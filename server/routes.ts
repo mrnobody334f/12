@@ -109,9 +109,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Determine sources based on filter or intent
       let sources;
+      
       if (source && source !== "all") {
         const platformSource = Object.values(platformSources).find(p => p.id === source);
-        if (platformSource && platformSource.site) {
+        if (platformSource) {
           sources = [platformSource];
         } else {
           sources = sourceConfig[intent] || sourceConfig.general;
@@ -123,15 +124,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Fetch results from sources
       const searchPromises = sources.map(async (src) => {
         try {
-          const results = await searchWithSerper(query, src.site, 10);
-          return results.map((result, idx) => ({
-            ...result,
-            source: src.id,
-            sourceName: src.name,
-            favicon: `https://www.google.com/s2/favicons?domain=${src.site}&sz=32`,
-            views: Math.floor(Math.random() * 100000),
-            engagement: Math.floor(Math.random() * 10000),
-          }));
+          // For Google search or "all", don't filter by site - get real Google results
+          const siteFilter = (src.id === "google" || source === "all") ? undefined : src.site;
+          const results = await searchWithSerper(query, siteFilter, 10);
+          
+          return results.map((result, idx) => {
+            // Extract domain from the result link for better favicon and source name
+            let domain = src.site;
+            let displayName = src.name;
+            
+            if (!siteFilter) {
+              // For Google search, extract the actual domain from the result
+              try {
+                const url = new URL(result.link);
+                domain = url.hostname.replace('www.', '');
+                // Capitalize first letter for display
+                displayName = domain.split('.')[0].charAt(0).toUpperCase() + domain.split('.')[0].slice(1);
+              } catch (e) {
+                domain = 'unknown.com';
+                displayName = 'Web';
+              }
+            }
+            
+            return {
+              ...result,
+              source: src.id,
+              sourceName: displayName,
+              favicon: `https://www.google.com/s2/favicons?domain=${domain}&sz=32`,
+              views: Math.floor(Math.random() * 100000),
+              engagement: Math.floor(Math.random() * 10000),
+            };
+          });
         } catch (error) {
           console.error(`Error fetching from ${src.name}:`, error);
           return [];

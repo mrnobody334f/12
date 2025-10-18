@@ -12,7 +12,7 @@ export type SortOption = typeof sortOptions[number];
 // Dedicated social media and platform sources
 export const platformSources = {
   all: { id: "all", name: "All", site: "", icon: "Globe" },
-  google: { id: "google", name: "Google", site: "google.com", icon: "Search" },
+  google: { id: "google", name: "Google", site: "", icon: "Search" },
   twitter: { id: "twitter", name: "Twitter", site: "twitter.com", icon: "Twitter" },
   instagram: { id: "instagram", name: "Instagram", site: "instagram.com", icon: "Instagram" },
   tiktok: { id: "tiktok", name: "TikTok", site: "tiktok.com", icon: "Music" },
@@ -51,7 +51,7 @@ export const sourceConfig = {
     { id: "pinterest", name: "Pinterest", site: "pinterest.com", icon: "Image" },
   ],
   general: [
-    { id: "google", name: "Google", site: "google.com", icon: "Search" },
+    { id: "google", name: "Google", site: "", icon: "Search" },
     { id: "youtube", name: "YouTube", site: "youtube.com", icon: "Youtube" },
     { id: "tiktok", name: "TikTok", site: "tiktok.com", icon: "Music" },
     { id: "reddit", name: "Reddit", site: "reddit.com", icon: "MessageSquare" },

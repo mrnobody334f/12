@@ -25,7 +25,8 @@ export async function searchWithSerper(
     throw new Error("SERPER_API_KEY is not configured");
   }
 
-  const searchQuery = site ? `site:${site} ${query}` : query;
+  // Don't use site filter if site is undefined or empty - get real Google results
+  const searchQuery = (site && site.trim()) ? `site:${site} ${query}` : query;
 
   try {
     const response = await fetch("https://google.serper.dev/search", {
