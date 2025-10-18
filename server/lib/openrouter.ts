@@ -54,46 +54,80 @@ async function callOpenRouter(messages: OpenRouterMessage[]): Promise<string> {
 function detectIntentByKeywords(query: string): IntentType {
   const lowerQuery = query.toLowerCase();
   
-  // Shopping keywords
-  const shoppingKeywords = [
-    'buy', 'purchase', 'shop', 'price', 'cost', 'cheap', 'deal', 'sale',
-    'discount', 'order', 'store', 'product', 'review', 'compare', 'best',
-    'اشتري', 'شراء', 'سعر', 'متجر', 'منتج', 'أفضل'
+  // Shopping keywords with weights (higher weight = more specific to shopping)
+  const shoppingPatterns = [
+    { pattern: /\b(buy|purchase|shop|order)\b/i, weight: 3 },
+    { pattern: /\b(price|cost|cheap|expensive|affordable)\b/i, weight: 2.5 },
+    { pattern: /\b(deal|sale|discount|offer|coupon)\b/i, weight: 2.5 },
+    { pattern: /\b(store|market|mall|retail)\b/i, weight: 2 },
+    { pattern: /\b(product|item|merchandise)\b/i, weight: 2 },
+    { pattern: /\b(review|compare|best|top|vs)\b/i, weight: 1.5 },
+    { pattern: /\b(اشتري|شراء|سعر|متجر|منتج|أفضل)\b/i, weight: 3 }
   ];
   
   // News keywords
-  const newsKeywords = [
-    'news', 'latest', 'breaking', 'today', 'yesterday', 'update', 'report',
-    'headline', 'current', 'recent', 'أخبار', 'جديد', 'اليوم'
+  const newsPatterns = [
+    { pattern: /\b(news|latest|breaking|headline)\b/i, weight: 3 },
+    { pattern: /\b(today|yesterday|tomorrow|current)\b/i, weight: 2 },
+    { pattern: /\b(update|report|announce|develop)\b/i, weight: 2.5 },
+    { pattern: /\b(recent|new|just|now)\b/i, weight: 1.5 },
+    { pattern: /\b(أخبار|جديد|اليوم|عاجل)\b/i, weight: 3 }
   ];
   
   // Learning keywords
-  const learningKeywords = [
-    'how to', 'tutorial', 'learn', 'guide', 'course', 'education', 'study',
-    'what is', 'explain', 'definition', 'كيف', 'تعلم', 'شرح', 'دورة'
+  const learningPatterns = [
+    { pattern: /\b(how to|tutorial|guide)\b/i, weight: 3 },
+    { pattern: /\b(learn|study|course|education)\b/i, weight: 2.5 },
+    { pattern: /\b(what is|explain|definition|meaning)\b/i, weight: 2.5 },
+    { pattern: /\b(teach|training|lesson|class)\b/i, weight: 2 },
+    { pattern: /\b(كيف|تعلم|شرح|دورة|درس)\b/i, weight: 3 }
   ];
   
   // Entertainment keywords
-  const entertainmentKeywords = [
-    'video', 'movie', 'music', 'song', 'watch', 'stream', 'episode', 'series',
-    'funny', 'meme', 'viral', 'trending', 'فيديو', 'فيلم', 'أغنية', 'مشاهدة'
+  const entertainmentPatterns = [
+    { pattern: /\b(video|movie|film|cinema)\b/i, weight: 2.5 },
+    { pattern: /\b(music|song|album|artist)\b/i, weight: 2.5 },
+    { pattern: /\b(watch|stream|play|download)\b/i, weight: 2 },
+    { pattern: /\b(episode|series|show|season)\b/i, weight: 2.5 },
+    { pattern: /\b(funny|comedy|meme|viral)\b/i, weight: 2 },
+    { pattern: /\b(trending|popular|hit)\b/i, weight: 1.5 },
+    { pattern: /\b(فيديو|فيلم|أغنية|مشاهدة|تحميل)\b/i, weight: 2.5 }
   ];
   
-  // Check each category
-  if (shoppingKeywords.some(keyword => lowerQuery.includes(keyword))) {
-    return 'shopping';
-  }
+  // Calculate scores for each intent
+  const scores = {
+    shopping: 0,
+    news: 0,
+    learning: 0,
+    entertainment: 0,
+    general: 0
+  };
   
-  if (newsKeywords.some(keyword => lowerQuery.includes(keyword))) {
-    return 'news';
-  }
+  shoppingPatterns.forEach(({ pattern, weight }) => {
+    if (pattern.test(lowerQuery)) scores.shopping += weight;
+  });
   
-  if (learningKeywords.some(keyword => lowerQuery.includes(keyword))) {
-    return 'learning';
-  }
+  newsPatterns.forEach(({ pattern, weight }) => {
+    if (pattern.test(lowerQuery)) scores.news += weight;
+  });
   
-  if (entertainmentKeywords.some(keyword => lowerQuery.includes(keyword))) {
-    return 'entertainment';
+  learningPatterns.forEach(({ pattern, weight }) => {
+    if (pattern.test(lowerQuery)) scores.learning += weight;
+  });
+  
+  entertainmentPatterns.forEach(({ pattern, weight }) => {
+    if (pattern.test(lowerQuery)) scores.entertainment += weight;
+  });
+  
+  // Find the highest scoring intent
+  const maxScore = Math.max(scores.shopping, scores.news, scores.learning, scores.entertainment);
+  
+  // Only return a specific intent if the score is significant enough
+  if (maxScore >= 2) {
+    if (scores.shopping === maxScore) return 'shopping';
+    if (scores.news === maxScore) return 'news';
+    if (scores.learning === maxScore) return 'learning';
+    if (scores.entertainment === maxScore) return 'entertainment';
   }
   
   return 'general';
@@ -151,30 +185,109 @@ function generateBasicSummary(
   intent: IntentType
 ): AISummary {
   const topResults = results.slice(0, 3);
+  const totalResults = results.length;
   
-  const summaryTemplates: Record<IntentType, string> = {
-    shopping: `Found ${results.length} shopping results for "${query}". Compare prices and reviews to find the best deals.`,
-    news: `Latest news about "${query}". ${results.length} articles found from various sources.`,
-    learning: `Educational resources about "${query}". ${results.length} learning materials available.`,
-    entertainment: `Trending content about "${query}". ${results.length} entertainment results found.`,
-    general: `Found ${results.length} results for "${query}". Browse through the search results below.`,
-  };
+  // Generate smarter summaries based on intent and results
+  let summary = "";
+  const recommendations: Array<{title: string, reason: string}> = [];
+  const suggestedQueries: string[] = [];
   
-  const recommendations = topResults.map((result, idx) => ({
-    title: result.title,
-    reason: `Top result from ${result.sourceName}`,
-  }));
-  
-  const suggestedQueries = [
-    `${query} 2025`,
-    `best ${query}`,
-    `${query} guide`,
-  ];
+  // Smart summary generation
+  if (totalResults === 0) {
+    summary = `No results found for "${query}". Try different keywords or check your spelling.`;
+  } else {
+    const sources = Array.from(new Set(results.map(r => r.sourceName).filter(s => s)));
+    const sourceText = sources.length > 1 ? `${sources.length} sources` : sources[0] || 'multiple sources';
+    
+    switch (intent) {
+      case 'shopping':
+        summary = `Found ${totalResults} shopping options for "${query}" from ${sourceText}. Review product details, prices, and customer ratings to make the best choice.`;
+        topResults.forEach((result, idx) => {
+          recommendations.push({
+            title: result.title,
+            reason: `Top ${idx + 1} result - Popular option from ${result.sourceName} with detailed information`
+          });
+        });
+        suggestedQueries.push(
+          `best ${query}`,
+          `${query} reviews`,
+          `${query} price comparison`,
+          `cheap ${query}`
+        );
+        break;
+        
+      case 'news':
+        summary = `Latest news about "${query}" from ${sourceText}. Stay updated with ${totalResults} recent articles and breaking developments.`;
+        topResults.forEach((result, idx) => {
+          const hasDate = result.date ? ` (${result.date})` : '';
+          recommendations.push({
+            title: result.title,
+            reason: `Breaking story${hasDate} - ${result.sourceName} coverage`
+          });
+        });
+        suggestedQueries.push(
+          `${query} latest news`,
+          `${query} today`,
+          `${query} update`,
+          `${query} breaking`
+        );
+        break;
+        
+      case 'learning':
+        summary = `Educational resources about "${query}" available from ${sourceText}. ${totalResults} learning materials including guides, tutorials, and explanations.`;
+        topResults.forEach((result, idx) => {
+          recommendations.push({
+            title: result.title,
+            reason: `Comprehensive guide from ${result.sourceName} - Great for learning`
+          });
+        });
+        suggestedQueries.push(
+          `how to ${query}`,
+          `${query} tutorial`,
+          `${query} guide`,
+          `learn ${query}`
+        );
+        break;
+        
+      case 'entertainment':
+        summary = `Trending entertainment content about "${query}" from ${sourceText}. ${totalResults} videos, shows, and media content available.`;
+        topResults.forEach((result, idx) => {
+          recommendations.push({
+            title: result.title,
+            reason: `Popular content on ${result.sourceName} - High engagement`
+          });
+        });
+        suggestedQueries.push(
+          `${query} video`,
+          `${query} watch online`,
+          `${query} trending`,
+          `${query} viral`
+        );
+        break;
+        
+      case 'general':
+      default:
+        summary = `Found ${totalResults} results for "${query}" from ${sourceText}. Browse comprehensive information and resources below.`;
+        topResults.forEach((result, idx) => {
+          recommendations.push({
+            title: result.title,
+            reason: `Highly relevant result from ${result.sourceName}`
+          });
+        });
+        suggestedQueries.push(
+          `${query} 2025`,
+          `what is ${query}`,
+          `${query} information`,
+          `${query} details`
+        );
+        break;
+    }
+  }
   
   return {
-    summary: summaryTemplates[intent],
-    recommendations,
-    suggestedQueries,
+    summary,
+    recommendations: recommendations.slice(0, 3),
+    suggestedQueries: suggestedQueries.slice(0, 3),
   };
 }
 
