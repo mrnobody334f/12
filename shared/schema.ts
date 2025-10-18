@@ -23,6 +23,7 @@ export const platformSources = {
   all: { id: "all", name: "All", site: "", icon: "Globe" },
   google: { id: "google", name: "Google", site: "", icon: "Search" },
   twitter: { id: "twitter", name: "Twitter", site: "twitter.com", icon: "Twitter" },
+  facebook: { id: "facebook", name: "Facebook", site: "facebook.com", icon: "Facebook" },
   instagram: { id: "instagram", name: "Instagram", site: "instagram.com", icon: "Instagram" },
   tiktok: { id: "tiktok", name: "TikTok", site: "tiktok.com", icon: "Music" },
   reddit: { id: "reddit", name: "Reddit", site: "reddit.com", icon: "MessageSquare" },
@@ -62,6 +63,7 @@ export const sourceConfig = {
   general: [
     { id: "google", name: "Google", site: "", icon: "Search" },
     { id: "youtube", name: "YouTube", site: "youtube.com", icon: "Youtube" },
+    { id: "facebook", name: "Facebook", site: "facebook.com", icon: "Facebook" },
     { id: "tiktok", name: "TikTok", site: "tiktok.com", icon: "Music" },
     { id: "reddit", name: "Reddit", site: "reddit.com", icon: "MessageSquare" },
     { id: "instagram", name: "Instagram", site: "instagram.com", icon: "Camera" },

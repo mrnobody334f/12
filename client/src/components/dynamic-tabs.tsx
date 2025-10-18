@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Globe, LucideIcon, Search, Twitter, Instagram, Music, MessageSquare, Youtube } from "lucide-react";
+import { Globe, LucideIcon, Search, Twitter, Facebook, Instagram, Music, MessageSquare, Youtube } from "lucide-react";
 import * as Icons from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +22,7 @@ const platformTabs = [
   { id: "all", name: "All", icon: Globe },
   { id: "google", name: "Google", icon: Search },
   { id: "twitter", name: "Twitter", icon: Twitter },
+  { id: "facebook", name: "Facebook", icon: Facebook },
   { id: "instagram", name: "Instagram", icon: Instagram },
   { id: "tiktok", name: "TikTok", icon: Music },
   { id: "reddit", name: "Reddit", icon: MessageSquare },
