@@ -113,7 +113,7 @@ const countriesData: Country[] = [
   { name: "Turkey", code: "tr", cities: ["Istanbul", "Ankara", "Izmir", "Bursa", "Antalya"] },
   { name: "Ukraine", code: "ua", cities: ["Kyiv", "Kharkiv", "Odesa", "Dnipro", "Lviv"] },
   { name: "United Arab Emirates", code: "ae", cities: ["Dubai", "Abu Dhabi", "Sharjah", "Ajman", "Ras Al Khaimah"] },
-  { name: "United Kingdom", code: "uk", cities: ["London", "Birmingham", "Manchester", "Glasgow", "Liverpool"] },
+  { name: "United Kingdom", code: "gb", cities: ["London", "Birmingham", "Manchester", "Glasgow", "Liverpool"] },
   { name: "United States", code: "us", cities: ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix"] },
   { name: "Uruguay", code: "uy", cities: ["Montevideo", "Salto", "Paysandú", "Las Piedras", "Rivera"] },
   { name: "Venezuela", code: "ve", cities: ["Caracas", "Maracaibo", "Valencia", "Barquisimeto", "Maracay"] },
