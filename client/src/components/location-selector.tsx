@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MapPin, Globe2, Check, ChevronsUpDown } from "lucide-react";
+import { MapPin, Globe2, Check, ChevronsUpDown, Locate } from "lucide-react";
 import { motion } from "framer-motion";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ interface LocationSelectorProps {
   countryCode?: string;
   city?: string;
   onLocationChange: (country: string, countryCode: string, city: string) => void;
+  detectedLocation?: {country: string; countryCode: string; city: string} | null | undefined;
 }
 
 export function LocationSelector({
@@ -31,6 +32,7 @@ export function LocationSelector({
   countryCode = "",
   city = "",
   onLocationChange,
+  detectedLocation,
 }: LocationSelectorProps) {
   const [countryOpen, setCountryOpen] = useState(false);
   const [cityOpen, setCityOpen] = useState(false);
@@ -57,15 +59,35 @@ export function LocationSelector({
     setCityOpen(false);
   };
 
+  const handleUseMyLocation = () => {
+    if (detectedLocation && detectedLocation.countryCode) {
+      onLocationChange(detectedLocation.country, detectedLocation.countryCode, "");
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       className="p-4 bg-card border border-card-border rounded-xl space-y-4"
     >
-      <div className="flex items-center gap-2 mb-3">
-        <MapPin className="h-5 w-5 text-primary" />
-        <Label className="text-sm font-medium">Search Location</Label>
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2">
+          <MapPin className="h-5 w-5 text-primary" />
+          <Label className="text-sm font-medium">Search Location</Label>
+        </div>
+        {detectedLocation && detectedLocation.countryCode && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleUseMyLocation}
+            className="gap-2"
+            data-testid="button-use-my-location"
+          >
+            <Locate className="h-4 w-4" />
+            <span className="text-xs">Use My Location</span>
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

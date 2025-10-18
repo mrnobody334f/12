@@ -42,18 +42,9 @@ export default function Home() {
     staleTime: Infinity,
   });
 
-  useEffect(() => {
-    if (detectedLocation && !isManualLocation && detectedLocation.countryCode) {
-      setUserLocation(detectedLocation);
-      setCountry(detectedLocation.country);
-      setCountryCode(detectedLocation.countryCode);
-      setCity(detectedLocation.city);
-    }
-  }, [detectedLocation, isManualLocation]);
-
-  const effectiveCountry = isManualLocation ? country : (userLocation?.country || '');
-  const effectiveCountryCode = isManualLocation ? countryCode : (userLocation?.countryCode || '');
-  const effectiveCity = isManualLocation ? city : (userLocation?.city || '');
+  const effectiveCountry = country;
+  const effectiveCountryCode = countryCode;
+  const effectiveCity = city;
 
   const locationParams = (effectiveCountryCode && effectiveCountryCode !== "global" && effectiveCountryCode !== '') || effectiveCity 
     ? `&countryCode=${encodeURIComponent(effectiveCountryCode)}&country=${encodeURIComponent(effectiveCountry)}&city=${encodeURIComponent(effectiveCity)}`
@@ -287,6 +278,7 @@ export default function Home() {
                 countryCode={countryCode}
                 city={city}
                 onLocationChange={handleLocationChange}
+                detectedLocation={detectedLocation}
               />
             </div>
           )}
@@ -303,6 +295,7 @@ export default function Home() {
                 countryCode={countryCode}
                 city={city}
                 onLocationChange={handleLocationChange}
+                detectedLocation={detectedLocation}
               />
             </motion.div>
           )}
