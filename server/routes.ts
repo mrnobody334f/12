@@ -96,6 +96,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Reverse geocode coordinates to location (more accurate than IP-based)
+  app.post("/api/location/geocode", async (req, res) => {
+    try {
+      const { latitude, longitude } = req.body;
+
+      if (!latitude || !longitude) {
+        return res.status(400).json({ error: "Latitude and longitude are required" });
+      }
+
+      console.log(`Reverse geocoding: ${latitude}, ${longitude}`);
+
+      // Using BigDataCloud's free reverse geocoding API (no API key needed)
+      const endpoint = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`;
+      
+      const response = await fetch(endpoint);
+      
+      if (!response.ok) {
+        console.error(`Geocoding API returned status: ${response.status}`);
+        return res.status(500).json({ error: "Failed to geocode location" });
+      }
+      
+      const data = await response.json();
+      
+      const result = {
+        country: data.countryName || '',
+        countryCode: (data.countryCode || '').toLowerCase(),
+        city: data.city || data.locality || data.principalSubdivision || ''
+      };
+      
+      console.log(`Geocoded location: ${result.city}, ${result.country} (${result.countryCode})`);
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Geocoding error:", error);
+      res.status(500).json({ error: "Failed to geocode location" });
+    }
+  });
+
   // Intent detection endpoint
   app.post("/api/intent", async (req, res) => {
     try {

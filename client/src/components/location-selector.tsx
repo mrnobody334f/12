@@ -3,6 +3,7 @@ import { MapPin, Globe2, Check, ChevronsUpDown, Locate } from "lucide-react";
 import { motion } from "framer-motion";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import {
   Command,
   CommandEmpty,
@@ -36,6 +37,8 @@ export function LocationSelector({
 }: LocationSelectorProps) {
   const [countryOpen, setCountryOpen] = useState(false);
   const [cityOpen, setCityOpen] = useState(false);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const { toast } = useToast();
 
   // Display "global" in the UI if no country code is set
   const displayCode = countryCode || "global";
@@ -59,10 +62,74 @@ export function LocationSelector({
     setCityOpen(false);
   };
 
-  const handleUseMyLocation = () => {
+  const handleUseMyLocation = async () => {
+    setIsGettingLocation(true);
+    
+    // Try to use browser's Geolocation API first (more accurate)
+    if ('geolocation' in navigator) {
+      try {
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          });
+        });
+
+        // Reverse geocode the coordinates
+        const response = await fetch('/api/location/geocode', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          }),
+        });
+
+        if (response.ok) {
+          const location = await response.json();
+          if (location.countryCode) {
+            onLocationChange(location.country, location.countryCode, location.city || "");
+            toast({
+              title: "Location detected",
+              description: `Using your precise location: ${location.city ? location.city + ', ' : ''}${location.country}`,
+            });
+            setIsGettingLocation(false);
+            return;
+          }
+        } else {
+          console.error("Geocoding API error:", response.status);
+        }
+      } catch (error) {
+        console.log("Geolocation API failed, falling back to IP-based detection:", error);
+        if ((error as GeolocationPositionError).code === 1) {
+          toast({
+            title: "Location access denied",
+            description: "Using approximate location based on IP address instead.",
+            variant: "default",
+          });
+        }
+      }
+    }
+
+    // Fallback to IP-based detection
     if (detectedLocation && detectedLocation.countryCode) {
       onLocationChange(detectedLocation.country, detectedLocation.countryCode, detectedLocation.city || "");
+      toast({
+        title: "Location detected",
+        description: `Using approximate location: ${detectedLocation.city ? detectedLocation.city + ', ' : ''}${detectedLocation.country}`,
+      });
+    } else {
+      toast({
+        title: "Location detection failed",
+        description: "Could not determine your location. Search results will be global.",
+        variant: "destructive",
+      });
     }
+    
+    setIsGettingLocation(false);
   };
 
   return (
@@ -76,18 +143,19 @@ export function LocationSelector({
           <MapPin className="h-5 w-5 text-primary" />
           <Label className="text-sm font-medium">Search Location</Label>
         </div>
-        {detectedLocation && detectedLocation.countryCode && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleUseMyLocation}
-            className="gap-2"
-            data-testid="button-use-my-location"
-          >
-            <Locate className="h-4 w-4" />
-            <span className="text-xs">Use My Location</span>
-          </Button>
-        )}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleUseMyLocation}
+          className="gap-2"
+          disabled={isGettingLocation}
+          data-testid="button-use-my-location"
+        >
+          <Locate className={cn("h-4 w-4", isGettingLocation && "animate-spin")} />
+          <span className="text-xs">
+            {isGettingLocation ? "Getting Location..." : "Use My Location"}
+          </span>
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
