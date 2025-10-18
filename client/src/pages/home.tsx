@@ -308,6 +308,7 @@ export default function Home() {
           sources={currentSources}
           activeSource={activeSource}
           onSourceChange={handleSourceChange}
+          searchQuery={searchQuery}
           showPlatformTabs={true}
         />
       )}

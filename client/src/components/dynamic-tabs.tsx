@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
-import { Globe, LucideIcon, Search, Twitter, Facebook, Instagram, Music, MessageSquare, Youtube } from "lucide-react";
+import { Globe, LucideIcon, Search, Twitter, Facebook, Instagram, Music, MessageSquare, Youtube, ExternalLink } from "lucide-react";
 import * as Icons from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 interface TabSource {
   id: string;
@@ -15,6 +16,24 @@ interface DynamicTabsProps {
   activeSource: string;
   onSourceChange: (sourceId: string) => void;
   showPlatformTabs?: boolean;
+  searchQuery?: string;
+}
+
+// Function to generate platform-specific search URLs
+function getPlatformSearchUrl(platformId: string, query: string): string {
+  const encodedQuery = encodeURIComponent(query);
+  
+  const urlMap: Record<string, string> = {
+    google: `https://www.google.com/search?q=${encodedQuery}`,
+    twitter: `https://twitter.com/search?q=${encodedQuery}`,
+    facebook: `https://www.facebook.com/search/posts/?q=${encodedQuery}`,
+    instagram: `https://www.instagram.com/explore/tags/${query.replace(/\s+/g, '')}`,
+    tiktok: `https://www.tiktok.com/search?q=${encodedQuery}`,
+    reddit: `https://www.reddit.com/search/?q=${encodedQuery}`,
+    youtube: `https://www.youtube.com/results?search_query=${encodedQuery}`,
+  };
+  
+  return urlMap[platformId] || `https://www.google.com/search?q=${encodedQuery}`;
 }
 
 // Platform-specific tabs that are always shown
@@ -29,7 +48,7 @@ const platformTabs = [
   { id: "youtube", name: "YouTube", icon: Youtube },
 ];
 
-export function DynamicTabs({ sources, activeSource, onSourceChange, showPlatformTabs = false }: DynamicTabsProps) {
+export function DynamicTabs({ sources, activeSource, onSourceChange, showPlatformTabs = false, searchQuery }: DynamicTabsProps) {
   const getIcon = (iconName: string): LucideIcon => {
     return (Icons as any)[iconName] || Globe;
   };
@@ -45,6 +64,17 @@ export function DynamicTabs({ sources, activeSource, onSourceChange, showPlatfor
     }));
   
   const tabsToShow = [...platformTabs, ...intentSources];
+
+  // Get active tab details
+  const activeTab = tabsToShow.find(tab => tab.id === activeSource);
+  const showOpenButton = searchQuery && activeSource !== "all" && activeTab;
+
+  const handleOpenInNewTab = () => {
+    if (searchQuery && activeSource) {
+      const url = getPlatformSearchUrl(activeSource, searchQuery);
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  };
 
   return (
     <div className="w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-16 z-40">
@@ -79,6 +109,21 @@ export function DynamicTabs({ sources, activeSource, onSourceChange, showPlatfor
             );
           })}
         </div>
+        
+        {showOpenButton && (
+          <div className="pb-3 pt-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleOpenInNewTab}
+              className="gap-2"
+              data-testid="button-open-in-new-tab"
+            >
+              <ExternalLink className="h-4 w-4" />
+              <span>Open {activeTab.name} in new tab</span>
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
