@@ -1,10 +1,26 @@
 import { z } from "zod";
+import { createInsertSchema } from "drizzle-zod";
 
 // Intent types for search queries
 export const intentTypes = ["shopping", "news", "learning", "entertainment", "general"] as const;
 export type IntentType = typeof intentTypes[number];
 
-// Search source configurations
+// Sort options for search results
+export const sortOptions = ["relevance", "recent", "mostViewed", "mostEngaged"] as const;
+export type SortOption = typeof sortOptions[number];
+
+// Dedicated social media and platform sources
+export const platformSources = {
+  all: { id: "all", name: "All", site: "", icon: "Globe" },
+  google: { id: "google", name: "Google", site: "google.com", icon: "Search" },
+  twitter: { id: "twitter", name: "Twitter", site: "twitter.com", icon: "Twitter" },
+  instagram: { id: "instagram", name: "Instagram", site: "instagram.com", icon: "Instagram" },
+  tiktok: { id: "tiktok", name: "TikTok", site: "tiktok.com", icon: "Music" },
+  reddit: { id: "reddit", name: "Reddit", site: "reddit.com", icon: "MessageSquare" },
+  youtube: { id: "youtube", name: "YouTube", site: "youtube.com", icon: "Youtube" },
+} as const;
+
+// Search source configurations based on intent
 export const sourceConfig = {
   shopping: [
     { id: "amazon", name: "Amazon", site: "amazon.com", icon: "ShoppingBag" },
@@ -40,19 +56,23 @@ export const sourceConfig = {
     { id: "tiktok", name: "TikTok", site: "tiktok.com", icon: "Music" },
     { id: "reddit", name: "Reddit", site: "reddit.com", icon: "MessageSquare" },
     { id: "instagram", name: "Instagram", site: "instagram.com", icon: "Camera" },
+    { id: "twitter", name: "Twitter", site: "twitter.com", icon: "Twitter" },
   ],
 };
 
-// Search result schema
+// Search result schema with enhanced metadata
 export const searchResultSchema = z.object({
   title: z.string(),
   link: z.string().url(),
   snippet: z.string(),
-  source: z.string(), // source ID (e.g., "amazon", "bestbuy")
-  sourceName: z.string().optional(), // display name (e.g., "Amazon", "Best Buy")
+  source: z.string(),
+  sourceName: z.string().optional(),
   favicon: z.string().optional(),
   thumbnail: z.string().optional(),
   position: z.number().optional(),
+  date: z.string().optional(),
+  views: z.number().optional(),
+  engagement: z.number().optional(),
 });
 
 export type SearchResult = z.infer<typeof searchResultSchema>;
@@ -79,11 +99,14 @@ export const aiSummarySchema = z.object({
 
 export type AISummary = z.infer<typeof aiSummarySchema>;
 
-// Search request/response
+// Search request/response with pagination
 export const searchRequestSchema = z.object({
   query: z.string().min(1),
   source: z.string().optional(),
   intent: z.enum(intentTypes).optional(),
+  page: z.number().optional().default(1),
+  limit: z.number().optional().default(20),
+  sort: z.enum(sortOptions).optional().default("relevance"),
 });
 
 export type SearchRequest = z.infer<typeof searchRequestSchema>;
@@ -99,9 +122,60 @@ export const searchResponseSchema = z.object({
     site: z.string(),
     icon: z.string(),
   })),
+  pagination: z.object({
+    currentPage: z.number(),
+    totalPages: z.number(),
+    totalResults: z.number(),
+    hasNext: z.boolean(),
+    hasPrevious: z.boolean(),
+  }),
 });
 
 export type SearchResponse = z.infer<typeof searchResponseSchema>;
+
+// Bookmark schema
+export const bookmarkSchema = z.object({
+  id: z.string(),
+  query: z.string(),
+  timestamp: z.number(),
+  results: z.array(searchResultSchema).optional(),
+});
+
+export type Bookmark = z.infer<typeof bookmarkSchema>;
+
+export const insertBookmarkSchema = z.object({
+  query: z.string(),
+  timestamp: z.number(),
+  results: z.array(searchResultSchema).optional(),
+});
+
+export type InsertBookmark = z.infer<typeof insertBookmarkSchema>;
+
+// Search history schema
+export const searchHistorySchema = z.object({
+  id: z.string(),
+  query: z.string(),
+  timestamp: z.number(),
+  intent: z.enum(intentTypes).optional(),
+});
+
+export type SearchHistory = z.infer<typeof searchHistorySchema>;
+
+export const insertSearchHistorySchema = z.object({
+  query: z.string(),
+  timestamp: z.number(),
+  intent: z.enum(intentTypes).optional(),
+});
+
+export type InsertSearchHistory = z.infer<typeof insertSearchHistorySchema>;
+
+// Autocomplete suggestion schema
+export const suggestionSchema = z.object({
+  query: z.string(),
+  type: z.enum(["trending", "history", "suggestion"]),
+});
+
+export type Suggestion = z.infer<typeof suggestionSchema>;
 
 // Cache entry (for backend)
 export interface CacheEntry<T> {

@@ -4,6 +4,7 @@ interface SerperResult {
   snippet: string;
   position?: number;
   thumbnail?: string;
+  date?: string;
 }
 
 interface SerperResponse {
@@ -13,7 +14,11 @@ interface SerperResponse {
   };
 }
 
-export async function searchWithSerper(query: string, site?: string): Promise<SerperResult[]> {
+export async function searchWithSerper(
+  query: string, 
+  site?: string, 
+  numResults: number = 50
+): Promise<SerperResult[]> {
   const apiKey = process.env.SERPER_API_KEY;
   
   if (!apiKey) {
@@ -31,7 +36,7 @@ export async function searchWithSerper(query: string, site?: string): Promise<Se
       },
       body: JSON.stringify({
         q: searchQuery,
-        num: 10,
+        num: numResults,
       }),
     });
 
@@ -47,6 +52,7 @@ export async function searchWithSerper(query: string, site?: string): Promise<Se
       snippet: result.snippet,
       position: result.position,
       thumbnail: result.thumbnail,
+      date: result.date,
     }));
   } catch (error) {
     console.error("Serper search error:", error);
