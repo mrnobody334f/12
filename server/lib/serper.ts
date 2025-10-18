@@ -17,7 +17,8 @@ interface SerperResponse {
 export async function searchWithSerper(
   query: string, 
   site?: string, 
-  numResults: number = 10
+  numResults: number = 10,
+  page: number = 1
 ): Promise<SerperResult[]> {
   const apiKey = process.env.SERPER_API_KEY;
   
@@ -34,7 +35,7 @@ export async function searchWithSerper(
       q: searchQuery,
       num: Math.min(numResults, 100), // Serper supports up to 100 results
       autocorrect: true,
-      page: 1,
+      page: page,
     };
     
     const response = await fetch("https://google.serper.dev/search", {

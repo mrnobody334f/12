@@ -121,60 +121,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sources = sourceConfig[intent] || sourceConfig.general;
       }
 
-      // Fetch results from sources
-      const searchPromises = sources.map(async (src) => {
-        try {
-          // For Google search or "all", don't filter by site - get real Google results
-          const siteFilter = (src.id === "google" || source === "all") ? undefined : src.site;
-          // Get more results for Google search to match real Google results better
-          const numToFetch = (src.id === "google") ? 50 : 10;
-          const results = await searchWithSerper(query, siteFilter, numToFetch);
-          
-          return results.map((result, idx) => {
-            // Extract domain from the result link for better favicon and source name
-            let domain = src.site;
-            let displayName = src.name;
+      // Create cache key for this specific search
+      const searchCacheKey = `search:${query}:${source || 'all'}:${pageNum}:${limitNum}:${sortBy}`;
+      const cachedSearch = cache.get<SearchResult[]>(searchCacheKey);
+      
+      let flatResults: SearchResult[];
+      
+      if (cachedSearch) {
+        console.log(`Using cached results for page ${pageNum}`);
+        flatResults = cachedSearch;
+      } else {
+        // Fetch results from sources for this specific page
+        const searchPromises = sources.map(async (src) => {
+          try {
+            // For Google search or "all", don't filter by site - get real Google results
+            const siteFilter = (src.id === "google" || source === "all") ? undefined : src.site;
             
-            if (!siteFilter) {
-              // For Google search, extract the actual domain from the result
-              try {
-                const url = new URL(result.link);
-                domain = url.hostname.replace('www.', '');
-                // Capitalize first letter for display
-                displayName = domain.split('.')[0].charAt(0).toUpperCase() + domain.split('.')[0].slice(1);
-              } catch (e) {
-                domain = 'unknown.com';
-                displayName = 'Web';
+            // Fetch results with pagination - pass page number to Serper API
+            const results = await searchWithSerper(query, siteFilter, limitNum, pageNum);
+            
+            return results.map((result, idx) => {
+              // Extract domain from the result link for better favicon and source name
+              let domain = src.site;
+              let displayName = src.name;
+              
+              if (!siteFilter) {
+                // For Google search, extract the actual domain from the result
+                try {
+                  const url = new URL(result.link);
+                  domain = url.hostname.replace('www.', '');
+                  // Capitalize first letter for display
+                  displayName = domain.split('.')[0].charAt(0).toUpperCase() + domain.split('.')[0].slice(1);
+                } catch (e) {
+                  domain = 'unknown.com';
+                  displayName = 'Web';
+                }
               }
-            }
-            
-            return {
-              ...result,
-              source: src.id,
-              sourceName: displayName,
-              favicon: `https://www.google.com/s2/favicons?domain=${domain}&sz=32`,
-              views: Math.floor(Math.random() * 100000),
-              engagement: Math.floor(Math.random() * 10000),
-            };
-          });
-        } catch (error) {
-          console.error(`Error fetching from ${src.name}:`, error);
-          return [];
-        }
-      });
+              
+              return {
+                ...result,
+                source: src.id,
+                sourceName: displayName,
+                favicon: `https://www.google.com/s2/favicons?domain=${domain}&sz=32`,
+                views: Math.floor(Math.random() * 100000),
+                engagement: Math.floor(Math.random() * 10000),
+              };
+            });
+          } catch (error) {
+            console.error(`Error fetching from ${src.name}:`, error);
+            return [];
+          }
+        });
 
-      const allResults = await Promise.all(searchPromises);
-      let flatResults: SearchResult[] = allResults.flat();
+        const allResults = await Promise.all(searchPromises);
+        flatResults = allResults.flat();
 
-      // Sort results
-      flatResults = sortResults(flatResults, sortBy);
+        // Sort results
+        flatResults = sortResults(flatResults, sortBy);
+        
+        // Cache the results for 5 minutes
+        cache.set(searchCacheKey, flatResults, 5 * 60 * 1000);
+      }
 
-      // Pagination
-      const totalResults = flatResults.length;
-      const totalPages = Math.ceil(totalResults / limitNum);
-      const startIdx = (pageNum - 1) * limitNum;
-      const endIdx = startIdx + limitNum;
-      const paginatedResults = flatResults.slice(startIdx, endIdx);
+      // Calculate pagination metadata
+      // Estimate total results (Serper typically has ~100 results per query)
+      const estimatedTotalResults = Math.min(limitNum * 10, 1000); // Estimate max 1000 results
+      const totalPages = Math.ceil(estimatedTotalResults / limitNum);
+      const paginatedResults = flatResults;
 
       // Generate AI summary for first page only
       let summary;
