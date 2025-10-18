@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bookmark, Loader2 } from "lucide-react";
+import { Bookmark, Loader2, Info } from "lucide-react";
 import { SearchBar } from "@/components/search-bar";
 import { IntentSelector } from "@/components/intent-selector";
 import { DynamicTabs } from "@/components/dynamic-tabs";
@@ -14,8 +14,10 @@ import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { SearchingSkeleton } from "@/components/loading-skeleton";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { searchCache } from "@/lib/search-cache";
 import type { SearchResponse, IntentType, SortOption, SearchResult } from "@shared/schema";
 
 export default function Home() {
@@ -27,7 +29,14 @@ export default function Home() {
   const [manualIntent, setManualIntent] = useState<IntentType | undefined>(undefined);
   const [allLoadedResults, setAllLoadedResults] = useState<SearchResult[]>([]);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMorePages, setHasMorePages] = useState(true);
   const { toast } = useToast();
+
+  // Create cache key for current search state
+  const getCacheKey = (page: number) => {
+    const intentKey = autoDetectIntent ? 'auto' : (manualIntent || 'none');
+    return `${searchQuery}:${activeSource}:${page}:${sortBy}:${intentKey}`;
+  };
 
   const { data, isLoading, error, refetch } = useQuery<SearchResponse>({
     queryKey: [
@@ -36,14 +45,44 @@ export default function Home() {
       }`,
     ],
     enabled: !!searchQuery,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes (formerly cacheTime)
   });
+
+  // Check localStorage cache before making request
+  useEffect(() => {
+    if (searchQuery && currentPage === 1) {
+      const cacheKey = getCacheKey(1);
+      const cached = searchCache.get(cacheKey);
+      if (cached) {
+        setAllLoadedResults(cached.results);
+        setHasMorePages(cached.pagination?.hasNext || false);
+      }
+    }
+  }, [searchQuery, activeSource, sortBy, autoDetectIntent, manualIntent]);
+
+  // Save to localStorage when data changes
+  useEffect(() => {
+    if (data && searchQuery) {
+      const cacheKey = getCacheKey(currentPage);
+      searchCache.set(cacheKey, data);
+    }
+  }, [data, searchQuery, currentPage]);
 
   // Reset loaded results when search query or filters change
   useEffect(() => {
     if (data && currentPage === 1) {
       setAllLoadedResults(data.results);
+      setHasMorePages(data.pagination?.hasNext || false);
     } else if (data && currentPage > 1) {
-      setAllLoadedResults(prev => [...prev, ...data.results]);
+      // Append new results
+      setAllLoadedResults(prev => {
+        // Avoid duplicates
+        const existingLinks = new Set(prev.map(r => r.link));
+        const newResults = data.results.filter(r => !existingLinks.has(r.link));
+        return [...prev, ...newResults];
+      });
+      setHasMorePages(data.pagination?.hasNext || false);
       setIsLoadingMore(false);
     }
   }, [data, currentPage]);
@@ -52,6 +91,7 @@ export default function Home() {
   useEffect(() => {
     setCurrentPage(1);
     setAllLoadedResults([]);
+    setHasMorePages(true);
   }, [searchQuery, activeSource, sortBy, autoDetectIntent, manualIntent]);
 
   const bookmarkMutation = useMutation({
@@ -82,12 +122,14 @@ export default function Home() {
     setActiveSource("all");
     setCurrentPage(1);
     setAllLoadedResults([]);
+    setHasMorePages(true);
   };
 
   const handleSourceChange = (sourceId: string) => {
     setActiveSource(sourceId);
     setCurrentPage(1);
     setAllLoadedResults([]);
+    setHasMorePages(true);
   };
 
   const handlePageChange = (page: number) => {
@@ -96,6 +138,7 @@ export default function Home() {
   };
 
   const handleLoadMore = () => {
+    if (!hasMorePages || isLoadingMore) return;
     setIsLoadingMore(true);
     setCurrentPage(prev => prev + 1);
   };
@@ -104,6 +147,7 @@ export default function Home() {
     setSortBy(sort);
     setCurrentPage(1);
     setAllLoadedResults([]);
+    setHasMorePages(true);
   };
 
   const handleIntentChange = (intent: IntentType | undefined) => {
@@ -111,6 +155,7 @@ export default function Home() {
     if (searchQuery) {
       setCurrentPage(1);
       setAllLoadedResults([]);
+      setHasMorePages(true);
       refetch();
     }
   };
@@ -120,11 +165,13 @@ export default function Home() {
     if (searchQuery) {
       setCurrentPage(1);
       setAllLoadedResults([]);
+      setHasMorePages(true);
       refetch();
     }
   };
 
   const handleRetry = () => {
+    setIsLoadingMore(false); // Reset loading state on retry
     refetch();
   };
 
@@ -135,8 +182,12 @@ export default function Home() {
   const currentSources = data?.sources || [];
   const hasSearched = searchQuery.length > 0;
   const pagination = data?.pagination;
-  const hasMoreResults = pagination?.hasNext || false;
-  const showLoadMore = hasMoreResults && !isLoadingMore;
+  
+  // Show Load More only if:
+  // 1. We have more pages according to the server
+  // 2. We're not currently loading more
+  // 3. The last fetch returned results (not empty)
+  const showLoadMore = hasMorePages && !isLoadingMore && allLoadedResults.length > 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -240,13 +291,29 @@ export default function Home() {
               <AISummaryCard summary={data.summary} query={searchQuery} />
             )}
 
-            {/* Sort Options */}
+            {/* Sort Options & Pagination Info */}
             {allLoadedResults.length > 0 && (
-              <SortOptions
-                selectedSort={sortBy}
-                onSortChange={handleSortChange}
-                resultCount={allLoadedResults.length}
-              />
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <SortOptions
+                  selectedSort={sortBy}
+                  onSortChange={handleSortChange}
+                  resultCount={allLoadedResults.length}
+                />
+                
+                {/* Pagination Status */}
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Info className="h-4 w-4" />
+                  <span>
+                    Page {currentPage}
+                    {hasMorePages && " • More results available"}
+                  </span>
+                  {pagination?.totalResults && (
+                    <Badge variant="secondary" className="ml-2">
+                      {allLoadedResults.length} loaded
+                    </Badge>
+                  )}
+                </div>
+              </div>
             )}
 
             {/* Results */}
@@ -270,15 +337,18 @@ export default function Home() {
 
                 {/* Load More Button */}
                 {showLoadMore && (
-                  <div className="flex justify-center py-8">
+                  <div className="flex flex-col items-center gap-3 py-8">
                     <Button
                       onClick={handleLoadMore}
                       size="lg"
-                      className="gap-2"
+                      className="gap-2 min-w-[200px]"
                       data-testid="button-load-more"
                     >
                       Load More Results
                     </Button>
+                    <p className="text-xs text-muted-foreground">
+                      Showing {allLoadedResults.length} results • Page {currentPage}
+                    </p>
                   </div>
                 )}
 
@@ -288,6 +358,20 @@ export default function Home() {
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Loader2 className="h-5 w-5 animate-spin" />
                       <span>Loading more results...</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* End of Results Message */}
+                {!hasMorePages && allLoadedResults.length > 0 && !isLoadingMore && (
+                  <div className="flex justify-center py-8">
+                    <div className="text-center space-y-2">
+                      <p className="text-sm text-muted-foreground">
+                        You've reached the end of search results
+                      </p>
+                      <Badge variant="outline">
+                        {allLoadedResults.length} total results
+                      </Badge>
                     </div>
                   </div>
                 )}
@@ -322,19 +406,19 @@ export default function Home() {
             <div className="space-y-3">
               <h3 className="font-semibold text-foreground">About NovaSearch</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Next-generation AI-powered search engine with comprehensive Google-like results, advanced features like pagination, bookmarks, history tracking, and intelligent result sorting.
+                Next-generation AI-powered search engine with comprehensive Google-like results, smart caching, lazy loading, and intelligent result sorting.
               </p>
             </div>
             
             <div className="space-y-3">
               <h3 className="font-semibold text-foreground">Features</h3>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>Google-Like Comprehensive Search</li>
-                <li>AI Intent Detection</li>
-                <li>Load More & Pagination</li>
-                <li>Smart Sorting & Filtering</li>
-                <li>Bookmarks & History</li>
-                <li>Auto-complete Suggestions</li>
+                <li>✓ Google-Like Comprehensive Search</li>
+                <li>✓ AI Intent Detection</li>
+                <li>✓ Smart Caching (Server & Client)</li>
+                <li>✓ Lazy Loading & Pagination</li>
+                <li>✓ Advanced Sorting & Filtering</li>
+                <li>✓ Bookmarks & History</li>
               </ul>
             </div>
             
@@ -349,7 +433,7 @@ export default function Home() {
           </div>
           
           <div className="pt-6 border-t border-border text-center text-sm text-muted-foreground">
-            <p>&copy; 2025 NovaSearch. Powered by AI.</p>
+            <p>&copy; 2025 NovaSearch. Powered by AI & Serper.dev</p>
           </div>
         </div>
       </footer>
