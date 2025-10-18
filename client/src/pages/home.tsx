@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Bookmark, MapPin } from "lucide-react";
+import { Bookmark, MapPin, Globe2 } from "lucide-react";
 import { SearchBar } from "@/components/search-bar";
 import { IntentSelector } from "@/components/intent-selector";
 import { LocationSelector } from "@/components/location-selector";
@@ -328,7 +328,7 @@ export default function Home() {
         {hasSearched && !isLoading && !error && data && (
           <div className="space-y-6">
             {/* Location Display */}
-            {data.location && (data.location.city || data.location.country) && (
+            {data.location && (data.location.city || data.location.country) ? (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -340,6 +340,19 @@ export default function Home() {
                   {data.location.city && <span>{data.location.city}</span>}
                   {data.location.city && data.location.country && <span>,</span>}
                   {data.location.country && <span>{data.location.country}</span>}
+                </Badge>
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-2 text-sm text-muted-foreground"
+              >
+                <Globe2 className="h-4 w-4" />
+                <span>Showing global search results</span>
+                <Badge variant="outline" className="gap-1" data-testid="badge-global-search">
+                  <Globe2 className="h-3 w-3" />
+                  Global
                 </Badge>
               </motion.div>
             )}

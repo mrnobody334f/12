@@ -61,7 +61,7 @@ export function LocationSelector({
 
   const handleUseMyLocation = () => {
     if (detectedLocation && detectedLocation.countryCode) {
-      onLocationChange(detectedLocation.country, detectedLocation.countryCode, "");
+      onLocationChange(detectedLocation.country, detectedLocation.countryCode, detectedLocation.city || "");
     }
   };
 
