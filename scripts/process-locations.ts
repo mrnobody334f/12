@@ -31,15 +31,33 @@ const locationsRaw: GoogleLocation[] = JSON.parse(
 console.log(`تم تحميل ${countriesRaw.length} دولة`);
 console.log(`تم تحميل ${locationsRaw.length} موقع`);
 
-const citiesByCountry: Record<string, Set<string>> = {};
+interface LocationWithReach {
+  name: string;
+  reach: number;
+}
+
+const citiesByCountry: Record<string, LocationWithReach[]> = {};
 
 locationsRaw.forEach((location) => {
-  if (location.target_type === 'City' && location.name) {
+  if (location.target_type === 'City' && location.name && location.name.length > 1) {
+    const cityName = location.name.trim();
+    
+    if (/^[0-9\s]+[A-Z]?$/.test(cityName)) {
+      return;
+    }
+    if (cityName.length < 2) {
+      return;
+    }
+    
     const countryCode = location.country_code.toLowerCase();
     if (!citiesByCountry[countryCode]) {
-      citiesByCountry[countryCode] = new Set();
+      citiesByCountry[countryCode] = [];
     }
-    citiesByCountry[countryCode].add(location.name);
+    
+    citiesByCountry[countryCode].push({
+      name: cityName,
+      reach: (location as any).reach || 0
+    });
   }
 });
 
@@ -49,9 +67,19 @@ const countries: Country[] = [
 
 countriesRaw.forEach((country) => {
   const code = country.country_code.toLowerCase();
-  const cities = Array.from(citiesByCountry[code] || [])
-    .sort()
-    .slice(0, 10);
+  const cityData = citiesByCountry[code] || [];
+  
+  const uniqueCities = new Map<string, number>();
+  cityData.forEach(({ name, reach }) => {
+    if (!uniqueCities.has(name) || uniqueCities.get(name)! < reach) {
+      uniqueCities.set(name, reach);
+    }
+  });
+  
+  const cities = Array.from(uniqueCities.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([name]) => name);
   
   countries.push({
     name: country.country_name,

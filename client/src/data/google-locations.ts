@@ -31,15 +31,15 @@ export const countriesData: Country[] = [
     "code": "dz",
     "cities": [
       "Algiers",
-      "Annaba",
+      "Oran",
+      "Constantine",
       "Batna",
-      "Bechar",
-      "Bejaia",
+      "Setif",
+      "Ouargla",
       "Bir El Djir",
-      "Biskra",
-      "Blida",
-      "Bouira",
-      "Chlef"
+      "Chlef",
+      "Tlemcen",
+      "Bejaia"
     ]
   },
   {
@@ -82,25 +82,25 @@ export const countriesData: Country[] = [
     "name": "Argentina",
     "code": "ar",
     "cities": [
-      "9 de Abril",
-      "Abasto",
-      "Adrogue",
-      "Aldo Bonzi",
-      "Alejandro Korn",
-      "Altos de San Lorenzo",
-      "Arana",
-      "Arturo Segui",
-      "Avellaneda",
-      "Bahia Blanca"
+      "Buenos Aires",
+      "Cordoba",
+      "Rosario",
+      "San Miguel de Tucuman",
+      "Mendoza",
+      "Neuquen",
+      "Corrientes",
+      "Salta",
+      "Mar del Plata",
+      "General San Martin Partido"
     ]
   },
   {
     "name": "Armenia",
     "code": "am",
     "cities": [
+      "Yerevan",
       "Gyumri",
-      "Vanadzor",
-      "Yerevan"
+      "Vanadzor"
     ]
   },
   {
@@ -112,32 +112,32 @@ export const countriesData: Country[] = [
     "name": "Australia",
     "code": "au",
     "cities": [
-      "Aberfoyle Park",
-      "Acacia Ridge",
-      "Adamstown",
+      "Sydney",
+      "Melbourne",
+      "Brisbane",
+      "Perth",
       "Adelaide",
-      "Adelaide Airport",
-      "Ainslie",
-      "Aintree",
-      "Airlie Beach",
-      "Airport West",
-      "Albany"
+      "Gold Coast",
+      "Canberra",
+      "Newcastle",
+      "Hobart",
+      "Central Coast"
     ]
   },
   {
     "name": "Austria",
     "code": "at",
     "cities": [
-      "Absam",
-      "Achenkirch",
-      "Admont",
-      "Alkoven",
-      "Allerheiligen im Murztal",
-      "Alpl",
-      "Altach",
-      "Altmunster",
-      "Ampflwang im Hausruckwald",
-      "Amstetten"
+      "Vienna",
+      "Graz",
+      "Innsbruck",
+      "Linz",
+      "Salzburg",
+      "Klagenfurt am Worthersee",
+      "Schwechat",
+      "Saint Polten",
+      "Wiener Neustadt",
+      "Klagenfurt"
     ]
   },
   {
@@ -157,66 +157,66 @@ export const countriesData: Country[] = [
     "name": "Bahrain",
     "code": "bh",
     "cities": [
-      "Isa Town",
       "Manama",
-      "Riffa"
+      "Riffa",
+      "Isa Town"
     ]
   },
   {
     "name": "Bangladesh",
     "code": "bd",
     "cities": [
-      "Aminbazar",
-      "Ashulia",
-      "Bandar",
-      "Barisal",
-      "Barishal",
-      "Bhatiari",
-      "Bogra",
-      "Bogura",
-      "Brahmanbaria",
-      "Chattogram"
+      "Dhaka",
+      "Chattogram",
+      "Sylhet",
+      "Cumilla",
+      "Khulna",
+      "Narayanganj",
+      "Cox's Bazar",
+      "Gazipur",
+      "Mawna",
+      "Jashore"
     ]
   },
   {
     "name": "Barbados",
     "code": "bb",
     "cities": [
+      "Saint Michael",
       "Oistins",
-      "Saint James",
-      "Saint Michael"
+      "Saint James"
     ]
   },
   {
     "name": "Belarus",
     "code": "by",
     "cities": [
-      "Akciabrski",
-      "Asipovichy",
-      "Atolina",
-      "Azarychy",
-      "Babruysk",
-      "Bahuseusk",
-      "Baranavichy",
-      "Baranovichi",
+      "Minsk",
+      "Gomel",
+      "Brest",
       "Barysaw",
-      "Begoml"
+      "Hrodna",
+      "Vitebsk",
+      "Mogilev",
+      "Baranavichy",
+      "Salihorsk",
+      "Babruysk"
     ]
   },
   {
     "name": "Belgium",
     "code": "be",
     "cities": [
-      "Aalst",
-      "Aalter",
-      "Aarschot",
-      "Aartselaar",
-      "Affligem",
-      "Alken",
-      "Amay",
-      "Andenne",
-      "Anderlecht",
-      "Antwerp"
+      "Antwerp",
+      "Ghent",
+      "Brussels",
+      "Liege",
+      "Hasselt",
+      "Zaventem",
+      "Charleroi",
+      "Bruges",
+      "Leuven",
+      "Schaerbeek"
     ]
   },
   {
@@ -228,11 +228,11 @@ export const countriesData: Country[] = [
     "name": "Benin",
     "code": "bj",
     "cities": [
-      "Abomey Calavi",
       "Cotonou",
       "Godomey",
-      "Porto Novo",
-      "Porto-Novo"
+      "Porto-Novo",
+      "Abomey Calavi",
+      "Porto Novo"
     ]
   },
   {
@@ -249,16 +249,16 @@ export const countriesData: Country[] = [
     "name": "Bolivia",
     "code": "bo",
     "cities": [
-      "Aiquile",
-      "Betanzos",
+      "Oruro",
+      "Trinidad",
       "Camiri",
-      "Caranavi",
-      "Chimore",
-      "La Belgica",
-      "Lahuachaca",
       "Llallagua",
-      "Machacamarca",
-      "Mapiri"
+      "Caranavi",
+      "Villamontes",
+      "Vallegrande",
+      "Aiquile",
+      "San Borja",
+      "Chimore"
     ]
   },
   {
@@ -266,15 +266,15 @@ export const countriesData: Country[] = [
     "code": "ba",
     "cities": [
       "Banja Luka",
-      "Bijeljina",
-      "Cazin",
-      "Doboj",
-      "Gracanica",
-      "Gradiska",
-      "Lukavac",
       "Mostar",
+      "Siroki Brijeg",
+      "Bijeljina",
       "Prijedor",
-      "Sanski Most"
+      "Doboj",
+      "Gradiska",
+      "Zivinice",
+      "Travnik",
+      "Gracanica"
     ]
   },
   {
@@ -291,16 +291,16 @@ export const countriesData: Country[] = [
     "name": "Brazil",
     "code": "br",
     "cities": [
-      "Abadiania",
-      "Abaetetuba",
-      "Abelardo Luz",
-      "Abreu e Lima",
-      "Acailandia",
-      "Acarau",
-      "Acu",
-      "Adamantina",
-      "Afonso Claudio",
-      "Agua Boa"
+      "Sao Paulo",
+      "Rio de Janeiro",
+      "Belo Horizonte",
+      "Campinas",
+      "Curitiba",
+      "Brasilia",
+      "Salvador",
+      "Porto Alegre",
+      "Goiania",
+      "Belem"
     ]
   },
   {
@@ -319,24 +319,24 @@ export const countriesData: Country[] = [
     "name": "Bulgaria",
     "code": "bg",
     "cities": [
-      "Asenovgrad",
-      "Aytos",
-      "Balchik",
-      "Bansko",
-      "Blagoevgrad",
-      "Botevgrad",
+      "Varna",
+      "Plovdiv Province",
+      "Sofia Province",
       "Burgas",
-      "Byala Slatina",
-      "Chirpan",
-      "Dimitrovgrad"
+      "Veliko Tarnovo Province",
+      "Haskovo Province",
+      "Ruse",
+      "Pleven Province",
+      "Stara Zagora",
+      "Veliko Tarnovo"
     ]
   },
   {
     "name": "Burkina Faso",
     "code": "bf",
     "cities": [
-      "Bobo-Dioulasso",
-      "Ouagadougou"
+      "Ouagadougou",
+      "Bobo-Dioulasso"
     ]
   },
   {
@@ -348,15 +348,15 @@ export const countriesData: Country[] = [
     "name": "Cambodia",
     "code": "kh",
     "cities": [
-      "Ba Phnum",
-      "Batheay",
-      "Malai",
-      "O Smach",
-      "Ou Sampor",
       "Phnom Penh",
-      "Prey Chhor",
       "Sisophon",
-      "Svay Chrum"
+      "Prey Chhor",
+      "Ou Sampor",
+      "Svay Chrum",
+      "Malai",
+      "Ba Phnum",
+      "O Smach",
+      "Batheay"
     ]
   },
   {
@@ -370,16 +370,16 @@ export const countriesData: Country[] = [
     "name": "Canada",
     "code": "ca",
     "cities": [
-      "100 Mile House",
-      "Abbotsford",
-      "Aberdeen",
-      "Acheson",
-      "Acme",
-      "Acton",
-      "Acton Vale",
-      "Agassiz",
-      "Airdrie",
-      "Ajax"
+      "Toronto",
+      "Montreal",
+      "Vancouver",
+      "Calgary",
+      "Ottawa",
+      "Mississauga",
+      "Edmonton",
+      "Brampton",
+      "London",
+      "Surrey"
     ]
   },
   {
@@ -412,32 +412,32 @@ export const countriesData: Country[] = [
     "name": "Chile",
     "code": "cl",
     "cities": [
-      "Ancud",
+      "Santiago",
+      "Concepcion",
+      "Providencia",
+      "Las Condes",
       "Antofagasta",
-      "Arica",
-      "Buin",
-      "Calama",
-      "Castro",
-      "Cerrillos",
-      "Chicureo",
-      "Chillan",
-      "Colina"
+      "Maipu",
+      "Puerto Montt",
+      "Nunoa",
+      "La Florida",
+      "Puente Alto"
     ]
   },
   {
     "name": "China",
     "code": "cn",
     "cities": [
-      "Aba",
-      "Aksu",
-      "Aksu Prefecture",
-      "Altay",
-      "Altay Prefecture",
-      "Alxa",
-      "Alxa League",
-      "Ankang",
-      "Anqing",
-      "Anshan"
+      "Shenzhen",
+      "Shanghai",
+      "Guangzhou",
+      "Beijing",
+      "Zhuhai",
+      "Hangzhou",
+      "Chengdu",
+      "Dongguan",
+      "Suzhou",
+      "Jiamusi"
     ]
   },
   {
@@ -454,16 +454,16 @@ export const countriesData: Country[] = [
     "name": "Colombia",
     "code": "co",
     "cities": [
-      "Abrego",
-      "Acacias",
-      "Agua de Dios",
-      "Aguachica",
-      "Aguadas",
-      "Aguazul",
-      "Algeciras",
-      "Amaga",
-      "Andes",
-      "Anserma"
+      "Bogota",
+      "Medellin",
+      "Cali",
+      "Barranquilla",
+      "Bucaramanga",
+      "Pereira",
+      "Soacha",
+      "Bello",
+      "Cucuta",
+      "Cartagena"
     ]
   },
   {
@@ -482,9 +482,9 @@ export const countriesData: Country[] = [
     "name": "Congo, the Democratic Republic of the",
     "code": "cd",
     "cities": [
-      "Goma",
       "Kinshasa",
-      "Lubumbashi"
+      "Lubumbashi",
+      "Goma"
     ]
   },
   {
@@ -496,16 +496,16 @@ export const countriesData: Country[] = [
     "name": "Costa Rica",
     "code": "cr",
     "cities": [
-      "Alajuela",
-      "Animas",
-      "Bajo Corrales",
+      "San Jose",
       "Cartago",
-      "Curridabat",
+      "Alajuela",
       "Desamparados",
+      "San Isidro de El General",
+      "San Vicente",
+      "Rio Segundo",
       "Liberia",
-      "Limon",
-      "Paraiso",
-      "Punta Arenas"
+      "Curridabat",
+      "Limon"
     ]
   },
   {
@@ -520,16 +520,16 @@ export const countriesData: Country[] = [
     "name": "Croatia",
     "code": "hr",
     "cities": [
-      "Bjelovar",
-      "Cakovec",
-      "Dubrovnik",
-      "Karlovac",
-      "Koprivnica",
-      "Mali Losinj",
+      "Zagreb",
+      "Split",
+      "Rijeka",
       "Osijek",
-      "Porec",
-      "Pozega",
-      "Pula"
+      "Dubrovnik",
+      "Pula",
+      "Zadar",
+      "Varazdin",
+      "Slavonski Brod",
+      "Velika Gorica"
     ]
   },
   {
@@ -541,43 +541,43 @@ export const countriesData: Country[] = [
     "name": "Cyprus",
     "code": "cy",
     "cities": [
-      "Larnaca",
-      "Limassol",
       "Nicosia",
-      "Paphos",
-      "Strovolos"
+      "Limassol",
+      "Strovolos",
+      "Larnaca",
+      "Paphos"
     ]
   },
   {
     "name": "Czech Republic",
     "code": "cz",
     "cities": [
-      "Adamov",
-      "As",
-      "Bakov nad Jizerou",
-      "Bechlin",
-      "Bechyne",
-      "Benatky",
-      "Benatky nad Jizerou",
-      "Benesov",
-      "Beroun",
-      "Bestovice"
+      "Prague",
+      "Praha 1",
+      "Brno",
+      "Praha 5",
+      "Praha 4",
+      "Prague 3",
+      "Praha 7",
+      "Ostrava",
+      "Praha 9",
+      "Olomouc"
     ]
   },
   {
     "name": "Denmark",
     "code": "dk",
     "cities": [
-      "Aabenraa",
-      "Aabybro",
-      "Aakirkeby",
-      "Aalborg",
-      "Aalborg Ost",
-      "Aalestrup",
+      "Copenhagen",
       "Aarhus",
-      "Aars",
-      "Aarup",
-      "Aeroskobing"
+      "Kobenhavn N",
+      "Odense",
+      "Ballerup",
+      "Arhus C",
+      "Aalborg",
+      "Valby",
+      "Frederiksberg",
+      "Kastrup"
     ]
   },
   {
@@ -598,62 +598,62 @@ export const countriesData: Country[] = [
     "name": "Dominican Republic",
     "code": "do",
     "cities": [
-      "Bani",
-      "Cambita El Pueblecito",
-      "Cotui",
-      "El Caobal",
-      "Higuey",
-      "Jarabacoa",
-      "Jicome",
+      "Santo Domingo Este",
+      "Punta Cana",
       "La Romana",
-      "Licey al Medio",
-      "Mao"
+      "Puerto Plata",
+      "Higuey",
+      "San Francisco de Macoris",
+      "Pantoja",
+      "Mao",
+      "Cotui",
+      "Bani"
     ]
   },
   {
     "name": "Ecuador",
     "code": "ec",
     "cities": [
-      "Alfredo Baquerizo Moreno",
-      "Ambato",
-      "Azogues",
-      "Bolivar",
-      "Catamayo",
-      "Cayambe",
+      "Guayaquil",
+      "Quito",
       "Cuenca",
-      "Cumanda",
+      "Ambato",
+      "Manta",
       "Duran",
-      "Guaranda"
+      "Portoviejo",
+      "Ibarra",
+      "Machala",
+      "Loja"
     ]
   },
   {
     "name": "Egypt",
     "code": "eg",
     "cities": [
-      "10th of Ramadan City",
-      "10th of Ramadan City 1",
-      "10th of Rammadan City",
+      "Cairo",
+      "Giza",
+      "New Cairo City",
+      "Alexandria",
       "6th of October City",
-      "6th of October City (2)",
-      "Abu El Matamir",
-      "Abu Kabir",
-      "Abu Tesht",
-      "Abu Tig",
-      "Agouza"
+      "Nozha 2",
+      "10th of Rammadan City",
+      "Hurghada",
+      "Al Obour City",
+      "Damanhour"
     ]
   },
   {
     "name": "El Salvador",
     "code": "sv",
     "cities": [
+      "San Salvador",
+      "Soyapango",
+      "Santa Tecla",
+      "San Miguel",
+      "Santa Ana",
       "Antiguo Cuscatlan",
       "Metapan",
-      "San Francisco",
-      "San Miguel",
-      "San Salvador",
-      "Santa Ana",
-      "Santa Tecla",
-      "Soyapango"
+      "San Francisco"
     ]
   },
   {
@@ -672,16 +672,16 @@ export const countriesData: Country[] = [
     "name": "Estonia",
     "code": "ee",
     "cities": [
-      "Haapsalu",
-      "Johvi",
-      "Keila",
-      "Kohtla-Jarve",
-      "Kuressaare",
-      "Lihula",
-      "Loksa",
-      "Maardu",
+      "Tallinn",
+      "Tartu",
+      "Parnu",
       "Narva",
-      "Paide"
+      "Rakvere",
+      "Viljandi",
+      "Maardu",
+      "Kohtla-Jarve",
+      "Keila",
+      "Voru"
     ]
   },
   {
@@ -689,8 +689,8 @@ export const countriesData: Country[] = [
     "code": "et",
     "cities": [
       "Addis Ababa",
-      "Shashamane",
-      "Shashemene"
+      "Shashemene",
+      "Shashamane"
     ]
   },
   {
@@ -716,32 +716,32 @@ export const countriesData: Country[] = [
     "name": "Finland",
     "code": "fi",
     "cities": [
-      "Espoo",
-      "Hameenlinna",
       "Helsinki",
-      "Hyryla",
-      "Joensuu",
+      "Tampere",
+      "Oulu",
+      "Espoo",
+      "Turku",
       "Jyvaskyla",
-      "Kaarina",
-      "Kajaani",
-      "Kerava",
-      "Kokkola"
+      "Lahti",
+      "Kuopio",
+      "Pori",
+      "Hameenlinna"
     ]
   },
   {
     "name": "France",
     "code": "fr",
     "cities": [
-      "Abbeville",
-      "Ablis",
-      "Acheres",
-      "Acheres-la-Foret",
-      "Acigne",
-      "Agde",
-      "Agen",
-      "Aigues-Mortes",
-      "Aire-sur-la-Lys",
-      "Aix-en-Provence"
+      "Paris",
+      "Lille",
+      "Strasbourg",
+      "Toulouse",
+      "Marseille",
+      "Lyon",
+      "Bordeaux",
+      "Rennes",
+      "Nantes",
+      "Dijon"
     ]
   },
   {
@@ -756,8 +756,8 @@ export const countriesData: Country[] = [
     "name": "French Polynesia",
     "code": "pf",
     "cities": [
-      "Pape'ete",
-      "Papeete"
+      "Papeete",
+      "Pape'ete"
     ]
   },
   {
@@ -784,24 +784,24 @@ export const countriesData: Country[] = [
     "name": "Georgia",
     "code": "ge",
     "cities": [
-      "Batumi",
-      "Tbilisi"
+      "Tbilisi",
+      "Batumi"
     ]
   },
   {
     "name": "Germany",
     "code": "de",
     "cities": [
-      "Aachen",
-      "Aalen",
-      "Abensberg",
-      "Achern",
-      "Achim",
-      "Adendorf",
-      "Adorf",
-      "Aerzen",
-      "Affalterbach",
-      "Affing"
+      "Frankfurt",
+      "Berlin",
+      "Hamburg",
+      "Munich",
+      "Stuttgart",
+      "Cologne",
+      "Hanover",
+      "Dusseldorf",
+      "Leipzig",
+      "Nuremberg"
     ]
   },
   {
@@ -809,15 +809,15 @@ export const countriesData: Country[] = [
     "code": "gh",
     "cities": [
       "Accra",
-      "Akweteyman",
-      "Awoshie",
+      "Kumasi",
+      "Tema",
+      "Tamale",
+      "Takoradi",
       "Cape Coast",
-      "Ejisu",
-      "Haatso",
+      "Madina",
       "Kasoa",
       "Koforidua",
-      "Kumasi",
-      "Kwabenya"
+      "Sekondi-Takoradi"
     ]
   },
   {
@@ -831,16 +831,16 @@ export const countriesData: Country[] = [
     "name": "Greece",
     "code": "gr",
     "cities": [
+      "Athens",
+      "Thessaloniki",
+      "Piraeus",
+      "Patras",
+      "Marousi",
+      "Chalandri",
+      "Larissa",
+      "Peristeri",
       "Acharnes",
-      "Agia Paraskevi",
-      "Agios Dimitrios",
-      "Agios Ioannis Rentis",
-      "Agrinio",
-      "Alexandroupoli",
-      "Alimos",
-      "Amaliada",
-      "Amfissa",
-      "Argos"
+      "Corfu"
     ]
   },
   {
@@ -861,39 +861,39 @@ export const countriesData: Country[] = [
     "name": "Guadeloupe",
     "code": "gp",
     "cities": [
-      "Baie Mahault",
       "Baie-Mahault",
-      "Basse Terre",
-      "Basse-Terre",
-      "Petit Bourg",
       "Petit-Bourg",
-      "Pointe-a-Pitre"
+      "Pointe-a-Pitre",
+      "Basse-Terre",
+      "Baie Mahault",
+      "Basse Terre",
+      "Petit Bourg"
     ]
   },
   {
     "name": "Guam",
     "code": "gu",
     "cities": [
-      "Barrigada",
+      "Tamuning",
       "Dededo",
       "Hagatna",
-      "Tamuning"
+      "Barrigada"
     ]
   },
   {
     "name": "Guatemala",
     "code": "gt",
     "cities": [
-      "Aqua Blanca",
-      "Chamac",
-      "Cuyotenango",
-      "Esquipulas",
       "Guatemala City",
+      "Quetzaltenango",
       "Huehuetenango",
+      "Esquipulas",
+      "Patzicia",
       "Nueva Concepcion",
-      "Pachalum",
       "Pastores",
-      "Patzicia"
+      "San Andres Itzapa",
+      "Teculutan",
+      "Chamac"
     ]
   },
   {
@@ -955,62 +955,62 @@ export const countriesData: Country[] = [
     "name": "Hungary",
     "code": "hu",
     "cities": [
-      "Abda",
-      "Abony",
-      "Ajka",
-      "Alacska",
-      "Albertirsa",
-      "Algyo",
-      "Alsozsolca",
-      "Aszod",
-      "Babolna",
-      "Bacsalmas"
+      "Budapest",
+      "Debrecen",
+      "Pecs",
+      "Miskolc",
+      "Gyor",
+      "Szeged",
+      "Szekesfehervar",
+      "Nyiregyhaza",
+      "Kecskemet",
+      "Szigetszentmiklos"
     ]
   },
   {
     "name": "Iceland",
     "code": "is",
     "cities": [
-      "Akureyri",
-      "Egilsstadir",
-      "Hafnarfjordur",
-      "Keflavik",
+      "Reykjavik",
       "Kopavogur",
+      "Hafnarfjordur",
+      "Akureyri",
+      "Keflavik",
       "Mosfellsbaer",
-      "Reykjanesbaer",
-      "Reykjavik"
+      "Egilsstadir",
+      "Reykjanesbaer"
     ]
   },
   {
     "name": "India",
     "code": "in",
     "cities": [
-      "3 A",
-      "6 Z",
-      "A.Reddihalli",
-      "A.Thirumuruganpoondi",
-      "Abhanpur",
-      "Abohar",
-      "Abrama",
-      "Abu Road",
-      "Achalpur",
-      "Achrol"
+      "Lucknow",
+      "Hyderabad",
+      "Bengaluru",
+      "Delhi",
+      "Pune",
+      "Patna",
+      "Ahmedabad",
+      "Chennai",
+      "Jaipur",
+      "Indore"
     ]
   },
   {
     "name": "Indonesia",
     "code": "id",
     "cities": [
-      "Abiansemal",
-      "Adiwerna",
-      "Ambarawa",
-      "Amlapura",
-      "Arga Makmur",
-      "Arjawinangun",
-      "Baleendah",
-      "Balikpapan",
-      "Balongan",
-      "Bambang Lipuro"
+      "Surabaya",
+      "Semarang",
+      "Bandung",
+      "South Jakarta",
+      "Tangerang",
+      "Medan",
+      "Makassar",
+      "Palembang",
+      "Pekanbaru",
+      "Surakarta"
     ]
   },
   {
@@ -1031,16 +1031,16 @@ export const countriesData: Country[] = [
     "name": "Ireland",
     "code": "ie",
     "cities": [
-      "Arklow",
-      "Ashbourne",
-      "Athlone",
-      "Athy",
-      "Balbriggan",
-      "Ballina",
-      "Ballyboden",
-      "Bray",
-      "Carlow",
-      "Carrigaline"
+      "Dublin",
+      "Cork",
+      "Limerick",
+      "Galway",
+      "Swords",
+      "Drogheda",
+      "Waterford",
+      "Naas",
+      "Dundalk",
+      "Lucan"
     ]
   },
   {
@@ -1055,32 +1055,32 @@ export const countriesData: Country[] = [
     "name": "Israel",
     "code": "il",
     "cities": [
-      "Acre",
-      "Afula",
-      "Arad",
-      "Ashdod",
-      "Ashkelon",
-      "Atlit",
-      "Baqa al-Gharbiyye",
-      "Bat Yam",
+      "Tel Aviv-Yafo",
+      "Rishon LeTsiyon",
+      "Petah Tikva",
+      "Jerusalem",
+      "Holon",
+      "Netanya",
       "Be'er Sheva",
-      "Be'er Ya'akov"
+      "Ramat Gan",
+      "Haifa",
+      "Rehovot"
     ]
   },
   {
     "name": "Italy",
     "code": "it",
     "cities": [
-      "Abano Terme",
-      "Abbiategrasso",
-      "Acerra",
-      "Aci Catena",
-      "Acireale",
-      "Acquaviva delle Fonti",
-      "Acqui Terme",
-      "Adrano",
-      "Adria",
-      "Adro"
+      "Rome",
+      "Milan",
+      "Naples",
+      "Turin",
+      "Bologna",
+      "Florence",
+      "Bari",
+      "Zone 1 of Milan",
+      "Palermo",
+      "Padua"
     ]
   },
   {
@@ -1095,24 +1095,24 @@ export const countriesData: Country[] = [
     "code": "jm",
     "cities": [
       "Kingston",
-      "Montego Bay",
-      "Portmore"
+      "Portmore",
+      "Montego Bay"
     ]
   },
   {
     "name": "Japan",
     "code": "jp",
     "cities": [
-      "Abashiri",
-      "Abiko",
-      "Adachi",
-      "Adachi City",
-      "Ageo",
-      "Agui",
-      "Aikawa",
-      "Aioi",
-      "Aira",
-      "Aisai"
+      "Tokyo",
+      "Osaka",
+      "Nagoya",
+      "Yokohama",
+      "Fukuoka",
+      "Shibuya City",
+      "Sapporo",
+      "Shinjuku City",
+      "Minato City",
+      "Chiyoda City"
     ]
   },
   {
@@ -1126,32 +1126,32 @@ export const countriesData: Country[] = [
     "name": "Kazakhstan",
     "code": "kz",
     "cities": [
-      "Aktau",
-      "Aktobe",
       "Almaty",
       "Astana",
-      "Atyrau",
+      "Shymkent",
       "Karaganda",
-      "Karagandy",
-      "Kostanay",
-      "Kyzylorda",
-      "Oskemen"
+      "Pavlodar",
+      "Taraz",
+      "Oskemen",
+      "Aktobe",
+      "Atyrau",
+      "Kostanay"
     ]
   },
   {
     "name": "Kenya",
     "code": "ke",
     "cities": [
-      "Athi River",
+      "Nairobi",
+      "Mombasa",
+      "Nakuru",
+      "Ruiru",
       "Eldoret",
       "Juja",
-      "Kikuyu",
       "Kisumu",
-      "Mlolongo",
-      "Mombasa",
-      "Nairobi",
-      "Nakuru",
-      "Nyeri"
+      "Rungiri",
+      "Nyeri",
+      "Athi River"
     ]
   },
   {
@@ -1168,31 +1168,31 @@ export const countriesData: Country[] = [
     "name": "Korea, Republic of",
     "code": "kr",
     "cities": [
-      "Andong",
-      "Andong-si",
-      "Ansan-si",
-      "Anseong",
-      "Anseong-si",
-      "Anyang",
-      "Anyang-si",
-      "Asan-si",
-      "Boeun-gun",
-      "Bonghwa-gun"
+      "Seoul",
+      "Busan",
+      "Incheon",
+      "Cheongwon-gun",
+      "Daegu",
+      "Gwangju",
+      "Daejeon",
+      "Suwon-si",
+      "Yongin-si",
+      "Hwaseong-si"
     ]
   },
   {
     "name": "Kuwait",
     "code": "kw",
     "cities": [
-      "Abdullah Al Mubarak Al Sabah",
-      "Al Farwaniyah",
-      "Al Jahra",
-      "Andalous",
-      "Ardiya",
-      "Fnaitees",
-      "Hadiya",
-      "Hawally",
+      "Salmiya",
       "Jabriya",
+      "Al Farwaniyah",
+      "Hawally",
+      "Al Jahra",
+      "Shuwaikh Industrial",
+      "Sabah Al Salem",
+      "Ardiya",
+      "Zahra",
       "Mangaf"
     ]
   },
@@ -1215,16 +1215,16 @@ export const countriesData: Country[] = [
     "name": "Latvia",
     "code": "lv",
     "cities": [
+      "Riga",
       "Daugavpils",
-      "Jekabpils",
       "Jelgava",
-      "Jurmala",
-      "Kuldiga",
       "Liepaja",
-      "Madona",
+      "Jurmala",
       "Ogre",
+      "Valmiera",
+      "Ventspils",
       "Rezekne",
-      "Riga"
+      "Jekabpils"
     ]
   },
   {
@@ -1252,61 +1252,61 @@ export const countriesData: Country[] = [
     "name": "Libyan Arab Jamahiriya",
     "code": "ly",
     "cities": [
-      "Az-Zawiyah",
+      "Tripoli",
       "Benghazi",
       "Janzur",
-      "Khoms",
       "Misrata",
       "Sabha",
-      "Tripoli"
+      "Az-Zawiyah",
+      "Khoms"
     ]
   },
   {
     "name": "Liechtenstein",
     "code": "li",
     "cities": [
-      "Schaan",
-      "Vaduz"
+      "Vaduz",
+      "Schaan"
     ]
   },
   {
     "name": "Lithuania",
     "code": "lt",
     "cities": [
-      "Alytus",
-      "Elektrenai",
-      "Jonava",
-      "Kaisiadorys",
+      "Vilnius",
       "Kaunas",
       "Klaipeda",
+      "Siauliai",
+      "Panevezys",
+      "Alytus",
       "Marijampole",
+      "Palanga",
       "Mazeikiai",
-      "Moletai",
-      "Palanga"
+      "Jonava"
     ]
   },
   {
     "name": "Luxembourg",
     "code": "lu",
     "cities": [
-      "Bertrange",
-      "Bettembourg",
-      "Bissen",
-      "Clemency",
-      "Dudelange",
-      "Esch-sur-Alzette",
-      "Ettelbruck",
-      "Kaerjeng",
       "Luxembourg",
-      "Luxembourg City"
+      "Bissen",
+      "Esch-sur-Alzette",
+      "Dudelange",
+      "Sanem",
+      "Mamer",
+      "Bettembourg",
+      "Bertrange",
+      "Strassen",
+      "Ettelbruck"
     ]
   },
   {
     "name": "Macao",
     "code": "mo",
     "cities": [
-      "Cotai",
-      "Macau"
+      "Macau",
+      "Cotai"
     ]
   },
   {
@@ -1314,9 +1314,9 @@ export const countriesData: Country[] = [
     "code": "mk",
     "cities": [
       "Bitola",
-      "Delchevo",
+      "Shtip",
       "Gevgelija",
-      "Shtip"
+      "Delchevo"
     ]
   },
   {
@@ -1324,8 +1324,8 @@ export const countriesData: Country[] = [
     "code": "mg",
     "cities": [
       "Antananarivo",
-      "Mahajanga",
-      "Toamasina"
+      "Toamasina",
+      "Mahajanga"
     ]
   },
   {
@@ -1340,16 +1340,16 @@ export const countriesData: Country[] = [
     "name": "Malaysia",
     "code": "my",
     "cities": [
-      "Air Kuning",
-      "Ajil",
-      "Al-Muktafi Billah Shah",
-      "Alai",
-      "Alor Gajah",
-      "Ampang Jaya",
-      "Arau",
-      "Asajaya",
-      "Ayer Baloi",
-      "Ayer Hitam"
+      "Kuala Lumpur",
+      "Johor Bahru",
+      "Shah Alam",
+      "Petaling Jaya",
+      "Puchong",
+      "Kota Kinabalu",
+      "Kajang",
+      "Kuching",
+      "Ipoh",
+      "Ampang Jaya"
     ]
   },
   {
@@ -1368,12 +1368,12 @@ export const countriesData: Country[] = [
     "name": "Malta",
     "code": "mt",
     "cities": [
-      "Msida",
-      "Saint Julian's",
-      "San Gwann",
       "St. Julian's",
+      "Valletta",
+      "Msida",
+      "San Gwann",
       "Ta' Qali",
-      "Valletta"
+      "Saint Julian's"
     ]
   },
   {
@@ -1400,15 +1400,15 @@ export const countriesData: Country[] = [
     "name": "Mauritius",
     "code": "mu",
     "cities": [
-      "Beau Bassin-Rose Hill",
-      "Curepipe",
-      "Flic en Flac",
-      "Grand Baie",
-      "Moka",
-      "Plaine Magnien",
-      "Port Louis",
+      "Vacoas-Phoenix",
       "Quatre Bornes",
-      "Vacoas-Phoenix"
+      "Port Louis",
+      "Beau Bassin-Rose Hill",
+      "Grand Baie",
+      "Curepipe",
+      "Moka",
+      "Flic en Flac",
+      "Plaine Magnien"
     ]
   },
   {
@@ -1420,16 +1420,16 @@ export const countriesData: Country[] = [
     "name": "Mexico",
     "code": "mx",
     "cities": [
-      "Abasolo",
-      "Acajete",
-      "Acala",
-      "Acambaro",
-      "Acaponeta",
-      "Acapulco",
-      "Acatic",
-      "Acatzingo de Hidalgo",
-      "Acayucan",
-      "Acolman"
+      "Mexico City",
+      "Monterrey",
+      "Guadalajara",
+      "Centro",
+      "Puebla",
+      "Santiago de Queretaro",
+      "Merida",
+      "Tijuana",
+      "Ecatepec de Morelos",
+      "Benito Juarez"
     ]
   },
   {
@@ -1443,11 +1443,11 @@ export const countriesData: Country[] = [
     "name": "Moldova, Republic of",
     "code": "md",
     "cities": [
+      "Chisinau",
+      "Tiraspol",
       "Balti",
       "Bender",
-      "Chisinau",
-      "Ribnita",
-      "Tiraspol"
+      "Ribnita"
     ]
   },
   {
@@ -1466,10 +1466,10 @@ export const countriesData: Country[] = [
     "name": "Montenegro",
     "code": "me",
     "cities": [
-      "Bar",
+      "Podgorica",
       "Budva",
       "Herceg Novi",
-      "Podgorica",
+      "Bar",
       "Ulcinj"
     ]
   },
@@ -1482,24 +1482,24 @@ export const countriesData: Country[] = [
     "name": "Morocco",
     "code": "ma",
     "cities": [
+      "Casablanca",
+      "Marrakesh",
+      "Fes",
+      "Tangier",
       "Agadir",
-      "Ahfir",
-      "Ain Harrouda",
-      "Ait Melloul",
-      "Al Hoceima",
-      "Amizmiz",
-      "Asilah",
-      "Asni",
-      "Azemmour",
-      "Azilal"
+      "Rabat",
+      "Sale",
+      "Meknes",
+      "Kenitra",
+      "Temara"
     ]
   },
   {
     "name": "Mozambique",
     "code": "mz",
     "cities": [
-      "Beira",
       "Maputo",
+      "Beira",
       "Matola"
     ]
   },
@@ -1507,24 +1507,24 @@ export const countriesData: Country[] = [
     "name": "Myanmar",
     "code": "mm",
     "cities": [
-      "Amarapura",
-      "Ayeyarwady",
-      "Bago",
-      "Dekkhina Thiri",
-      "East Dagon Township",
-      "Hlegu",
-      "Hpa-An",
-      "Lashio",
+      "Yangon",
       "Mandalay",
-      "Mawlamyine"
+      "Ayeyarwady",
+      "Taunggyi",
+      "Pyin Oo Lwin",
+      "Myitkyina",
+      "Naypyidaw",
+      "Tachileik",
+      "Lashio",
+      "Myeik"
     ]
   },
   {
     "name": "Namibia",
     "code": "na",
     "cities": [
-      "Swakopmund",
-      "Windhoek"
+      "Windhoek",
+      "Swakopmund"
     ]
   },
   {
@@ -1536,24 +1536,24 @@ export const countriesData: Country[] = [
     "name": "Nepal",
     "code": "np",
     "cities": [
-      "Biratnagar",
-      "Kathmandu"
+      "Kathmandu",
+      "Biratnagar"
     ]
   },
   {
     "name": "Netherlands",
     "code": "nl",
     "cities": [
-      "'s Hertogenbosch",
-      "'s-Gravendeel",
-      "'s-Gravenpolder",
-      "'s-Gravenzande",
-      "'s-Heer Abtskerke",
-      "'s-Heer Arendskerke",
-      "'s-Heer Hendrikskinderen",
-      "'s-Heerenberg",
-      "'s-Heerenhoek",
-      "'s-Hertogenbosch"
+      "Amsterdam",
+      "Rotterdam",
+      "Naaldwijk",
+      "The Hague",
+      "Haarlem",
+      "Utrecht",
+      "Eindhoven",
+      "Arnhem",
+      "Groningen",
+      "Tilburg"
     ]
   },
   {
@@ -1572,25 +1572,25 @@ export const countriesData: Country[] = [
     "name": "New Zealand",
     "code": "nz",
     "cities": [
-      "Ashburton",
       "Auckland",
-      "Blenheim",
-      "Cambridge",
       "Christchurch",
+      "Wellington",
+      "Hamilton",
+      "Tauranga",
+      "Lower Hutt",
       "Dunedin",
-      "Feilding",
-      "Gisborne",
-      "Gore",
-      "Greymouth"
+      "Palmerston North",
+      "Napier",
+      "Whangarei"
     ]
   },
   {
     "name": "Nicaragua",
     "code": "ni",
     "cities": [
-      "Granada",
+      "Managua",
       "Juigalpa",
-      "Managua"
+      "Granada"
     ]
   },
   {
@@ -1604,16 +1604,16 @@ export const countriesData: Country[] = [
     "name": "Nigeria",
     "code": "ng",
     "cities": [
-      "Aba",
-      "Abaji",
-      "Abak",
-      "Abakaliki",
-      "Abeokuta",
+      "Lagos",
+      "Port Harcourt",
       "Abuja",
-      "Afikpo",
-      "Agenebode",
-      "Agulu",
-      "Ahoada"
+      "Ikeja",
+      "Ibadan",
+      "Lekki",
+      "Benin City",
+      "Kano",
+      "Ikorodu",
+      "Onitsha"
     ]
   },
   {
@@ -1637,41 +1637,41 @@ export const countriesData: Country[] = [
     "name": "Norway",
     "code": "no",
     "cities": [
-      "A",
-      "Alesund",
-      "Alsten",
-      "Alta",
-      "Andalsnes",
-      "Ardalstangen",
-      "Arendal",
-      "As",
-      "Asker",
-      "Askim"
+      "Oslo",
+      "Bergen",
+      "Trondheim",
+      "Stavanger",
+      "Kristiansand",
+      "Drammen",
+      "Laksevag",
+      "Tromso",
+      "Sandnes",
+      "Fredrikstad"
     ]
   },
   {
     "name": "Oman",
     "code": "om",
     "cities": [
-      "Al Buraimi",
       "Muscat",
-      "Seeb"
+      "Seeb",
+      "Al Buraimi"
     ]
   },
   {
     "name": "Pakistan",
     "code": "pk",
     "cities": [
-      "Abbottabad",
-      "Attock",
-      "Bahawalpur",
-      "Burewala",
-      "Chakwal",
-      "Chichawatni",
-      "Chiniot",
-      "Daska",
-      "Dera Ghazi Khan",
-      "Dera Ismail Khan"
+      "Lahore",
+      "Karachi",
+      "Islamabad",
+      "Faisalabad",
+      "Rawalpindi",
+      "Multan",
+      "Peshawar",
+      "Gujranwala",
+      "Hyderabad",
+      "Sialkot"
     ]
   },
   {
@@ -1690,24 +1690,24 @@ export const countriesData: Country[] = [
     "name": "Panama",
     "code": "pa",
     "cities": [
-      "Aguadulce District",
-      "Changuinola",
-      "Changuinola District",
-      "Chitre",
-      "Colon",
-      "David",
       "La Chorrera",
-      "La Concepcion",
+      "David",
+      "Colon",
       "Penonome",
-      "Puerto Armuelles"
+      "Aguadulce District",
+      "La Concepcion",
+      "Chitre",
+      "Changuinola",
+      "Puerto Armuelles",
+      "Changuinola District"
     ]
   },
   {
     "name": "Papua New Guinea",
     "code": "pg",
     "cities": [
-      "Lae",
-      "Port Moresby"
+      "Port Moresby",
+      "Lae"
     ]
   },
   {
@@ -1722,32 +1722,32 @@ export const countriesData: Country[] = [
     "name": "Peru",
     "code": "pe",
     "cities": [
-      "Alto Selva Alegre",
+      "Trujillo",
       "Arequipa",
-      "Ate",
-      "Ayacucho",
-      "Barranca",
-      "Barranco",
-      "Bellavista",
-      "Boca del Rio",
-      "Brena",
-      "Cajamarca"
+      "Cerro Colorado",
+      "Lima",
+      "Piura",
+      "Santiago de Surco",
+      "San Martin de Porres",
+      "Chiclayo",
+      "San Juan de Lurigancho",
+      "Callao"
     ]
   },
   {
     "name": "Philippines",
     "code": "ph",
     "cities": [
+      "Quezon City",
+      "Manila",
+      "Cebu City",
+      "Davao City",
+      "Cagayan de Oro",
+      "Makati",
       "Angeles",
-      "Antipolo",
-      "Bacolod",
-      "Bacoor",
-      "Baguio",
-      "Batangas",
-      "Binan",
-      "Binangonan",
-      "Butuan City",
-      "Cabanatuan City"
+      "Taguig",
+      "Caloocan",
+      "Pasay"
     ]
   },
   {
@@ -1759,100 +1759,100 @@ export const countriesData: Country[] = [
     "name": "Poland",
     "code": "pl",
     "cities": [
-      "Adelnau",
-      "Aleksandrow Kujawski",
-      "Aleksandrow Lodzki",
-      "Andrychow",
-      "Augustow",
-      "Babimost",
-      "Baborow",
-      "Baniocha",
-      "Barcin",
-      "Barczewo"
+      "Warsaw",
+      "Wroclaw",
+      "Krakow",
+      "Poznan",
+      "Katowice",
+      "Lodz",
+      "Gdansk",
+      "Bydgoszcz",
+      "Lublin",
+      "Szczecin"
     ]
   },
   {
     "name": "Portugal",
     "code": "pt",
     "cities": [
-      "Abrunheira",
-      "Agueda",
-      "Albufeira",
-      "Alges",
-      "Algueirao–Mem Martins",
-      "Aljustrel",
-      "Almada",
-      "Alverca do Ribatejo",
+      "Lisbon",
+      "Porto",
+      "Vila Nova de Gaia",
+      "Braga",
       "Amadora",
-      "Amora"
+      "Coimbra",
+      "Funchal",
+      "Almada",
+      "Montijo",
+      "Guimaraes"
     ]
   },
   {
     "name": "Puerto Rico",
     "code": "pr",
     "cities": [
-      "Aguadilla",
-      "Aguadilla Pueblo",
-      "Aibonito",
-      "Arecibo",
+      "San Juan",
       "Bayamon",
-      "Caguas",
       "Carolina",
-      "Catano",
-      "Cayey",
-      "Ceiba"
+      "Caguas",
+      "Ponce",
+      "Guaynabo",
+      "Mayaguez",
+      "Arecibo",
+      "Trujillo Alto",
+      "Guayama"
     ]
   },
   {
     "name": "Qatar",
     "code": "qa",
     "cities": [
-      "Al Khor",
-      "Al Wakrah",
-      "Al Wukair",
+      "Doha",
       "Ar-Rayyan",
-      "Doha"
+      "Al Wukair",
+      "Al Wakrah",
+      "Al Khor"
     ]
   },
   {
     "name": "Reunion",
     "code": "re",
     "cities": [
-      "Le Port",
       "Saint-Paul",
-      "Sainte-Marie"
+      "Sainte-Marie",
+      "Le Port"
     ]
   },
   {
     "name": "Romania",
     "code": "ro",
     "cities": [
-      "Adjud",
-      "Aiud",
-      "Alba Iulia",
-      "Alexandria",
-      "Arad",
-      "Bacau",
-      "Baia Mare",
-      "Baile Herculane",
-      "Barlad",
-      "Beclean"
+      "Bucharest",
+      "Cluj-Napoca",
+      "Timisoara",
+      "Iasi",
+      "Brasov",
+      "Ploiesti",
+      "Voluntari",
+      "Craiova",
+      "Floresti",
+      "Constanta"
     ]
   },
   {
     "name": "Russian Federation",
     "code": "ru",
     "cities": [
-      "Abakan",
-      "Achinsk",
-      "Adler",
-      "Afipsky",
-      "Agoi",
-      "Akhtubinsk",
-      "Aksay",
-      "Al'burikent",
-      "Alabino",
-      "Alburikent"
+      "Moscow",
+      "Saint Petersburg",
+      "Krasnodar",
+      "Yekaterinburg",
+      "Nizhny Novgorod",
+      "Rostov-on-Don",
+      "Kazan",
+      "Novosibirsk",
+      "Chelyabinsk",
+      "Samara"
     ]
   },
   {
@@ -1914,16 +1914,16 @@ export const countriesData: Country[] = [
     "name": "Saudi Arabia",
     "code": "sa",
     "cities": [
+      "Riyadh",
+      "Jeddah",
+      "Dammam",
+      "Makkah",
+      "Madinah",
+      "Al Khobar",
+      "Taif",
       "Abha",
-      "Ad Dammam",
-      "Ain Al Nakhal",
-      "Al Amar",
-      "Al Bad'",
-      "Al Bahah",
-      "Al Dulaymiyah",
-      "Al Faqirah",
-      "Al Fawwarah",
-      "Al Ghat"
+      "Buraydah",
+      "Al Jubail"
     ]
   },
   {
@@ -1931,25 +1931,25 @@ export const countriesData: Country[] = [
     "code": "sn",
     "cities": [
       "Dakar",
-      "Pikine",
+      "Thies",
       "Saint Louis",
-      "Thies"
+      "Pikine"
     ]
   },
   {
     "name": "Serbia",
     "code": "rs",
     "cities": [
-      "Adasevci",
-      "Adrovac",
-      "Aleksinacki Bujmir",
-      "Aradac",
-      "Arandjelovac",
-      "Arilje",
-      "Arnajevo",
-      "Bac",
-      "Backo Dusanovo",
-      "Baluga"
+      "Belgrade",
+      "Nis",
+      "Krusevac",
+      "Uzice",
+      "Novi Pazar",
+      "Valjevo",
+      "Ruma",
+      "Zlatibor",
+      "Cuprija",
+      "Petrovac"
     ]
   },
   {
@@ -1973,32 +1973,32 @@ export const countriesData: Country[] = [
     "name": "Slovakia",
     "code": "sk",
     "cities": [
-      "Banska Bystrica",
       "Bratislava",
-      "Brezno",
-      "Cadca",
-      "Filakovo",
-      "Karlova Ves",
-      "Komarno",
       "Kosice",
-      "Kosice-Juh",
-      "Kosice-Zapad"
+      "Petrzalka",
+      "Zilina",
+      "Banska Bystrica",
+      "Presov",
+      "Nitra",
+      "Trnava",
+      "Trencin",
+      "Poprad"
     ]
   },
   {
     "name": "Slovenia",
     "code": "si",
     "cities": [
-      "Celje",
-      "Domzale",
-      "Dravograd",
-      "Izola",
-      "Kamnik",
-      "Koper",
-      "Kranj",
-      "Krsko",
       "Ljubljana",
-      "Maribor"
+      "Maribor",
+      "Kranj",
+      "Celje",
+      "Koper",
+      "Novo Mesto",
+      "Ptuj",
+      "Velenje",
+      "Domzale",
+      "Kamnik"
     ]
   },
   {
@@ -2012,24 +2012,24 @@ export const countriesData: Country[] = [
     "name": "Somalia",
     "code": "so",
     "cities": [
-      "Hargeisa",
-      "Mogadishu"
+      "Mogadishu",
+      "Hargeisa"
     ]
   },
   {
     "name": "South Africa",
     "code": "za",
     "cities": [
-      "Addo",
-      "Adelaide",
-      "Akasia",
-      "Alberton",
-      "Alice",
-      "Aliwal North",
-      "Amanzimtoti",
-      "Arniston",
-      "Ashburton",
-      "Balfour"
+      "Pretoria",
+      "Cape Town",
+      "Johannesburg",
+      "Soweto",
+      "Pietermaritzburg",
+      "Durban",
+      "Sandton",
+      "Benoni",
+      "Gqeberha",
+      "Centurion"
     ]
   },
   {
@@ -2041,31 +2041,31 @@ export const countriesData: Country[] = [
     "name": "Spain",
     "code": "es",
     "cities": [
-      "A Coruna",
-      "Adeje",
-      "Adra",
-      "Aguadulce",
-      "Aguilas",
-      "Agullent",
-      "Ajalvir",
-      "Albacete",
-      "Albal",
-      "Albatera"
+      "Madrid",
+      "Barcelona",
+      "Seville",
+      "Valencia",
+      "Malaga",
+      "Palma",
+      "Bilbao",
+      "Cordoba",
+      "Valladolid",
+      "Vigo"
     ]
   },
   {
     "name": "Sri Lanka",
     "code": "lk",
     "cities": [
-      "Agalawatta",
-      "Ahangama",
-      "Ambalantota",
-      "Anuradhapura",
-      "Arugam Bay",
-      "Avissawella",
-      "Baddegama",
-      "Baduraliya",
-      "Balapitiya",
+      "Colombo",
+      "Negombo",
+      "Dehiwala-Mount Lavinia",
+      "Kandy",
+      "Sri Jayawardenepura Kotte",
+      "Galle",
+      "Malabe",
+      "Moratuwa",
+      "Katunayake",
       "Battaramulla"
     ]
   },
@@ -2100,32 +2100,32 @@ export const countriesData: Country[] = [
     "name": "Sweden",
     "code": "se",
     "cities": [
-      "Ahus",
-      "Akarp",
-      "Akersberga",
-      "Alafors",
-      "Alingsas",
-      "Almhult",
-      "Alta",
-      "Alvdalen",
-      "Alvesta",
-      "Alvkarleby"
+      "Stockholm",
+      "Gothenburg",
+      "Malmo",
+      "Umea",
+      "Uppsala",
+      "Helsingborg",
+      "Solna",
+      "Lund",
+      "Orebro",
+      "Bromma"
     ]
   },
   {
     "name": "Switzerland",
     "code": "ch",
     "cities": [
-      "Aadorf",
-      "Aarau",
-      "Aarberg",
-      "Aarburg",
-      "Aarwangen",
-      "Adelboden",
-      "Adligenswil",
-      "Adliswil",
-      "Aesch",
-      "Affoltern am Albis"
+      "Zurich",
+      "Lausanne",
+      "Bern",
+      "Geneva",
+      "Basel",
+      "Winterthur",
+      "Lugano",
+      "Opfikon",
+      "Lucerne",
+      "St. Gallen"
     ]
   },
   {
@@ -2137,16 +2137,16 @@ export const countriesData: Country[] = [
     "name": "Taiwan, Province of China",
     "code": "tw",
     "cities": [
-      "Bade District",
-      "Beidou Township",
-      "Beigang Township",
-      "Caotun",
-      "Caotun Township",
-      "Changhua City",
-      "Chaozhou",
-      "Chaozhou Township",
-      "Chiayi",
-      "Chiayi City"
+      "Taipei",
+      "Taipei City",
+      "New Taipei City",
+      "Taichung City",
+      "Kaohsiung City",
+      "Taichung",
+      "Tainan City",
+      "Zhongli District",
+      "Taoyuan District",
+      "Hsinchu City"
     ]
   },
   {
@@ -2160,29 +2160,29 @@ export const countriesData: Country[] = [
     "name": "Tanzania, United Republic of",
     "code": "tz",
     "cities": [
-      "Arusha",
       "Dar es Salaam",
-      "Dodoma",
-      "Mbeya",
-      "Morogoro",
+      "Zanzibar",
       "Mwanza",
-      "Zanzibar"
+      "Mbeya",
+      "Arusha",
+      "Dodoma",
+      "Morogoro"
     ]
   },
   {
     "name": "Thailand",
     "code": "th",
     "cities": [
-      "Ang Sila",
-      "Ao Nang",
-      "Ao Noi",
-      "Ban Bueng",
-      "Ban Du",
-      "Ban It",
-      "Ban Kao",
-      "Ban Khot",
-      "Ban Klang",
-      "Ban Ko"
+      "Bangkok",
+      "Chiang Mai",
+      "Khon Kaen",
+      "Pattaya City",
+      "Nakhon Ratchasima",
+      "Nakhon Sawan",
+      "Hat Yai",
+      "Laem Chabang",
+      "Phuket",
+      "Pa Tong"
     ]
   },
   {
@@ -2213,41 +2213,41 @@ export const countriesData: Country[] = [
     "name": "Trinidad and Tobago",
     "code": "tt",
     "cities": [
-      "Downtown",
       "Port of Spain",
-      "San Juan"
+      "San Juan",
+      "Downtown"
     ]
   },
   {
     "name": "Tunisia",
     "code": "tn",
     "cities": [
-      "Bizerte",
-      "Bou Argoub",
-      "Gabes",
-      "Hammamet",
-      "Houmt Souk",
-      "Kairouan",
-      "La Marsa",
+      "Tunis",
+      "Sfax",
+      "Sousse",
       "Nabeul‎",
+      "La Marsa",
+      "Bizerte",
+      "Kairouan",
       "Rades",
-      "Sahline"
+      "Hammamet",
+      "Gabes"
     ]
   },
   {
     "name": "Turkiye",
     "code": "tr",
     "cities": [
+      "Istanbul",
+      "Ankara",
+      "Izmir",
       "Adana",
-      "Adiyaman",
-      "Afyonkarahisar",
-      "Agri",
-      "Akcaabat",
-      "Akcakoca",
-      "Akcay",
-      "Akhisar",
-      "Aksaray",
-      "Aksehir"
+      "Gaziantep",
+      "Bursa",
+      "Antalya",
+      "Diyarbakir",
+      "Konya",
+      "Mersin"
     ]
   },
   {
@@ -2273,40 +2273,40 @@ export const countriesData: Country[] = [
     "name": "Uganda",
     "code": "ug",
     "cities": [
-      "Entebbe",
-      "Kampala"
+      "Kampala",
+      "Entebbe"
     ]
   },
   {
     "name": "Ukraine",
     "code": "ua",
     "cities": [
-      "Alchevs'k",
-      "Amvrosiivka",
-      "Antonivka",
-      "Antratsyt",
-      "Apostolove",
-      "Artsyz",
-      "Avdiivka",
-      "Bakhmach",
-      "Bakhmut",
-      "Bakhmuts'ke"
+      "Kyiv",
+      "Lviv",
+      "Dnipro",
+      "Odesa",
+      "Kharkiv",
+      "Kryvyi Rih",
+      "Poltava",
+      "Zaporizhzhia",
+      "Khmelnytskyi",
+      "Ivano-Frankivsk"
     ]
   },
   {
     "name": "United Arab Emirates",
     "code": "ae",
     "cities": [
+      "Dubai",
       "Abu Dhabi",
+      "Sharjah",
       "Ajman",
       "Al Ain",
-      "Al Ruways Industrial City",
-      "Dubai",
+      "Ras Al-Khaimah",
       "Fujairah",
       "Kalba",
-      "Madinat Zayed",
-      "Ras Al-Khaimah",
-      "Ruwais"
+      "Zayed City",
+      "Al Ruways Industrial City"
     ]
   },
   {
@@ -2318,32 +2318,32 @@ export const countriesData: Country[] = [
     "name": "United Kingdom",
     "code": "gb",
     "cities": [
-      "Abbots Langley",
-      "Aberdare",
-      "Aberdeen",
-      "Abergavenny",
-      "Abergele",
-      "Aberteifi",
-      "Aberystwyth",
-      "Abingdon",
-      "Accrington",
-      "Acle"
+      "London",
+      "Birmingham",
+      "Edinburgh",
+      "Manchester",
+      "Liverpool",
+      "Glasgow",
+      "Bristol",
+      "Sheffield",
+      "Newcastle upon Tyne",
+      "Leeds"
     ]
   },
   {
     "name": "United States",
     "code": "us",
     "cities": [
-      "Aaronsburg",
-      "Abbeville",
-      "Abbotsford",
-      "Abercrombie",
-      "Aberdeen",
-      "Aberdeen Proving Ground",
-      "Aberdeen Township",
-      "Abernathy",
-      "Abilene",
-      "Abingdon"
+      "New York",
+      "Los Angeles",
+      "Chicago",
+      "Dallas",
+      "Atlanta",
+      "Houston",
+      "Philadelphia",
+      "Miami",
+      "Seattle",
+      "Boston"
     ]
   },
   {
@@ -2355,8 +2355,8 @@ export const countriesData: Country[] = [
     "name": "Uruguay",
     "code": "uy",
     "cities": [
-      "Maldonado",
-      "Montevideo"
+      "Montevideo",
+      "Maldonado"
     ]
   },
   {
@@ -2377,32 +2377,32 @@ export const countriesData: Country[] = [
     "name": "Venezuela",
     "code": "ve",
     "cities": [
-      "Acarigua",
-      "Agua Blanca",
-      "Anaco",
-      "Araure",
-      "Barcelona",
-      "Barinas",
+      "Caracas",
+      "Valencia",
+      "Maracaibo",
       "Barquisimeto",
-      "Bejuma",
-      "Biscucuy",
-      "Boca de Pozo(Macanao)"
+      "Maracay",
+      "Guayana City",
+      "San Cristobal",
+      "Maturin",
+      "Barcelona",
+      "Puerto La Cruz"
     ]
   },
   {
     "name": "Viet Nam",
     "code": "vn",
     "cities": [
-      "An Nhon",
-      "Ba Ria",
-      "Bac Giang",
-      "Bac Kan",
-      "Bac Lieu",
-      "Bac Ninh",
-      "Bao Loc",
-      "Ben Cat",
-      "Ben Tre",
-      "Bien Hoa"
+      "Hanoi",
+      "Ho Chi Minh City",
+      "Da Nang",
+      "Bien Hoa",
+      "Dalat",
+      "Thuan An",
+      "Can Tho",
+      "Thanh Hoa",
+      "Quy Nhon",
+      "Haiphong"
     ]
   },
   {
@@ -2417,8 +2417,8 @@ export const countriesData: Country[] = [
     "code": "vi",
     "cities": [
       "Charlotte Amalie",
-      "Christiansted",
-      "Cruz Bay"
+      "Cruz Bay",
+      "Christiansted"
     ]
   },
   {
@@ -2442,8 +2442,8 @@ export const countriesData: Country[] = [
     "name": "Zambia",
     "code": "zm",
     "cities": [
-      "Kitwe",
       "Lusaka",
+      "Kitwe",
       "Ndola"
     ]
   },
@@ -2451,9 +2451,9 @@ export const countriesData: Country[] = [
     "name": "Zimbabwe",
     "code": "zw",
     "cities": [
+      "Harare",
       "Bulawayo",
       "Gweru",
-      "Harare",
       "Masvingo"
     ]
   }
