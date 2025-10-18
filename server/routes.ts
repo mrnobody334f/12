@@ -39,13 +39,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
                        req.headers['x-real-ip']?.toString() || 
                        req.socket.remoteAddress || '';
       
-      const testIp = clientIp.includes('::1') || clientIp.includes('127.0.0.1') 
-        ? '' 
-        : clientIp;
+      console.log(`Location detection for IP: ${clientIp}`);
       
-      const response = await fetch(`https://ipapi.co/${testIp}/json/`);
+      const isLocalhost = !clientIp || 
+                         clientIp.includes('::1') || 
+                         clientIp.includes('127.0.0.1') ||
+                         clientIp.includes('::ffff:127.0.0.1');
+      
+      if (isLocalhost) {
+        console.log('Local IP detected, using ip-api.com without IP parameter');
+      }
+      
+      const ipToCheck = isLocalhost ? '' : clientIp;
+      const endpoint = ipToCheck 
+        ? `http://ip-api.com/json/${ipToCheck}?fields=status,country,countryCode,city`
+        : 'http://ip-api.com/json/?fields=status,country,countryCode,city';
+      
+      const response = await fetch(endpoint);
       
       if (!response.ok) {
+        console.error(`ip-api.com returned status: ${response.status}`);
         return res.json({
           country: '',
           countryCode: '',
@@ -55,11 +68,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const data = await response.json();
       
-      res.json({
-        country: data.country_name || '',
-        countryCode: (data.country_code || '').toLowerCase(),
+      if (data.status !== 'success') {
+        console.error(`ip-api.com failed:`, data);
+        return res.json({
+          country: '',
+          countryCode: '',
+          city: ''
+        });
+      }
+      
+      const result = {
+        country: data.country || '',
+        countryCode: (data.countryCode || '').toLowerCase(),
         city: data.city || ''
-      });
+      };
+      
+      console.log(`Detected location: ${result.city}, ${result.country} (${result.countryCode})`);
+      
+      res.json(result);
     } catch (error) {
       console.error("Location detection error:", error);
       res.json({
