@@ -44,8 +44,19 @@ export async function searchWithSerper(
     throw new Error("SERPER_API_KEY is not configured");
   }
 
+  // Build the search query with location if provided
+  let enhancedQuery = query;
+  
+  // Add city to query for better local results
+  if (city && city.trim()) {
+    const detectedLanguage = detectLanguage(query);
+    const locationKeyword = detectedLanguage === 'ar' ? 'في' : 'in';
+    enhancedQuery = `${query} ${locationKeyword} ${city}`;
+    console.log(`Enhanced query with city: "${query}" → "${enhancedQuery}"`);
+  }
+  
   // Don't use site filter if site is undefined or empty - get real Google results
-  const searchQuery = (site && site.trim()) ? `site:${site} ${query}` : query;
+  const searchQuery = (site && site.trim()) ? `site:${site} ${enhancedQuery}` : enhancedQuery;
   
   const detectedLanguage = detectLanguage(query);
 

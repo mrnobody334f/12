@@ -103,31 +103,26 @@ export function LocationSelector({
           console.error("Geocoding API error:", response.status);
         }
       } catch (error) {
-        console.log("Geolocation API failed, falling back to IP-based detection:", error);
+        console.log("Geolocation API failed:", error);
         if ((error as GeolocationPositionError).code === 1) {
+          // User denied permission - make search global
           toast({
             title: "Location access denied",
-            description: "Using approximate location based on IP address instead.",
+            description: "Search results will be global. You can manually select a location below.",
             variant: "default",
           });
+          setIsGettingLocation(false);
+          return;
         }
       }
     }
 
-    // Fallback to IP-based detection
-    if (detectedLocation && detectedLocation.countryCode) {
-      onLocationChange(detectedLocation.country, detectedLocation.countryCode, detectedLocation.city || "");
-      toast({
-        title: "Location detected",
-        description: `Using approximate location: ${detectedLocation.city ? detectedLocation.city + ', ' : ''}${detectedLocation.country}`,
-      });
-    } else {
-      toast({
-        title: "Location detection failed",
-        description: "Could not determine your location. Search results will be global.",
-        variant: "destructive",
-      });
-    }
+    // If geolocation not available or other error, show message
+    toast({
+      title: "Location detection failed",
+      description: "Could not determine your location. Search results will be global.",
+      variant: "destructive",
+    });
     
     setIsGettingLocation(false);
   };
