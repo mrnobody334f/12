@@ -59,14 +59,9 @@ export async function searchWithSerper(
       hl: detectedLanguage,
     };
 
-    // Add location parameters if provided (only valid two-letter country codes)
-    if (countryCode && /^[a-z]{2}$/i.test(countryCode)) {
+    // Add country code only if provided (no default fallback, no city)
+    if (countryCode && countryCode.toLowerCase() !== 'global' && /^[a-z]{2}$/i.test(countryCode)) {
       requestBody.gl = countryCode.toLowerCase();
-    } else if (detectedLanguage === 'ar' && !countryCode) {
-      requestBody.gl = 'sa';
-    }
-    if (city && city.trim()) {
-      requestBody.location = city.trim();
     }
     
     const response = await fetch("https://google.serper.dev/search", {
@@ -85,7 +80,7 @@ export async function searchWithSerper(
     const data: SerperResponse = await response.json();
     
     // Log search info for debugging
-    const locationInfo = requestBody.gl || requestBody.location ? ` [gl=${requestBody.gl || 'none'}, location=${requestBody.location || 'none'}, hl=${requestBody.hl}]` : ` [hl=${requestBody.hl}]`;
+    const locationInfo = requestBody.gl ? ` [country=${requestBody.gl}, language=${requestBody.hl}]` : ` [language=${requestBody.hl}, global]`;
     console.log(`Serper search: "${searchQuery}"${locationInfo} - Found ${data.organic?.length || 0} results`);
     if (data.organic && data.organic.length > 0) {
       console.log(`First result: ${data.organic[0].title} - ${data.organic[0].link}`);
