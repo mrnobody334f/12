@@ -32,11 +32,31 @@ export default function Home() {
   const [country, setCountry] = useState("");
   const [countryCode, setCountryCode] = useState("");
   const [city, setCity] = useState("");
-  const { toast } = useToast();
+  const [userLocation, setUserLocation] = useState<{country: string; countryCode: string; city: string} | null>(null);
+  const [isManualLocation, setIsManualLocation] = useState(false);
+  const { toast} = useToast();
 
-  // Only add location parameters if a valid country code or city is set
-  const locationParams = (countryCode && countryCode !== "global") || city 
-    ? `&countryCode=${encodeURIComponent(countryCode)}&country=${encodeURIComponent(country)}&city=${encodeURIComponent(city)}`
+  const { data: detectedLocation } = useQuery<{country: string; countryCode: string; city: string}>({
+    queryKey: ["/api/location/detect"],
+    refetchOnWindowFocus: false,
+    staleTime: Infinity,
+  });
+
+  useEffect(() => {
+    if (detectedLocation && !isManualLocation && detectedLocation.countryCode) {
+      setUserLocation(detectedLocation);
+      setCountry(detectedLocation.country);
+      setCountryCode(detectedLocation.countryCode);
+      setCity(detectedLocation.city);
+    }
+  }, [detectedLocation, isManualLocation]);
+
+  const effectiveCountry = isManualLocation ? country : (userLocation?.country || '');
+  const effectiveCountryCode = isManualLocation ? countryCode : (userLocation?.countryCode || '');
+  const effectiveCity = isManualLocation ? city : (userLocation?.city || '');
+
+  const locationParams = (effectiveCountryCode && effectiveCountryCode !== "global" && effectiveCountryCode !== '') || effectiveCity 
+    ? `&countryCode=${encodeURIComponent(effectiveCountryCode)}&country=${encodeURIComponent(effectiveCountry)}&city=${encodeURIComponent(effectiveCity)}`
     : "";
 
   const { data, isLoading, error, refetch } = useQuery<SearchResponse>({
@@ -120,6 +140,7 @@ export default function Home() {
     setCountry(newCountry);
     setCountryCode(newCountryCode);
     setCity(newCity);
+    setIsManualLocation(newCountryCode !== '' && newCountryCode !== 'global');
     if (searchQuery) {
       setCurrentPage(1);
       refetch();

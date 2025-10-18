@@ -32,6 +32,44 @@ function sortResults(results: SearchResult[], sortBy: SortOption): SearchResult[
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Detect user location from IP address
+  app.get("/api/location/detect", async (req, res) => {
+    try {
+      const clientIp = req.headers['x-forwarded-for']?.toString().split(',')[0] || 
+                       req.headers['x-real-ip']?.toString() || 
+                       req.socket.remoteAddress || '';
+      
+      const testIp = clientIp.includes('::1') || clientIp.includes('127.0.0.1') 
+        ? '' 
+        : clientIp;
+      
+      const response = await fetch(`https://ipapi.co/${testIp}/json/`);
+      
+      if (!response.ok) {
+        return res.json({
+          country: '',
+          countryCode: '',
+          city: ''
+        });
+      }
+      
+      const data = await response.json();
+      
+      res.json({
+        country: data.country_name || '',
+        countryCode: (data.country_code || '').toLowerCase(),
+        city: data.city || ''
+      });
+    } catch (error) {
+      console.error("Location detection error:", error);
+      res.json({
+        country: '',
+        countryCode: '',
+        city: ''
+      });
+    }
+  });
+
   // Intent detection endpoint
   app.post("/api/intent", async (req, res) => {
     try {
