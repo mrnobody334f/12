@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Bookmark } from "lucide-react";
@@ -25,6 +25,8 @@ export default function Home() {
   const [sortBy, setSortBy] = useState<SortOption>("relevance");
   const [autoDetectIntent, setAutoDetectIntent] = useState(true);
   const [manualIntent, setManualIntent] = useState<IntentType | undefined>(undefined);
+  const [accumulatedResults, setAccumulatedResults] = useState<any[]>([]);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const { toast } = useToast();
 
   const { data, isLoading, error, refetch } = useQuery<SearchResponse>({
@@ -63,11 +65,13 @@ export default function Home() {
     setSearchQuery(query);
     setActiveSource("all");
     setCurrentPage(1);
+    setAccumulatedResults([]);
   };
 
   const handleSourceChange = (sourceId: string) => {
     setActiveSource(sourceId);
     setCurrentPage(1);
+    setAccumulatedResults([]);
   };
 
   const handlePageChange = (page: number) => {
@@ -75,9 +79,15 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleLoadMore = async () => {
+    setIsLoadingMore(true);
+    setCurrentPage(prev => prev + 1);
+  };
+
   const handleSortChange = (sort: SortOption) => {
     setSortBy(sort);
     setCurrentPage(1);
+    setAccumulatedResults([]);
   };
 
   const handleIntentChange = (intent: IntentType | undefined) => {
@@ -104,7 +114,62 @@ export default function Home() {
     bookmarkMutation.mutate();
   };
 
-  const filteredResults = data?.results || [];
+  // Load cached results from localStorage on mount
+  useEffect(() => {
+    if (searchQuery) {
+      const cacheKey = `search_cache_${searchQuery}_${activeSource}_${sortBy}`;
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        try {
+          const parsedCache = JSON.parse(cached);
+          if (parsedCache.timestamp && Date.now() - parsedCache.timestamp < 5 * 60 * 1000) {
+            // Cache valid for 5 minutes
+            setAccumulatedResults(parsedCache.results);
+          }
+        } catch (e) {
+          // Invalid cache, ignore
+        }
+      }
+    }
+  }, [searchQuery, activeSource, sortBy]);
+
+  // Accumulate results when new data arrives
+  useEffect(() => {
+    if (data?.results) {
+      if (currentPage === 1) {
+        // First page - replace all results
+        setAccumulatedResults(data.results);
+        setIsLoadingMore(false);
+        
+        // Cache first page results
+        const cacheKey = `search_cache_${searchQuery}_${activeSource}_${sortBy}`;
+        localStorage.setItem(cacheKey, JSON.stringify({
+          results: data.results,
+          timestamp: Date.now()
+        }));
+      } else {
+        // Subsequent pages - append new results
+        setAccumulatedResults(prev => {
+          // Avoid duplicates by checking link
+          const existingLinks = new Set(prev.map(r => r.link));
+          const newResults = data.results.filter(r => !existingLinks.has(r.link));
+          const allResults = [...prev, ...newResults];
+          
+          // Update cache with accumulated results
+          const cacheKey = `search_cache_${searchQuery}_${activeSource}_${sortBy}`;
+          localStorage.setItem(cacheKey, JSON.stringify({
+            results: allResults,
+            timestamp: Date.now()
+          }));
+          
+          return allResults;
+        });
+        setIsLoadingMore(false);
+      }
+    }
+  }, [data, currentPage, searchQuery, activeSource, sortBy]);
+
+  const filteredResults = accumulatedResults.length > 0 ? accumulatedResults : (data?.results || []);
   const currentSources = data?.sources || [];
   const hasSearched = searchQuery.length > 0;
   const pagination = data?.pagination;
@@ -195,7 +260,7 @@ export default function Home() {
       <main className="max-w-7xl mx-auto px-4 py-6">
         {!hasSearched && <EmptyState onSuggestedSearch={handleSearch} />}
 
-        {hasSearched && isLoading && <SearchingSkeleton />}
+        {hasSearched && isLoading && currentPage === 1 && <SearchingSkeleton />}
 
         {hasSearched && error && (
           <ErrorState
@@ -229,15 +294,36 @@ export default function Home() {
                   ))}
                 </div>
 
-                {/* Pagination */}
+                {/* Load More Button */}
+                {pagination && pagination.hasNext && (
+                  <div className="flex flex-col items-center gap-3 pt-4">
+                    <Button
+                      onClick={handleLoadMore}
+                      disabled={isLoadingMore}
+                      size="lg"
+                      className="min-w-[200px]"
+                      data-testid="button-load-more"
+                    >
+                      {isLoadingMore ? "Loading..." : "Load More Results"}
+                    </Button>
+                    <p className="text-sm text-muted-foreground">
+                      Showing {filteredResults.length} of {pagination.totalResults} results
+                      {pagination.hasNext && ` • Page ${currentPage} of ${pagination.totalPages}`}
+                    </p>
+                  </div>
+                )}
+
+                {/* Traditional Pagination (optional - keep for page jumping) */}
                 {pagination && pagination.totalPages > 1 && (
-                  <Pagination
-                    currentPage={pagination.currentPage}
-                    totalPages={pagination.totalPages}
-                    onPageChange={handlePageChange}
-                    hasNext={pagination.hasNext}
-                    hasPrevious={pagination.hasPrevious}
-                  />
+                  <div className="pt-4">
+                    <Pagination
+                      currentPage={pagination.currentPage}
+                      totalPages={pagination.totalPages}
+                      onPageChange={handlePageChange}
+                      hasNext={pagination.hasNext}
+                      hasPrevious={pagination.hasPrevious}
+                    />
+                  </div>
                 )}
               </div>
             ) : (

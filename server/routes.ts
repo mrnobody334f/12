@@ -185,8 +185,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Calculate pagination metadata
       // Estimate total results (Serper typically has ~100 results per query)
-      const estimatedTotalResults = Math.min(limitNum * 10, 1000); // Estimate max 1000 results
-      const totalPages = Math.ceil(estimatedTotalResults / limitNum);
+      const totalResults = Math.min(limitNum * 10, 1000); // Estimate max 1000 results
+      const totalPages = Math.ceil(totalResults / limitNum);
       const paginatedResults = flatResults;
 
       // Generate AI summary for first page only
