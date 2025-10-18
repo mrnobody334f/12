@@ -126,7 +126,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           // For Google search or "all", don't filter by site - get real Google results
           const siteFilter = (src.id === "google" || source === "all") ? undefined : src.site;
-          const results = await searchWithSerper(query, siteFilter, 10);
+          // Get more results for Google search to match real Google results better
+          const numToFetch = (src.id === "google") ? 50 : 10;
+          const results = await searchWithSerper(query, siteFilter, numToFetch);
           
           return results.map((result, idx) => {
             // Extract domain from the result link for better favicon and source name
