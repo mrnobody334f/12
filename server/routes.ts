@@ -89,8 +89,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (cachedIntent) {
           intent = cachedIntent;
         } else {
-          intent = await detectIntent(query);
-          cache.set(intentCacheKey, intent, 10 * 60 * 1000);
+          try {
+            intent = await detectIntent(query);
+            cache.set(intentCacheKey, intent, 10 * 60 * 1000);
+          } catch (error) {
+            console.error("Intent detection error:", error);
+            // Fallback to general intent if AI detection fails
+            intent = "general";
+          }
         }
       }
 
