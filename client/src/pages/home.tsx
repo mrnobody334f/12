@@ -187,7 +187,7 @@ export default function Home() {
           sources={currentSources}
           activeSource={activeSource}
           onSourceChange={handleSourceChange}
-          showPlatformTabs={!autoDetectIntent}
+          showPlatformTabs={true}
         />
       )}
 
