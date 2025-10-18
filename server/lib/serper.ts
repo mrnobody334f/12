@@ -14,6 +14,22 @@ interface SerperResponse {
   };
 }
 
+function detectLanguage(text: string): string {
+  const arabicPattern = /[\u0600-\u06FF]/;
+  const chinesePattern = /[\u4E00-\u9FFF]/;
+  const japanesePattern = /[\u3040-\u309F\u30A0-\u30FF]/;
+  const koreanPattern = /[\uAC00-\uD7AF]/;
+  const russianPattern = /[\u0400-\u04FF]/;
+  
+  if (arabicPattern.test(text)) return 'ar';
+  if (chinesePattern.test(text)) return 'zh';
+  if (japanesePattern.test(text)) return 'ja';
+  if (koreanPattern.test(text)) return 'ko';
+  if (russianPattern.test(text)) return 'ru';
+  
+  return 'en';
+}
+
 export async function searchWithSerper(
   query: string, 
   site?: string, 
@@ -30,6 +46,8 @@ export async function searchWithSerper(
 
   // Don't use site filter if site is undefined or empty - get real Google results
   const searchQuery = (site && site.trim()) ? `site:${site} ${query}` : query;
+  
+  const detectedLanguage = detectLanguage(query);
 
   try {
     // Prepare request body
@@ -38,11 +56,14 @@ export async function searchWithSerper(
       num: Math.min(numResults, 100), // Serper supports up to 100 results
       autocorrect: true,
       page: page,
+      hl: detectedLanguage,
     };
 
     // Add location parameters if provided (only valid two-letter country codes)
     if (countryCode && /^[a-z]{2}$/i.test(countryCode)) {
       requestBody.gl = countryCode.toLowerCase();
+    } else if (detectedLanguage === 'ar' && !countryCode) {
+      requestBody.gl = 'sa';
     }
     if (city && city.trim()) {
       requestBody.location = city.trim();
@@ -64,7 +85,7 @@ export async function searchWithSerper(
     const data: SerperResponse = await response.json();
     
     // Log search info for debugging
-    const locationInfo = countryCode || city ? ` [Location: ${city || ''}, ${countryCode || ''}]` : '';
+    const locationInfo = requestBody.gl || requestBody.location ? ` [gl=${requestBody.gl || 'none'}, location=${requestBody.location || 'none'}, hl=${requestBody.hl}]` : ` [hl=${requestBody.hl}]`;
     console.log(`Serper search: "${searchQuery}"${locationInfo} - Found ${data.organic?.length || 0} results`);
     if (data.organic && data.organic.length > 0) {
       console.log(`First result: ${data.organic[0].title} - ${data.organic[0].link}`);
