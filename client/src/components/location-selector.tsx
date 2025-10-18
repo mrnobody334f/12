@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MapPin, Globe2, Check, ChevronsUpDown, Locate } from "lucide-react";
+import { MapPin, Globe2, Check, ChevronsUpDown, Locate, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -133,6 +133,14 @@ export function LocationSelector({
     setIsGettingLocation(false);
   };
 
+  const handleClearLocation = () => {
+    onLocationChange("", "", "");
+    toast({
+      title: "Location cleared",
+      description: "Search results will now be global",
+    });
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
@@ -144,19 +152,33 @@ export function LocationSelector({
           <MapPin className="h-5 w-5 text-primary" />
           <Label className="text-sm font-medium">Search Location</Label>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleUseMyLocation}
-          className="gap-2"
-          disabled={isGettingLocation}
-          data-testid="button-use-my-location"
-        >
-          <Locate className={cn("h-4 w-4", isGettingLocation && "animate-spin")} />
-          <span className="text-xs">
-            {isGettingLocation ? "Getting Location..." : "Use My Location"}
-          </span>
-        </Button>
+        <div className="flex items-center gap-2">
+          {(country || countryCode) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleClearLocation}
+              className="gap-2"
+              data-testid="button-clear-location"
+            >
+              <X className="h-4 w-4" />
+              <span className="text-xs">Clear</span>
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleUseMyLocation}
+            className="gap-2"
+            disabled={isGettingLocation}
+            data-testid="button-use-my-location"
+          >
+            <Locate className={cn("h-4 w-4", isGettingLocation && "animate-spin")} />
+            <span className="text-xs">
+              {isGettingLocation ? "Getting Location..." : "Use My Location"}
+            </span>
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
