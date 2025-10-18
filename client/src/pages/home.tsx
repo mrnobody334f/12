@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { motion } from "framer-motion";
-import { Bookmark } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Bookmark, Loader2 } from "lucide-react";
 import { SearchBar } from "@/components/search-bar";
 import { IntentSelector } from "@/components/intent-selector";
 import { DynamicTabs } from "@/components/dynamic-tabs";
@@ -16,7 +16,7 @@ import { SearchingSkeleton } from "@/components/loading-skeleton";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import type { SearchResponse, IntentType, SortOption } from "@shared/schema";
+import type { SearchResponse, IntentType, SortOption, SearchResult } from "@shared/schema";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -25,6 +25,8 @@ export default function Home() {
   const [sortBy, setSortBy] = useState<SortOption>("relevance");
   const [autoDetectIntent, setAutoDetectIntent] = useState(true);
   const [manualIntent, setManualIntent] = useState<IntentType | undefined>(undefined);
+  const [allLoadedResults, setAllLoadedResults] = useState<SearchResult[]>([]);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const { toast } = useToast();
 
   const { data, isLoading, error, refetch } = useQuery<SearchResponse>({
@@ -36,11 +38,27 @@ export default function Home() {
     enabled: !!searchQuery,
   });
 
+  // Reset loaded results when search query or filters change
+  useEffect(() => {
+    if (data && currentPage === 1) {
+      setAllLoadedResults(data.results);
+    } else if (data && currentPage > 1) {
+      setAllLoadedResults(prev => [...prev, ...data.results]);
+      setIsLoadingMore(false);
+    }
+  }, [data, currentPage]);
+
+  // Reset page when search query or source changes
+  useEffect(() => {
+    setCurrentPage(1);
+    setAllLoadedResults([]);
+  }, [searchQuery, activeSource, sortBy, autoDetectIntent, manualIntent]);
+
   const bookmarkMutation = useMutation({
     mutationFn: async () => {
       return apiRequest("POST", "/api/bookmarks", {
         query: searchQuery,
-        results: data?.results,
+        results: allLoadedResults,
       });
     },
     onSuccess: () => {
@@ -63,11 +81,13 @@ export default function Home() {
     setSearchQuery(query);
     setActiveSource("all");
     setCurrentPage(1);
+    setAllLoadedResults([]);
   };
 
   const handleSourceChange = (sourceId: string) => {
     setActiveSource(sourceId);
     setCurrentPage(1);
+    setAllLoadedResults([]);
   };
 
   const handlePageChange = (page: number) => {
@@ -75,15 +95,22 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleLoadMore = () => {
+    setIsLoadingMore(true);
+    setCurrentPage(prev => prev + 1);
+  };
+
   const handleSortChange = (sort: SortOption) => {
     setSortBy(sort);
     setCurrentPage(1);
+    setAllLoadedResults([]);
   };
 
   const handleIntentChange = (intent: IntentType | undefined) => {
     setManualIntent(intent);
     if (searchQuery) {
       setCurrentPage(1);
+      setAllLoadedResults([]);
       refetch();
     }
   };
@@ -92,6 +119,7 @@ export default function Home() {
     setAutoDetectIntent(enabled);
     if (searchQuery) {
       setCurrentPage(1);
+      setAllLoadedResults([]);
       refetch();
     }
   };
@@ -104,10 +132,11 @@ export default function Home() {
     bookmarkMutation.mutate();
   };
 
-  const filteredResults = data?.results || [];
   const currentSources = data?.sources || [];
   const hasSearched = searchQuery.length > 0;
   const pagination = data?.pagination;
+  const hasMoreResults = pagination?.hasNext || false;
+  const showLoadMore = hasMoreResults && !isLoadingMore;
 
   return (
     <div className="min-h-screen bg-background">
@@ -125,7 +154,7 @@ export default function Home() {
 
           <div className="flex items-center gap-2">
             <BookmarkHistory onSearchClick={handleSearch} />
-            {hasSearched && data && (
+            {hasSearched && allLoadedResults.length > 0 && (
               <Button
                 variant="outline"
                 size="sm"
@@ -148,7 +177,7 @@ export default function Home() {
           <SearchBar
             onSearch={handleSearch}
             initialQuery={searchQuery}
-            isSearching={isLoading}
+            isSearching={isLoading && currentPage === 1}
           />
 
           {/* Intent Selector */}
@@ -195,7 +224,7 @@ export default function Home() {
       <main className="max-w-7xl mx-auto px-4 py-6">
         {!hasSearched && <EmptyState onSuggestedSearch={handleSearch} />}
 
-        {hasSearched && isLoading && <SearchingSkeleton />}
+        {hasSearched && isLoading && currentPage === 1 && <SearchingSkeleton />}
 
         {hasSearched && error && (
           <ErrorState
@@ -204,33 +233,67 @@ export default function Home() {
           />
         )}
 
-        {hasSearched && !isLoading && !error && data && (
+        {hasSearched && !error && (
           <div className="space-y-6">
             {/* AI Summary */}
-            {data.summary && activeSource === "all" && currentPage === 1 && (
+            {data?.summary && activeSource === "all" && currentPage === 1 && (
               <AISummaryCard summary={data.summary} query={searchQuery} />
             )}
 
             {/* Sort Options */}
-            {filteredResults.length > 0 && (
+            {allLoadedResults.length > 0 && (
               <SortOptions
                 selectedSort={sortBy}
                 onSortChange={handleSortChange}
-                resultCount={pagination?.totalResults || filteredResults.length}
+                resultCount={allLoadedResults.length}
               />
             )}
 
             {/* Results */}
-            {filteredResults.length > 0 ? (
+            {allLoadedResults.length > 0 ? (
               <div className="space-y-4">
                 <div className="grid gap-4" data-testid="results-container">
-                  {filteredResults.map((result, index) => (
-                    <ResultCard key={`${result.link}-${index}`} result={result} index={index} />
-                  ))}
+                  <AnimatePresence mode="popLayout">
+                    {allLoadedResults.map((result, index) => (
+                      <motion.div
+                        key={`${result.link}-${index}`}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ delay: index * 0.02 }}
+                      >
+                        <ResultCard result={result} index={index} />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
                 </div>
 
-                {/* Pagination */}
-                {pagination && pagination.totalPages > 1 && (
+                {/* Load More Button */}
+                {showLoadMore && (
+                  <div className="flex justify-center py-8">
+                    <Button
+                      onClick={handleLoadMore}
+                      size="lg"
+                      className="gap-2"
+                      data-testid="button-load-more"
+                    >
+                      Load More Results
+                    </Button>
+                  </div>
+                )}
+
+                {/* Loading More Indicator */}
+                {isLoadingMore && (
+                  <div className="flex justify-center py-8">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span>Loading more results...</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Traditional Pagination (as fallback) */}
+                {!showLoadMore && !isLoadingMore && pagination && pagination.totalPages > 1 && (
                   <Pagination
                     currentPage={pagination.currentPage}
                     totalPages={pagination.totalPages}
@@ -240,7 +303,7 @@ export default function Home() {
                   />
                 )}
               </div>
-            ) : (
+            ) : !isLoading && (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">
                   No results found for "{searchQuery}"
@@ -259,15 +322,16 @@ export default function Home() {
             <div className="space-y-3">
               <h3 className="font-semibold text-foreground">About NovaSearch</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Next-generation AI-powered search engine with advanced features like pagination, bookmarks, history tracking, and intelligent result sorting.
+                Next-generation AI-powered search engine with comprehensive Google-like results, advanced features like pagination, bookmarks, history tracking, and intelligent result sorting.
               </p>
             </div>
             
             <div className="space-y-3">
               <h3 className="font-semibold text-foreground">Features</h3>
               <ul className="text-sm text-muted-foreground space-y-1">
+                <li>Google-Like Comprehensive Search</li>
                 <li>AI Intent Detection</li>
-                <li>Multi-Source Search</li>
+                <li>Load More & Pagination</li>
                 <li>Smart Sorting & Filtering</li>
                 <li>Bookmarks & History</li>
                 <li>Auto-complete Suggestions</li>

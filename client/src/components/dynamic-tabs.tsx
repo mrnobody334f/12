@@ -19,8 +19,7 @@ interface DynamicTabsProps {
 
 // Platform-specific tabs that are always shown
 const platformTabs = [
-  { id: "all", name: "All", icon: Globe },
-  { id: "google", name: "Google", icon: Search },
+  { id: "all", name: "Google", icon: Search },
   { id: "twitter", name: "Twitter", icon: Twitter },
   { id: "instagram", name: "Instagram", icon: Instagram },
   { id: "tiktok", name: "TikTok", icon: Music },
@@ -33,9 +32,9 @@ export function DynamicTabs({ sources, activeSource, onSourceChange, showPlatfor
     return (Icons as any)[iconName] || Globe;
   };
 
-  // Use platform tabs if enabled, otherwise show intent-based sources
+  // Use platform tabs if enabled, otherwise show intent-based sources with Google
   const tabsToShow = showPlatformTabs ? platformTabs : [
-    { id: "all", name: "All Sources", icon: Globe },
+    { id: "all", name: "Google", icon: Search },
     ...sources.map(source => ({
       id: source.id,
       name: source.name,

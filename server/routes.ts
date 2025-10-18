@@ -101,39 +101,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
         intent,
       });
 
-      // Determine sources based on filter or intent
+      let flatResults: SearchResult[] = [];
       let sources;
-      if (source && source !== "all") {
-        const platformSource = Object.values(platformSources).find(p => p.id === source);
-        if (platformSource && platformSource.site) {
-          sources = [platformSource];
-        } else {
-          sources = sourceConfig[intent] || sourceConfig.general;
-        }
-      } else {
-        sources = sourceConfig[intent] || sourceConfig.general;
-      }
 
-      // Fetch results from sources
-      const searchPromises = sources.map(async (src) => {
+      // Special handling for "all" or "google" tab - get comprehensive Google results
+      if (source === "all" || source === "google" || !source) {
+        // For "All" tab, perform a direct Google search without site filtering
+        // This gives us all types of content: websites, videos, news, social media, etc.
         try {
-          const results = await searchWithSerper(query, src.site, 10);
-          return results.map((result, idx) => ({
+          const googleResults = await searchWithSerper(query, undefined, 10);
+          flatResults = googleResults.map((result) => ({
             ...result,
-            source: src.id,
-            sourceName: src.name,
-            favicon: `https://www.google.com/s2/favicons?domain=${src.site}&sz=32`,
+            source: "google",
+            sourceName: "Google",
+            favicon: `https://www.google.com/s2/favicons?domain=${new URL(result.link).hostname}&sz=32`,
             views: Math.floor(Math.random() * 100000),
             engagement: Math.floor(Math.random() * 10000),
           }));
         } catch (error) {
-          console.error(`Error fetching from ${src.name}:`, error);
-          return [];
+          console.error("Error fetching from Google:", error);
         }
-      });
+        
+        // Set sources to show we're using Google
+        sources = [{ id: "google", name: "Google", site: "google.com", icon: "Search" }];
+      } else {
+        // For specific platform tabs or other sources
+        if (source && source !== "all") {
+          const platformSource = Object.values(platformSources).find(p => p.id === source);
+          if (platformSource && platformSource.site) {
+            sources = [platformSource];
+          } else {
+            sources = sourceConfig[intent] || sourceConfig.general;
+          }
+        } else {
+          sources = sourceConfig[intent] || sourceConfig.general;
+        }
 
-      const allResults = await Promise.all(searchPromises);
-      let flatResults: SearchResult[] = allResults.flat();
+        // Fetch results from selected sources
+        const searchPromises = sources.map(async (src) => {
+          try {
+            const results = await searchWithSerper(query, src.site, 10);
+            return results.map((result) => ({
+              ...result,
+              source: src.id,
+              sourceName: src.name,
+              favicon: `https://www.google.com/s2/favicons?domain=${src.site}&sz=32`,
+              views: Math.floor(Math.random() * 100000),
+              engagement: Math.floor(Math.random() * 10000),
+            }));
+          } catch (error) {
+            console.error(`Error fetching from ${src.name}:`, error);
+            return [];
+          }
+        });
+
+        const allResults = await Promise.all(searchPromises);
+        flatResults = allResults.flat();
+      }
 
       // Sort results
       flatResults = sortResults(flatResults, sortBy);
@@ -145,9 +169,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const endIdx = startIdx + limitNum;
       const paginatedResults = flatResults.slice(startIdx, endIdx);
 
-      // Generate AI summary for first page only
+      // Generate AI summary for first page only and for "all" tab
       let summary;
-      if (pageNum === 1 && paginatedResults.length > 0) {
+      if (pageNum === 1 && paginatedResults.length > 0 && (source === "all" || !source)) {
         try {
           summary = await generateSummary(query, paginatedResults, intent);
         } catch (error) {
@@ -160,7 +184,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         intent,
         results: paginatedResults,
         summary,
-        sources,
+        sources: sources || [],
         pagination: {
           currentPage: pageNum,
           totalPages,
