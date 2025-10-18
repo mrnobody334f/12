@@ -265,7 +265,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sources = sourceConfig[intent] || sourceConfig.general;
         }
       } else {
-        sources = sourceConfig[intent] || sourceConfig.general;
+        // For "All" tab, just use Google (no site filters)
+        sources = [platformSources.google];
       }
 
       // Create cache key for this specific search (include location in key)
@@ -282,8 +283,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Fetch results from sources for this specific page
         const searchPromises = sources.map(async (src) => {
           try {
-            // For Google search or "all", don't filter by site - get real Google results
-            const siteFilter = (src.id === "google" || source === "all") ? undefined : src.site;
+            // For Google search, don't filter by site - get real Google results
+            // For other platforms (Twitter, Facebook, etc), use site: filter
+            const siteFilter = (src.id === "google") ? undefined : src.site;
             
             // Fetch results with pagination and location - pass page number and location to Serper API
             const results = await searchWithSerper(query, siteFilter, limitNum, pageNum, locationCountryCode, locationCity);
