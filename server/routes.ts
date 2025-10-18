@@ -68,6 +68,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         limit = "20",
         sort = "relevance",
         autoDetect = "true",
+        country,
+        countryCode,
+        city,
       } = req.query;
 
       if (!query || typeof query !== "string") {
@@ -78,6 +81,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limitNum = parseInt(limit as string, 10);
       const sortBy = sort as SortOption;
       const shouldAutoDetect = autoDetect === "true";
+      
+      // Extract location parameters
+      const locationCountry = country && typeof country === "string" ? country : undefined;
+      const locationCountryCode = countryCode && typeof countryCode === "string" ? countryCode : undefined;
+      const locationCity = city && typeof city === "string" ? city : undefined;
 
       // Detect or use provided intent
       let intent: IntentType = "general";
@@ -121,8 +129,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sources = sourceConfig[intent] || sourceConfig.general;
       }
 
-      // Create cache key for this specific search
-      const searchCacheKey = `search:${query}:${source || 'all'}:${pageNum}:${limitNum}:${sortBy}`;
+      // Create cache key for this specific search (include location in key)
+      const locationKey = `${locationCountryCode || ''}:${locationCity || ''}`;
+      const searchCacheKey = `search:${query}:${source || 'all'}:${pageNum}:${limitNum}:${sortBy}:${locationKey}`;
       const cachedSearch = cache.get<SearchResult[]>(searchCacheKey);
       
       let flatResults: SearchResult[];
@@ -137,8 +146,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // For Google search or "all", don't filter by site - get real Google results
             const siteFilter = (src.id === "google" || source === "all") ? undefined : src.site;
             
-            // Fetch results with pagination - pass page number to Serper API
-            const results = await searchWithSerper(query, siteFilter, limitNum, pageNum);
+            // Fetch results with pagination and location - pass page number and location to Serper API
+            const results = await searchWithSerper(query, siteFilter, limitNum, pageNum, locationCountryCode, locationCity);
             
             return results.map((result, idx) => {
               // Extract domain from the result link for better favicon and source name
@@ -212,6 +221,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           hasNext: pageNum < totalPages,
           hasPrevious: pageNum > 1,
         },
+        location: (locationCountry || locationCountryCode || locationCity) ? {
+          country: locationCountry,
+          countryCode: locationCountryCode,
+          city: locationCity,
+        } : undefined,
       };
 
       res.json(response);

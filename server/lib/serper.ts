@@ -18,7 +18,9 @@ export async function searchWithSerper(
   query: string, 
   site?: string, 
   numResults: number = 10,
-  page: number = 1
+  page: number = 1,
+  countryCode?: string,
+  city?: string
 ): Promise<SerperResult[]> {
   const apiKey = process.env.SERPER_API_KEY;
   
@@ -37,6 +39,14 @@ export async function searchWithSerper(
       autocorrect: true,
       page: page,
     };
+
+    // Add location parameters if provided (only valid two-letter country codes)
+    if (countryCode && /^[a-z]{2}$/i.test(countryCode)) {
+      requestBody.gl = countryCode.toLowerCase();
+    }
+    if (city && city.trim()) {
+      requestBody.location = city.trim();
+    }
     
     const response = await fetch("https://google.serper.dev/search", {
       method: "POST",
@@ -54,7 +64,8 @@ export async function searchWithSerper(
     const data: SerperResponse = await response.json();
     
     // Log search info for debugging
-    console.log(`Serper search: "${searchQuery}" - Found ${data.organic?.length || 0} results`);
+    const locationInfo = countryCode || city ? ` [Location: ${city || ''}, ${countryCode || ''}]` : '';
+    console.log(`Serper search: "${searchQuery}"${locationInfo} - Found ${data.organic?.length || 0} results`);
     if (data.organic && data.organic.length > 0) {
       console.log(`First result: ${data.organic[0].title} - ${data.organic[0].link}`);
     }

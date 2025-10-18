@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Bookmark } from "lucide-react";
+import { Bookmark, MapPin } from "lucide-react";
 import { SearchBar } from "@/components/search-bar";
 import { IntentSelector } from "@/components/intent-selector";
+import { LocationSelector } from "@/components/location-selector";
 import { DynamicTabs } from "@/components/dynamic-tabs";
 import { SortOptions } from "@/components/sort-options";
 import { Pagination } from "@/components/pagination";
@@ -14,6 +15,7 @@ import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { SearchingSkeleton } from "@/components/loading-skeleton";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { SearchResponse, IntentType, SortOption } from "@shared/schema";
@@ -27,13 +29,21 @@ export default function Home() {
   const [manualIntent, setManualIntent] = useState<IntentType | undefined>(undefined);
   const [accumulatedResults, setAccumulatedResults] = useState<any[]>([]);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [country, setCountry] = useState("");
+  const [countryCode, setCountryCode] = useState("");
+  const [city, setCity] = useState("");
   const { toast } = useToast();
+
+  // Only add location parameters if a valid country code or city is set
+  const locationParams = (countryCode && countryCode !== "global") || city 
+    ? `&countryCode=${encodeURIComponent(countryCode)}&country=${encodeURIComponent(country)}&city=${encodeURIComponent(city)}`
+    : "";
 
   const { data, isLoading, error, refetch } = useQuery<SearchResponse>({
     queryKey: [
       `/api/search?query=${encodeURIComponent(searchQuery)}&source=${activeSource}&page=${currentPage}&limit=20&sort=${sortBy}&autoDetect=${autoDetectIntent}${
         !autoDetectIntent && manualIntent ? `&intent=${manualIntent}` : ""
-      }`,
+      }${locationParams}`,
     ],
     enabled: !!searchQuery,
   });
@@ -100,6 +110,16 @@ export default function Home() {
 
   const handleAutoDetectChange = (enabled: boolean) => {
     setAutoDetectIntent(enabled);
+    if (searchQuery) {
+      setCurrentPage(1);
+      refetch();
+    }
+  };
+
+  const handleLocationChange = (newCountry: string, newCountryCode: string, newCity: string) => {
+    setCountry(newCountry);
+    setCountryCode(newCountryCode);
+    setCity(newCity);
     if (searchQuery) {
       setCurrentPage(1);
       refetch();
@@ -234,14 +254,36 @@ export default function Home() {
           )}
 
           {hasSearched && (
-            <div className="mt-4 max-w-3xl mx-auto">
+            <div className="mt-4 max-w-3xl mx-auto space-y-4">
               <IntentSelector
                 selectedIntent={manualIntent}
                 onIntentChange={handleIntentChange}
                 autoDetect={autoDetectIntent}
                 onAutoDetectChange={handleAutoDetectChange}
               />
+              <LocationSelector
+                country={country}
+                countryCode={countryCode}
+                city={city}
+                onLocationChange={handleLocationChange}
+              />
             </div>
+          )}
+
+          {!hasSearched && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="mt-4 max-w-3xl mx-auto"
+            >
+              <LocationSelector
+                country={country}
+                countryCode={countryCode}
+                city={city}
+                onLocationChange={handleLocationChange}
+              />
+            </motion.div>
           )}
         </div>
       </div>
@@ -271,6 +313,23 @@ export default function Home() {
 
         {hasSearched && !isLoading && !error && data && (
           <div className="space-y-6">
+            {/* Location Display */}
+            {data.location && (data.location.city || data.location.country) && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-2 text-sm text-muted-foreground"
+              >
+                <MapPin className="h-4 w-4" />
+                <span>Showing results for</span>
+                <Badge variant="secondary" className="gap-1" data-testid="badge-location">
+                  {data.location.city && <span>{data.location.city}</span>}
+                  {data.location.city && data.location.country && <span>,</span>}
+                  {data.location.country && <span>{data.location.country}</span>}
+                </Badge>
+              </motion.div>
+            )}
+
             {/* AI Summary */}
             {data.summary && activeSource === "all" && currentPage === 1 && (
               <AISummaryCard summary={data.summary} query={searchQuery} />

@@ -9,6 +9,15 @@ export type IntentType = typeof intentTypes[number];
 export const sortOptions = ["relevance", "recent", "mostViewed", "mostEngaged"] as const;
 export type SortOption = typeof sortOptions[number];
 
+// Location schema for localized search
+export const locationSchema = z.object({
+  country: z.string().optional(),
+  countryCode: z.string().optional(),
+  city: z.string().optional(),
+});
+
+export type Location = z.infer<typeof locationSchema>;
+
 // Dedicated social media and platform sources
 export const platformSources = {
   all: { id: "all", name: "All", site: "", icon: "Globe" },
@@ -107,6 +116,9 @@ export const searchRequestSchema = z.object({
   page: z.number().optional().default(1),
   limit: z.number().optional().default(20),
   sort: z.enum(sortOptions).optional().default("relevance"),
+  country: z.string().optional(),
+  countryCode: z.string().optional(),
+  city: z.string().optional(),
 });
 
 export type SearchRequest = z.infer<typeof searchRequestSchema>;
@@ -129,6 +141,7 @@ export const searchResponseSchema = z.object({
     hasNext: z.boolean(),
     hasPrevious: z.boolean(),
   }),
+  location: locationSchema.optional(),
 });
 
 export type SearchResponse = z.infer<typeof searchResponseSchema>;
