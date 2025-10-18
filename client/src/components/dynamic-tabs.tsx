@@ -19,7 +19,8 @@ interface DynamicTabsProps {
 
 // Platform-specific tabs that are always shown
 const platformTabs = [
-  { id: "all", name: "Google", icon: Search },
+  { id: "all", name: "All", icon: Globe },
+  { id: "google", name: "Google", icon: Search },
   { id: "twitter", name: "Twitter", icon: Twitter },
   { id: "instagram", name: "Instagram", icon: Instagram },
   { id: "tiktok", name: "TikTok", icon: Music },
@@ -32,24 +33,15 @@ export function DynamicTabs({ sources, activeSource, onSourceChange, showPlatfor
     return (Icons as any)[iconName] || Globe;
   };
 
-  // Always show Google tab + intent-based sources
-  // Optionally add platform tabs when showPlatformTabs is true
-  const intentTabs = [
-    { id: "all", name: "Google", icon: Search },
+  // Use platform tabs if enabled, otherwise show intent-based sources
+  const tabsToShow = showPlatformTabs ? platformTabs : [
+    { id: "all", name: "All Sources", icon: Globe },
     ...sources.map(source => ({
       id: source.id,
       name: source.name,
       icon: getIcon(source.icon),
     }))
   ];
-
-  // If showPlatformTabs, add the platform tabs (excluding Google since it's already there)
-  const tabsToShow = showPlatformTabs 
-    ? [
-        ...intentTabs,
-        ...platformTabs.filter(tab => tab.id !== "all") // Add platform tabs except Google
-      ]
-    : intentTabs;
 
   return (
     <div className="w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-16 z-40">

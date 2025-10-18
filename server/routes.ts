@@ -101,107 +101,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         intent,
       });
 
-      // Check cache first for this specific query + page + source + intent combination
-      const cacheKey = `search:${query}:${source || 'all'}:${pageNum}:${sortBy}:${intent}`;
-      const cachedResults = cache.get<{ results: SearchResult[]; hasNext: boolean; sources: any[] }>(cacheKey);
-      
-      if (cachedResults) {
-        const response: SearchResponse = {
-          query,
-          intent,
-          results: cachedResults.results,
-          sources: cachedResults.sources,
-          pagination: {
-            currentPage: pageNum,
-            totalPages: pageNum + (cachedResults.hasNext ? 1 : 0),
-            totalResults: cachedResults.results.length,
-            hasNext: cachedResults.hasNext,
-            hasPrevious: pageNum > 1,
-          },
-        };
-        return res.json(response);
-      }
-
-      let flatResults: SearchResult[] = [];
+      // Determine sources based on filter or intent
       let sources;
-      let hasMoreResults = false;
-
-      // Special handling for "all" or "google" tab - get comprehensive Google results
-      if (source === "all" || source === "google" || !source) {
-        // For "All" tab, fetch from Google with pagination
-        try {
-          const googleResults = await searchWithSerper(query, undefined, 10, pageNum);
-          flatResults = googleResults.map((result) => ({
-            ...result,
-            source: "google",
-            sourceName: "Google",
-            favicon: `https://www.google.com/s2/favicons?domain=${new URL(result.link).hostname}&sz=32`,
-            views: Math.floor(Math.random() * 100000),
-            engagement: Math.floor(Math.random() * 10000),
-          }));
-          
-          // If we got exactly 10 results, there might be more
-          hasMoreResults = googleResults.length === 10;
-        } catch (error) {
-          console.error("Error fetching from Google:", error);
-        }
-        
-        sources = [{ id: "google", name: "Google", site: "google.com", icon: "Search" }];
-      } else {
-        // For specific platform tabs or other sources
-        if (source && source !== "all") {
-          const platformSource = Object.values(platformSources).find(p => p.id === source);
-          if (platformSource && platformSource.site) {
-            sources = [platformSource];
-          } else {
-            sources = sourceConfig[intent] || sourceConfig.general;
-          }
+      if (source && source !== "all") {
+        const platformSource = Object.values(platformSources).find(p => p.id === source);
+        if (platformSource && platformSource.site) {
+          sources = [platformSource];
         } else {
           sources = sourceConfig[intent] || sourceConfig.general;
         }
-
-        // Fetch results from selected sources with pagination
-        // Track per-source results to determine if more pages exist
-        const searchPromises = sources.map(async (src) => {
-          try {
-            const results = await searchWithSerper(query, src.site, 10, pageNum);
-            return {
-              source: src,
-              results: results.map((result) => ({
-                ...result,
-                source: src.id,
-                sourceName: src.name,
-                favicon: `https://www.google.com/s2/favicons?domain=${src.site}&sz=32`,
-                views: Math.floor(Math.random() * 100000),
-                engagement: Math.floor(Math.random() * 10000),
-              })),
-              hasMore: results.length === 10,
-            };
-          } catch (error) {
-            console.error(`Error fetching from ${src.name}:`, error);
-            return { source: src, results: [], hasMore: false };
-          }
-        });
-
-        const allResults = await Promise.all(searchPromises);
-        
-        // Flatten results
-        flatResults = allResults.flatMap(r => r.results);
-        
-        // Has more results if ANY source returned full page (10 items)
-        hasMoreResults = allResults.some(r => r.hasMore);
+      } else {
+        sources = sourceConfig[intent] || sourceConfig.general;
       }
+
+      // Fetch results from sources
+      const searchPromises = sources.map(async (src) => {
+        try {
+          const results = await searchWithSerper(query, src.site, 10);
+          return results.map((result, idx) => ({
+            ...result,
+            source: src.id,
+            sourceName: src.name,
+            favicon: `https://www.google.com/s2/favicons?domain=${src.site}&sz=32`,
+            views: Math.floor(Math.random() * 100000),
+            engagement: Math.floor(Math.random() * 10000),
+          }));
+        } catch (error) {
+          console.error(`Error fetching from ${src.name}:`, error);
+          return [];
+        }
+      });
+
+      const allResults = await Promise.all(searchPromises);
+      let flatResults: SearchResult[] = allResults.flat();
 
       // Sort results
       flatResults = sortResults(flatResults, sortBy);
-      
-      // For pagination info
-      const totalResults = flatResults.length;
-      const paginatedResults = flatResults;
 
-      // Generate AI summary for first page only and for "all" tab
+      // Pagination
+      const totalResults = flatResults.length;
+      const totalPages = Math.ceil(totalResults / limitNum);
+      const startIdx = (pageNum - 1) * limitNum;
+      const endIdx = startIdx + limitNum;
+      const paginatedResults = flatResults.slice(startIdx, endIdx);
+
+      // Generate AI summary for first page only
       let summary;
-      if (pageNum === 1 && paginatedResults.length > 0 && (source === "all" || !source)) {
+      if (pageNum === 1 && paginatedResults.length > 0) {
         try {
           summary = await generateSummary(query, paginatedResults, intent);
         } catch (error) {
@@ -209,24 +155,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Cache the results (10 minutes TTL)
-      cache.set(cacheKey, {
-        results: paginatedResults,
-        hasNext: hasMoreResults,
-        sources: sources || [],
-      }, 10 * 60 * 1000);
-
       const response: SearchResponse = {
         query,
         intent,
         results: paginatedResults,
         summary,
-        sources: sources || [],
+        sources,
         pagination: {
           currentPage: pageNum,
-          totalPages: pageNum + (hasMoreResults ? 1 : 0),
-          totalResults: totalResults,
-          hasNext: hasMoreResults,
+          totalPages,
+          totalResults,
+          hasNext: pageNum < totalPages,
           hasPrevious: pageNum > 1,
         },
       };
