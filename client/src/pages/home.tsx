@@ -1,50 +1,119 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
+import { Bookmark } from "lucide-react";
 import { SearchBar } from "@/components/search-bar";
+import { IntentSelector } from "@/components/intent-selector";
 import { DynamicTabs } from "@/components/dynamic-tabs";
+import { SortOptions } from "@/components/sort-options";
+import { Pagination } from "@/components/pagination";
+import { BookmarkHistory } from "@/components/bookmark-history";
 import { AISummaryCard } from "@/components/ai-summary";
 import { ResultCard } from "@/components/result-card";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { SearchingSkeleton } from "@/components/loading-skeleton";
-import type { SearchResponse } from "@shared/schema";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import type { SearchResponse, IntentType, SortOption } from "@shared/schema";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSource, setActiveSource] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState<SortOption>("relevance");
+  const [autoDetectIntent, setAutoDetectIntent] = useState(true);
+  const [manualIntent, setManualIntent] = useState<IntentType | undefined>(undefined);
+  const { toast } = useToast();
 
   const { data, isLoading, error, refetch } = useQuery<SearchResponse>({
-    queryKey: [`/api/search?query=${encodeURIComponent(searchQuery)}`],
+    queryKey: [
+      `/api/search?query=${encodeURIComponent(searchQuery)}&source=${activeSource}&page=${currentPage}&limit=20&sort=${sortBy}&autoDetect=${autoDetectIntent}${
+        !autoDetectIntent && manualIntent ? `&intent=${manualIntent}` : ""
+      }`,
+    ],
     enabled: !!searchQuery,
+  });
+
+  const bookmarkMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("POST", "/api/bookmarks", {
+        query: searchQuery,
+        results: data?.results,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Bookmark saved",
+        description: `"${searchQuery}" has been added to your bookmarks`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/bookmarks"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to save bookmark",
+        variant: "destructive",
+      });
+    },
   });
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
     setActiveSource("all");
+    setCurrentPage(1);
   };
 
   const handleSourceChange = (sourceId: string) => {
     setActiveSource(sourceId);
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleSortChange = (sort: SortOption) => {
+    setSortBy(sort);
+    setCurrentPage(1);
+  };
+
+  const handleIntentChange = (intent: IntentType | undefined) => {
+    setManualIntent(intent);
+    if (searchQuery) {
+      setCurrentPage(1);
+      refetch();
+    }
+  };
+
+  const handleAutoDetectChange = (enabled: boolean) => {
+    setAutoDetectIntent(enabled);
+    if (searchQuery) {
+      setCurrentPage(1);
+      refetch();
+    }
   };
 
   const handleRetry = () => {
     refetch();
   };
 
-  const filteredResults = data?.results.filter((result) => {
-    if (activeSource === "all") return true;
-    return result.source === activeSource;
-  }) || [];
+  const handleBookmarkClick = () => {
+    bookmarkMutation.mutate();
+  };
 
+  const filteredResults = data?.results || [];
   const currentSources = data?.sources || [];
   const hasSearched = searchQuery.length > 0;
+  const pagination = data?.pagination;
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-gradient-to-br from-primary to-ai-accent rounded-lg flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-lg">N</span>
@@ -52,6 +121,23 @@ export default function Home() {
             <h1 className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
               NovaSearch
             </h1>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <BookmarkHistory onSearchClick={handleSearch} />
+            {hasSearched && data && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={handleBookmarkClick}
+                disabled={bookmarkMutation.isPending}
+                data-testid="button-bookmark"
+              >
+                <Bookmark className="h-4 w-4" />
+                <span className="hidden sm:inline">Bookmark</span>
+              </Button>
+            )}
           </div>
         </div>
       </header>
@@ -64,15 +150,44 @@ export default function Home() {
             initialQuery={searchQuery}
             isSearching={isLoading}
           />
+
+          {/* Intent Selector */}
+          {!hasSearched && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="mt-8 max-w-3xl mx-auto"
+            >
+              <IntentSelector
+                selectedIntent={manualIntent}
+                onIntentChange={handleIntentChange}
+                autoDetect={autoDetectIntent}
+                onAutoDetectChange={handleAutoDetectChange}
+              />
+            </motion.div>
+          )}
+
+          {hasSearched && (
+            <div className="mt-4 max-w-3xl mx-auto">
+              <IntentSelector
+                selectedIntent={manualIntent}
+                onIntentChange={handleIntentChange}
+                autoDetect={autoDetectIntent}
+                onAutoDetectChange={handleAutoDetectChange}
+              />
+            </div>
+          )}
         </div>
       </div>
 
       {/* Dynamic Tabs */}
-      {hasSearched && currentSources.length > 0 && !isLoading && (
+      {hasSearched && !isLoading && (
         <DynamicTabs
           sources={currentSources}
           activeSource={activeSource}
           onSourceChange={handleSourceChange}
+          showPlatformTabs={!autoDetectIntent}
         />
       )}
 
@@ -92,31 +207,44 @@ export default function Home() {
         {hasSearched && !isLoading && !error && data && (
           <div className="space-y-6">
             {/* AI Summary */}
-            {data.summary && activeSource === "all" && (
+            {data.summary && activeSource === "all" && currentPage === 1 && (
               <AISummaryCard summary={data.summary} query={searchQuery} />
+            )}
+
+            {/* Sort Options */}
+            {filteredResults.length > 0 && (
+              <SortOptions
+                selectedSort={sortBy}
+                onSortChange={handleSortChange}
+                resultCount={pagination?.totalResults || filteredResults.length}
+              />
             )}
 
             {/* Results */}
             {filteredResults.length > 0 ? (
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">
-                    Found {filteredResults.length} result{filteredResults.length !== 1 ? 's' : ''}
-                    {activeSource !== "all" && ` from ${currentSources.find(s => s.id === activeSource)?.name || activeSource}`}
-                  </p>
-                </div>
-
                 <div className="grid gap-4" data-testid="results-container">
                   {filteredResults.map((result, index) => (
                     <ResultCard key={`${result.link}-${index}`} result={result} index={index} />
                   ))}
                 </div>
+
+                {/* Pagination */}
+                {pagination && pagination.totalPages > 1 && (
+                  <Pagination
+                    currentPage={pagination.currentPage}
+                    totalPages={pagination.totalPages}
+                    onPageChange={handlePageChange}
+                    hasNext={pagination.hasNext}
+                    hasPrevious={pagination.hasPrevious}
+                  />
+                )}
               </div>
             ) : (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">
                   No results found for "{searchQuery}"
-                  {activeSource !== "all" && ` from ${currentSources.find(s => s.id === activeSource)?.name || activeSource}`}
+                  {activeSource !== "all" && ` in ${activeSource}`}
                 </p>
               </div>
             )}
@@ -131,7 +259,7 @@ export default function Home() {
             <div className="space-y-3">
               <h3 className="font-semibold text-foreground">About NovaSearch</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Next-generation AI-powered search engine that understands your intent and delivers intelligent, multi-source results.
+                Next-generation AI-powered search engine with advanced features like pagination, bookmarks, history tracking, and intelligent result sorting.
               </p>
             </div>
             
@@ -140,8 +268,9 @@ export default function Home() {
               <ul className="text-sm text-muted-foreground space-y-1">
                 <li>AI Intent Detection</li>
                 <li>Multi-Source Search</li>
-                <li>Smart Summarization</li>
-                <li>Dynamic Filtering</li>
+                <li>Smart Sorting & Filtering</li>
+                <li>Bookmarks & History</li>
+                <li>Auto-complete Suggestions</li>
               </ul>
             </div>
             

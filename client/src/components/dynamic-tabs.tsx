@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Globe, LucideIcon } from "lucide-react";
+import { Globe, LucideIcon, Search, Twitter, Instagram, Music, MessageSquare, Youtube } from "lucide-react";
 import * as Icons from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -14,48 +14,64 @@ interface DynamicTabsProps {
   sources: TabSource[];
   activeSource: string;
   onSourceChange: (sourceId: string) => void;
+  showPlatformTabs?: boolean;
 }
 
-export function DynamicTabs({ sources, activeSource, onSourceChange }: DynamicTabsProps) {
+// Platform-specific tabs that are always shown
+const platformTabs = [
+  { id: "all", name: "All", icon: Globe },
+  { id: "google", name: "Google", icon: Search },
+  { id: "twitter", name: "Twitter", icon: Twitter },
+  { id: "instagram", name: "Instagram", icon: Instagram },
+  { id: "tiktok", name: "TikTok", icon: Music },
+  { id: "reddit", name: "Reddit", icon: MessageSquare },
+  { id: "youtube", name: "YouTube", icon: Youtube },
+];
+
+export function DynamicTabs({ sources, activeSource, onSourceChange, showPlatformTabs = false }: DynamicTabsProps) {
   const getIcon = (iconName: string): LucideIcon => {
     return (Icons as any)[iconName] || Globe;
   };
+
+  // Use platform tabs if enabled, otherwise show intent-based sources
+  const tabsToShow = showPlatformTabs ? platformTabs : [
+    { id: "all", name: "All Sources", icon: Globe },
+    ...sources.map(source => ({
+      id: source.id,
+      name: source.name,
+      icon: getIcon(source.icon),
+    }))
+  ];
 
   return (
     <div className="w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-16 z-40">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide py-3">
-          {/* All Sources Tab */}
-          <button
-            onClick={() => onSourceChange("all")}
-            className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-full font-medium text-sm whitespace-nowrap transition-all duration-200 hover-elevate active-elevate-2",
-              activeSource === "all"
-                ? "bg-primary text-primary-foreground"
-                : "bg-transparent text-muted-foreground"
-            )}
-            data-testid="tab-all"
-          >
-            <Globe className="h-4 w-4" />
-            <span>All Sources</span>
-          </button>
+          {tabsToShow.map((tab) => {
+            const Icon = typeof tab.icon === 'string' ? getIcon(tab.icon) : tab.icon;
+            const isActive = activeSource === tab.id;
 
-          {sources.map((source) => {
-            const Icon = getIcon(source.icon);
             return (
               <button
-                key={source.id}
-                onClick={() => onSourceChange(source.id)}
+                key={tab.id}
+                onClick={() => onSourceChange(tab.id)}
                 className={cn(
                   "relative flex items-center gap-2 px-4 py-2 rounded-full font-medium text-sm whitespace-nowrap transition-all duration-200 hover-elevate active-elevate-2",
-                  activeSource === source.id
+                  isActive
                     ? "bg-primary text-primary-foreground"
                     : "bg-transparent text-muted-foreground"
                 )}
-                data-testid={`tab-${source.id}`}
+                data-testid={`tab-${tab.id}`}
               >
                 <Icon className="h-4 w-4" />
-                <span>{source.name}</span>
+                <span>{tab.name}</span>
+                {isActive && (
+                  <motion.div
+                    layoutId="activeTab"
+                    className="absolute inset-0 bg-primary rounded-full -z-10"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
               </button>
             );
           })}
