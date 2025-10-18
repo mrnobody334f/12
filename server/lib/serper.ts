@@ -17,7 +17,7 @@ interface SerperResponse {
 export async function searchWithSerper(
   query: string, 
   site?: string, 
-  numResults: number = 50
+  numResults: number = 10
 ): Promise<SerperResult[]> {
   const apiKey = process.env.SERPER_API_KEY;
   
@@ -36,7 +36,7 @@ export async function searchWithSerper(
       },
       body: JSON.stringify({
         q: searchQuery,
-        num: numResults,
+        num: Math.min(numResults, 10), // Serper API supports max 10 results per request
       }),
     });
 

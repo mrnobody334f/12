@@ -114,10 +114,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sources = sourceConfig[intent] || sourceConfig.general;
       }
 
-      // Fetch more results for pagination
+      // Fetch results from sources
       const searchPromises = sources.map(async (src) => {
         try {
-          const results = await searchWithSerper(query, src.site, 50);
+          const results = await searchWithSerper(query, src.site, 10);
           return results.map((result, idx) => ({
             ...result,
             source: src.id,
