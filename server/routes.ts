@@ -105,15 +105,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Latitude and longitude are required" });
       }
 
-      console.log(`Reverse geocoding: ${latitude}, ${longitude}`);
+      console.log(`Reverse geocoding GPS coordinates: ${latitude}, ${longitude}`);
 
-      // Using BigDataCloud's free reverse geocoding API (no API key needed)
-      const endpoint = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`;
+      // Try Nominatim first (OpenStreetMap's geocoding - more accurate)
+      try {
+        const nominatimUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=en`;
+        
+        const nominatimResponse = await fetch(nominatimUrl, {
+          headers: {
+            'User-Agent': 'NovaSearch/1.0'
+          }
+        });
+        
+        if (nominatimResponse.ok) {
+          const nominatimData = await nominatimResponse.json();
+          
+          if (nominatimData.address) {
+            const result = {
+              country: nominatimData.address.country || '',
+              countryCode: (nominatimData.address.country_code || '').toLowerCase(),
+              city: nominatimData.address.city || 
+                    nominatimData.address.town || 
+                    nominatimData.address.village || 
+                    nominatimData.address.municipality || 
+                    nominatimData.address.state || ''
+            };
+            
+            console.log(`✓ Nominatim geocoded: ${result.city}, ${result.country} (${result.countryCode})`);
+            console.log(`Full address data:`, nominatimData.address);
+            
+            if (result.countryCode) {
+              return res.json(result);
+            }
+          }
+        }
+      } catch (nominatimError) {
+        console.log('Nominatim failed, trying BigDataCloud...', nominatimError);
+      }
+
+      // Fallback to BigDataCloud
+      const bigDataUrl = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`;
       
-      const response = await fetch(endpoint);
+      const response = await fetch(bigDataUrl);
       
       if (!response.ok) {
-        console.error(`Geocoding API returned status: ${response.status}`);
+        console.error(`BigDataCloud API returned status: ${response.status}`);
         return res.status(500).json({ error: "Failed to geocode location" });
       }
       
@@ -125,7 +161,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         city: data.city || data.locality || data.principalSubdivision || ''
       };
       
-      console.log(`Geocoded location: ${result.city}, ${result.country} (${result.countryCode})`);
+      console.log(`✓ BigDataCloud geocoded: ${result.city}, ${result.country} (${result.countryCode})`);
+      console.log(`Full data:`, data);
       
       res.json(result);
     } catch (error) {
