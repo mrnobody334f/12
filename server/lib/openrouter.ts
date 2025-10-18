@@ -50,11 +50,64 @@ async function callOpenRouter(messages: OpenRouterMessage[]): Promise<string> {
   }
 }
 
+// Fallback keyword-based intent detection
+function detectIntentByKeywords(query: string): IntentType {
+  const lowerQuery = query.toLowerCase();
+  
+  // Shopping keywords
+  const shoppingKeywords = [
+    'buy', 'purchase', 'shop', 'price', 'cost', 'cheap', 'deal', 'sale',
+    'discount', 'order', 'store', 'product', 'review', 'compare', 'best',
+    'اشتري', 'شراء', 'سعر', 'متجر', 'منتج', 'أفضل'
+  ];
+  
+  // News keywords
+  const newsKeywords = [
+    'news', 'latest', 'breaking', 'today', 'yesterday', 'update', 'report',
+    'headline', 'current', 'recent', 'أخبار', 'جديد', 'اليوم'
+  ];
+  
+  // Learning keywords
+  const learningKeywords = [
+    'how to', 'tutorial', 'learn', 'guide', 'course', 'education', 'study',
+    'what is', 'explain', 'definition', 'كيف', 'تعلم', 'شرح', 'دورة'
+  ];
+  
+  // Entertainment keywords
+  const entertainmentKeywords = [
+    'video', 'movie', 'music', 'song', 'watch', 'stream', 'episode', 'series',
+    'funny', 'meme', 'viral', 'trending', 'فيديو', 'فيلم', 'أغنية', 'مشاهدة'
+  ];
+  
+  // Check each category
+  if (shoppingKeywords.some(keyword => lowerQuery.includes(keyword))) {
+    return 'shopping';
+  }
+  
+  if (newsKeywords.some(keyword => lowerQuery.includes(keyword))) {
+    return 'news';
+  }
+  
+  if (learningKeywords.some(keyword => lowerQuery.includes(keyword))) {
+    return 'learning';
+  }
+  
+  if (entertainmentKeywords.some(keyword => lowerQuery.includes(keyword))) {
+    return 'entertainment';
+  }
+  
+  return 'general';
+}
+
 export async function detectIntent(query: string): Promise<IntentType> {
-  const messages: OpenRouterMessage[] = [
-    {
-      role: "system",
-      content: `You are an expert at understanding search intent. Classify the following search query into one of these categories:
+  // First try AI-based detection if API key is available and has credits
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  
+  if (apiKey) {
+    const messages: OpenRouterMessage[] = [
+      {
+        role: "system",
+        content: `You are an expert at understanding search intent. Classify the following search query into one of these categories:
 - shopping: User wants to buy or compare products
 - news: User wants current events or updates
 - learning: Educational or informational intent
@@ -62,28 +115,67 @@ export async function detectIntent(query: string): Promise<IntentType> {
 - general: Catch-all default for other queries
 
 Respond with ONLY the category name, nothing else.`,
-    },
-    {
-      role: "user",
-      content: `Classify this search query: "${query}"`,
-    },
-  ];
+      },
+      {
+        role: "user",
+        content: `Classify this search query: "${query}"`,
+      },
+    ];
 
-  try {
-    const response = await callOpenRouter(messages);
-    const intent = response.trim().toLowerCase() as IntentType;
-    
-    // Validate the intent
-    const validIntents: IntentType[] = ["shopping", "news", "learning", "entertainment", "general"];
-    if (validIntents.includes(intent)) {
-      return intent;
+    try {
+      const response = await callOpenRouter(messages);
+      const intent = response.trim().toLowerCase() as IntentType;
+      
+      // Validate the intent
+      const validIntents: IntentType[] = ["shopping", "news", "learning", "entertainment", "general"];
+      if (validIntents.includes(intent)) {
+        return intent;
+      }
+      
+      return "general";
+    } catch (error) {
+      console.error("AI intent detection failed, falling back to keyword-based detection:", error);
+      // Fall back to keyword-based detection
+      return detectIntentByKeywords(query);
     }
-    
-    return "general";
-  } catch (error) {
-    console.error("Intent detection error:", error);
-    return "general";
   }
+  
+  // If no API key, use keyword-based detection
+  return detectIntentByKeywords(query);
+}
+
+// Fallback summary generation without AI
+function generateBasicSummary(
+  query: string,
+  results: SearchResult[],
+  intent: IntentType
+): AISummary {
+  const topResults = results.slice(0, 3);
+  
+  const summaryTemplates: Record<IntentType, string> = {
+    shopping: `Found ${results.length} shopping results for "${query}". Compare prices and reviews to find the best deals.`,
+    news: `Latest news about "${query}". ${results.length} articles found from various sources.`,
+    learning: `Educational resources about "${query}". ${results.length} learning materials available.`,
+    entertainment: `Trending content about "${query}". ${results.length} entertainment results found.`,
+    general: `Found ${results.length} results for "${query}". Browse through the search results below.`,
+  };
+  
+  const recommendations = topResults.map((result, idx) => ({
+    title: result.title,
+    reason: `Top result from ${result.sourceName}`,
+  }));
+  
+  const suggestedQueries = [
+    `${query} 2025`,
+    `best ${query}`,
+    `${query} guide`,
+  ];
+  
+  return {
+    summary: summaryTemplates[intent],
+    recommendations,
+    suggestedQueries,
+  };
 }
 
 export async function generateSummary(
@@ -91,6 +183,13 @@ export async function generateSummary(
   results: SearchResult[],
   intent: IntentType
 ): Promise<AISummary> {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  
+  // If no API key or no results, use basic summary
+  if (!apiKey || results.length === 0) {
+    return generateBasicSummary(query, results, intent);
+  }
+  
   const resultsText = results
     .slice(0, 10)
     .map((r, i) => `${i + 1}. ${r.title}\n   ${r.snippet}\n   Source: ${r.source}`)
@@ -149,11 +248,8 @@ Respond in JSON format with this structure:
       suggestedQueries: [],
     };
   } catch (error) {
-    console.error("Summary generation error:", error);
-    return {
-      summary: "Unable to generate summary at this time.",
-      recommendations: [],
-      suggestedQueries: [],
-    };
+    console.error("AI summary generation failed, falling back to basic summary:", error);
+    // Fall back to basic summary
+    return generateBasicSummary(query, results, intent);
   }
 }
