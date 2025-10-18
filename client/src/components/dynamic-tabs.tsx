@@ -33,15 +33,8 @@ export function DynamicTabs({ sources, activeSource, onSourceChange, showPlatfor
     return (Icons as any)[iconName] || Globe;
   };
 
-  // Use platform tabs if enabled, otherwise show intent-based sources
-  const tabsToShow = showPlatformTabs ? platformTabs : [
-    { id: "all", name: "All Sources", icon: Globe },
-    ...sources.map(source => ({
-      id: source.id,
-      name: source.name,
-      icon: getIcon(source.icon),
-    }))
-  ];
+  // Always show platform tabs, they are the main navigation
+  const tabsToShow = platformTabs;
 
   return (
     <div className="w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-16 z-40">
