@@ -236,9 +236,22 @@ export function LocationSelector({
 
         {/* City Selector with Search */}
         <div className="space-y-2">
-          <Label htmlFor="city" className="text-xs text-muted-foreground">
-            City (optional)
-          </Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="city" className="text-xs text-muted-foreground">
+              City (optional)
+            </Label>
+            {city && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleCitySelect("")}
+                className="h-5 w-5"
+                data-testid="button-clear-city"
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
           <Popover open={cityOpen} onOpenChange={setCityOpen}>
             <PopoverTrigger asChild>
               <Button
