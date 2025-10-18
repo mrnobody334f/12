@@ -76,6 +76,12 @@ export function LocationSelector({
           });
         });
 
+        console.log('GPS coordinates received:', {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy
+        });
+
         // Reverse geocode the coordinates
         const response = await fetch('/api/location/geocode', {
           method: 'POST',
