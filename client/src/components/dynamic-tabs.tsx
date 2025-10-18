@@ -32,8 +32,9 @@ export function DynamicTabs({ sources, activeSource, onSourceChange, showPlatfor
     return (Icons as any)[iconName] || Globe;
   };
 
-  // Use platform tabs if enabled, otherwise show intent-based sources with Google
-  const tabsToShow = showPlatformTabs ? platformTabs : [
+  // Always show Google tab + intent-based sources
+  // Optionally add platform tabs when showPlatformTabs is true
+  const intentTabs = [
     { id: "all", name: "Google", icon: Search },
     ...sources.map(source => ({
       id: source.id,
@@ -41,6 +42,14 @@ export function DynamicTabs({ sources, activeSource, onSourceChange, showPlatfor
       icon: getIcon(source.icon),
     }))
   ];
+
+  // If showPlatformTabs, add the platform tabs (excluding Google since it's already there)
+  const tabsToShow = showPlatformTabs 
+    ? [
+        ...intentTabs,
+        ...platformTabs.filter(tab => tab.id !== "all") // Add platform tabs except Google
+      ]
+    : intentTabs;
 
   return (
     <div className="w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-16 z-40">
