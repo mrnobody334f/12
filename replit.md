@@ -24,7 +24,11 @@ To provide users with a next-generation search experience that:
     - Learning mode: Shows only educational sites from search results
     - Entertainment mode: Shows only entertainment/social sites from search results
   - **Location-Aware Tabs**: Tabs adapt based on selected country (e.g., SA shows Jarir, Noon; US shows Amazon, Walmart)
-  - **Intelligent Site Classification**: Added pattern matching to identify site types with exclude lists
+  - **Intelligent Site Classification**: Curated allow lists for major sites (100+ vetted domains) plus pattern matching fallback with exclude lists
+    - Shopping: Amazon, eBay, Walmart, Target, Noon, Jarir, and 20+ more
+    - News: CNN, BBC, Guardian, Atlantic, Forbes, Reuters, and 35+ more  
+    - Learning: Wikipedia, Stack Overflow, Medium, MIT, Stanford, and 25+ more
+    - Entertainment: YouTube, TikTok, Netflix, Spotify, Instagram, and 20+ more
   - **Auto-Detect Control**: Tabs only appear when auto-detect is enabled OR manual intent is selected
   - **More Tabs Feature**: Load additional domain tabs from next page of search results
   - **Cache Optimization**: Separate cache keys for each intent and location combination
