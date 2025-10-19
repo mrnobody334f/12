@@ -50,53 +50,113 @@ async function callOpenRouter(messages: OpenRouterMessage[]): Promise<string> {
   }
 }
 
-// Fallback keyword-based intent detection
+// Fallback keyword-based intent detection with multi-language support
 function detectIntentByKeywords(query: string): IntentType {
   const lowerQuery = query.toLowerCase();
   
   // Shopping keywords with weights (higher weight = more specific to shopping)
+  // Supports: English, Arabic, French, Spanish, German, Turkish, Persian, Hindi, Portuguese, Italian
   const shoppingPatterns = [
-    { pattern: /\b(buy|purchase|shop|order|shopping)\b/i, weight: 4 },
-    { pattern: /\b(price|cost|cheap|expensive|affordable|budget)\b/i, weight: 3.5 },
-    { pattern: /\b(deal|sale|discount|offer|coupon|promo)\b/i, weight: 3.5 },
-    { pattern: /\b(store|market|mall|retail|seller)\b/i, weight: 2.5 },
-    { pattern: /\b(product|item|merchandise|goods)\b/i, weight: 2.5 },
-    { pattern: /\b(review|compare|comparison|best|top rated|vs)\b/i, weight: 2 },
-    { pattern: /\b(online shopping|e-commerce|checkout|cart)\b/i, weight: 4 },
-    { pattern: /\b(اشتري|شراء|سعر|متجر|منتج|أفضل|تسوق|عروض)\b/i, weight: 4 }
+    // High priority - Direct purchase intent (English)
+    { pattern: /\b(buy|purchase|shop|order|shopping|buying)\b/i, weight: 5 },
+    // High priority - Direct purchase intent (Arabic)
+    { pattern: /(شراء|اشتري|شري|اشتريت|ابي اشتري|بشتري|نشتري)/i, weight: 5 },
+    // High priority - Direct purchase intent (Other languages)
+    { pattern: /\b(acheter|comprar|kaufen|satın al|خرید|خريد|खरीदें|compre|acquistare)\b/i, weight: 5 },
+    
+    // Price & cost (Multiple languages)
+    { pattern: /\b(price|cost|cheap|expensive|affordable|budget|pricing)\b/i, weight: 4 },
+    { pattern: /(سعر|اسعار|تكلفة|رخيص|غالي|ثمن|كم سعر)/i, weight: 4 },
+    { pattern: /\b(prix|precio|preis|fiyat|قیمت|मूल्य|preço|prezzo)\b/i, weight: 4 },
+    
+    // Deals & discounts
+    { pattern: /\b(deal|sale|discount|offer|coupon|promo|deals|sales)\b/i, weight: 4 },
+    { pattern: /(عرض|عروض|خصم|خصومات|تخفيض|تخفيضات|تنزيلات)/i, weight: 4 },
+    { pattern: /\b(offre|oferta|angebot|indirim|تخفیف|ऑफ़र|oferta|offerta)\b/i, weight: 4 },
+    
+    // Store & marketplace
+    { pattern: /\b(store|market|mall|retail|seller|marketplace|amazon|ebay)\b/i, weight: 3 },
+    { pattern: /(متجر|متاجر|سوق|محل|محلات|بائع|موقع)/i, weight: 3 },
+    { pattern: /\b(magasin|tienda|geschäft|mağaza|فروشگاه|दुकान|loja|negozio)\b/i, weight: 3 },
+    
+    // Product & items
+    { pattern: /\b(product|item|merchandise|goods|products|items)\b/i, weight: 3 },
+    { pattern: /(منتج|منتجات|سلعة|سلع|بضاعة|مواد)/i, weight: 3 },
+    { pattern: /\b(produit|producto|produkt|ürün|محصول|उत्पाद|produto|prodotto)\b/i, weight: 3 },
+    
+    // Reviews & comparisons
+    { pattern: /\b(review|compare|comparison|best|top rated|vs|reviews)\b/i, weight: 2.5 },
+    { pattern: /(مراجعة|مراجعات|تقييم|مقارنة|أفضل|الأفضل|احسن)/i, weight: 2.5 },
+    
+    // Online shopping specific
+    { pattern: /\b(online shopping|e-commerce|checkout|cart|add to cart)\b/i, weight: 5 },
+    { pattern: /(تسوق اونلاين|تسوق عبر الانترنت|شراء اونلاين)/i, weight: 5 },
+    
+    // Common shopping items (to catch queries like "احذيه", "shoes", etc.)
+    { pattern: /(حذاء|احذية|أحذية|حذية|شوز|احذيه)/i, weight: 3.5 },
+    { pattern: /(ملابس|لبس|ثياب|كلوثس|ثوب|قميص|بنطلون|فستان)/i, weight: 3.5 },
+    { pattern: /(هاتف|جوال|موبايل|تلفون|ايفون|سامسونج)/i, weight: 3.5 },
+    { pattern: /(لابتوب|كمبيوتر|حاسوب|لاب توب)/i, weight: 3.5 },
+    { pattern: /\b(shoes|clothing|clothes|shirt|pants|dress|phone|laptop|computer)\b/i, weight: 3.5 }
   ];
   
-  // News keywords
+  // News keywords - Multi-language
   const newsPatterns = [
-    { pattern: /\b(news|latest|breaking|headline|press)\b/i, weight: 4 },
-    { pattern: /\b(today|yesterday|this week|current events)\b/i, weight: 2.5 },
-    { pattern: /\b(update|updates|report|announce|announcement)\b/i, weight: 3 },
-    { pattern: /\b(recent|new|just|now|live)\b/i, weight: 2 },
-    { pattern: /\b(happening|event|incident|story)\b/i, weight: 2.5 },
-    { pattern: /\b(أخبار|جديد|اليوم|عاجل|آخر الأخبار)\b/i, weight: 4 }
+    // English
+    { pattern: /\b(news|latest|breaking|headline|press)\b/i, weight: 5 },
+    { pattern: /\b(today|yesterday|this week|current events)\b/i, weight: 3 },
+    { pattern: /\b(update|updates|report|announce|announcement)\b/i, weight: 3.5 },
+    { pattern: /\b(recent|just|now|live|happening)\b/i, weight: 2.5 },
+    
+    // Arabic
+    { pattern: /(أخبار|اخبار|خبر|جديد|عاجل|آخر الأخبار|الاخبار)/i, weight: 5 },
+    { pattern: /(اليوم|امس|الآن|حالياً|حاليا|مباشر)/i, weight: 3 },
+    { pattern: /(تحديث|تحديثات|تقرير|إعلان|اعلان)/i, weight: 3.5 },
+    
+    // Other languages
+    { pattern: /\b(nouvelles|actualités|noticias|nachrichten|haberler|اخبار|समाचार|notícias|notizie)\b/i, weight: 5 },
+    { pattern: /\b(dernier|último|neueste|son|آخرین|नवीनतम|último|ultimo)\b/i, weight: 3 }
   ];
   
-  // Learning keywords
+  // Learning keywords - Multi-language
   const learningPatterns = [
-    { pattern: /\b(how to|tutorial|guide|step by step)\b/i, weight: 4 },
-    { pattern: /\b(learn|learning|study|course|education)\b/i, weight: 3.5 },
-    { pattern: /\b(what is|what are|explain|definition|meaning)\b/i, weight: 3.5 },
-    { pattern: /\b(teach|teaching|training|lesson|class)\b/i, weight: 2.5 },
-    { pattern: /\b(why|how|when|where|understanding)\b/i, weight: 2 },
-    { pattern: /\b(documentation|docs|manual|reference)\b/i, weight: 2.5 },
-    { pattern: /\b(كيف|كيفية|تعلم|شرح|دورة|درس|تعليم)\b/i, weight: 4 }
+    // English
+    { pattern: /\b(how to|tutorial|guide|step by step)\b/i, weight: 5 },
+    { pattern: /\b(learn|learning|study|course|education)\b/i, weight: 4 },
+    { pattern: /\b(what is|what are|explain|definition|meaning)\b/i, weight: 4 },
+    { pattern: /\b(teach|teaching|training|lesson|class)\b/i, weight: 3 },
+    { pattern: /\b(documentation|docs|manual|reference)\b/i, weight: 3 },
+    
+    // Arabic
+    { pattern: /(كيف|كيفية|طريقة|كيف اسوي|ازاي)/i, weight: 5 },
+    { pattern: /(تعلم|تعليم|دراسة|دورة|تدريب|درس|دروس)/i, weight: 4 },
+    { pattern: /(ما هو|ما هي|شرح|توضيح|معنى|تعريف)/i, weight: 4 },
+    
+    // Other languages
+    { pattern: /\b(comment|cómo|wie|nasıl|چگونه|कैसे|como)\b/i, weight: 5 },
+    { pattern: /\b(apprendre|aprender|lernen|öğrenmek|یادگیری|सीखना|aprender|imparare)\b/i, weight: 4 }
   ];
   
-  // Entertainment keywords
+  // Entertainment keywords - Multi-language
   const entertainmentPatterns = [
-    { pattern: /\b(video|movie|film|cinema|movies)\b/i, weight: 3.5 },
-    { pattern: /\b(music|song|album|artist|singer)\b/i, weight: 3.5 },
-    { pattern: /\b(watch|stream|streaming|play|download)\b/i, weight: 2.5 },
-    { pattern: /\b(episode|series|show|season|tv)\b/i, weight: 3 },
-    { pattern: /\b(funny|comedy|meme|viral|trending)\b/i, weight: 2.5 },
-    { pattern: /\b(game|gaming|gameplay|gamer)\b/i, weight: 3 },
-    { pattern: /\b(entertainment|fun|enjoy)\b/i, weight: 2 },
-    { pattern: /\b(فيديو|فيلم|أغنية|مشاهدة|تحميل|ترفيه)\b/i, weight: 3.5 }
+    // English
+    { pattern: /\b(video|movie|film|cinema|movies)\b/i, weight: 4 },
+    { pattern: /\b(music|song|album|artist|singer)\b/i, weight: 4 },
+    { pattern: /\b(watch|stream|streaming|play|download)\b/i, weight: 3 },
+    { pattern: /\b(episode|series|show|season|tv)\b/i, weight: 3.5 },
+    { pattern: /\b(funny|comedy|meme|viral|trending)\b/i, weight: 3 },
+    { pattern: /\b(game|gaming|gameplay|gamer)\b/i, weight: 3.5 },
+    
+    // Arabic
+    { pattern: /(فيديو|فيديوهات|فلم|فيلم|افلام|أفلام|سينما)/i, weight: 4 },
+    { pattern: /(موسيقى|اغنية|أغنية|اغاني|أغاني|مغني|مطرب)/i, weight: 4 },
+    { pattern: /(مشاهدة|شاهد|تحميل|تنزيل|استماع)/i, weight: 3 },
+    { pattern: /(حلقة|حلقات|مسلسل|موسم|برنامج)/i, weight: 3.5 },
+    { pattern: /(مضحك|كوميدي|ترفيه|ترفيهي|لعبة|العاب|ألعاب)/i, weight: 3 },
+    
+    // Other languages
+    { pattern: /\b(vidéo|película|video|film|فیلم|वीडियो|vídeo)\b/i, weight: 4 },
+    { pattern: /\b(musique|música|musik|müzik|موسیقی|संगीत|música|musica)\b/i, weight: 4 }
   ];
   
   // Calculate scores for each intent
@@ -127,8 +187,18 @@ function detectIntentByKeywords(query: string): IntentType {
   // Find the highest scoring intent
   const maxScore = Math.max(scores.shopping, scores.news, scores.learning, scores.entertainment);
   
-  // Only return a specific intent if the score is significant enough
-  if (maxScore >= 2) {
+  // Log for debugging (can be removed in production)
+  console.log(`Intent detection for "${query}":`, {
+    shopping: scores.shopping,
+    news: scores.news,
+    learning: scores.learning,
+    entertainment: scores.entertainment,
+    maxScore,
+    detected: maxScore >= 1.5 ? 'specific intent' : 'general'
+  });
+  
+  // Lower threshold to 1.5 to be more sensitive to intent keywords
+  if (maxScore >= 1.5) {
     if (scores.shopping === maxScore) return 'shopping';
     if (scores.news === maxScore) return 'news';
     if (scores.learning === maxScore) return 'learning';
