@@ -153,18 +153,16 @@ export function LocationSelector({
           <Label className="text-sm font-medium">Search Location</Label>
         </div>
         <div className="flex items-center gap-2">
-          {(country || countryCode) && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleClearLocation}
-              className="gap-2"
-              data-testid="button-clear-location"
-            >
-              <X className="h-4 w-4" />
-              <span className="text-xs">Clear</span>
-            </Button>
-          )}
+          <Button
+            variant={displayCode === "global" ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleCountrySelect("global")}
+            className="gap-2"
+            data-testid="button-set-global"
+          >
+            <Globe2 className="h-4 w-4" />
+            <span className="text-xs">Global</span>
+          </Button>
           <Button
             variant="outline"
             size="sm"

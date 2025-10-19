@@ -5,6 +5,70 @@ import { detectIntent, generateSummary } from "./lib/openrouter";
 import { getPopularSites } from "./lib/popular-sites";
 import { cache } from "./lib/cache";
 import { storage } from "./storage";
+
+// Helper functions for global domain fallback
+function getGlobalDomain(localDomain: string): string | null {
+  const lowerDomain = localDomain.toLowerCase();
+  
+  // Specific mappings for known sites (same brand only)
+  const globalDomainMap: Record<string, string> = {
+    'amazon.sa': 'amazon.com',
+    'amazon.ae': 'amazon.com',
+    'amazon.eg': 'amazon.com',
+    'amazon.in': 'amazon.com',
+    'amazon.co.uk': 'amazon.com',
+    'noon.sa': 'noon.com',
+    'noon.ae': 'noon.com',
+    'noon.eg': 'noon.com',
+    'shein.sa': 'shein.com',
+    'shein.ae': 'shein.com',
+    'shein.eg': 'shein.com',
+    'jarir.sa': 'jarir.com',
+    'extra.sa': 'extra.com',
+    'carrefourksa.com': 'carrefour.com',
+    'carrefouruae.com': 'carrefour.com',
+    'carrefouregypt.com': 'carrefour.com',
+  };
+  
+  // Check explicit mapping first
+  if (globalDomainMap[lowerDomain]) {
+    return globalDomainMap[lowerDomain];
+  }
+  
+  // Try to infer global domain from localized domain
+  // Pattern: sitename.country_code -> sitename.com
+  const parts = lowerDomain.split('.');
+  if (parts.length >= 2) {
+    const baseName = parts[0]; // e.g., "amazon" from "amazon.sa"
+    const lastPart = parts[parts.length - 1]; // e.g., "sa" from "amazon.sa"
+    
+    // If it's a country code (2 letters) or country-specific domain, try .com
+    if (lastPart.length === 2 || ['co', 'ae', 'sa', 'eg', 'in'].includes(lastPart)) {
+      const globalDomain = `${baseName}.com`;
+      // Only return if it's different from the original domain
+      if (globalDomain !== lowerDomain) {
+        console.log(`🌍 Inferred global domain: ${lowerDomain} → ${globalDomain}`);
+        return globalDomain;
+      }
+    }
+  }
+  
+  // No global variant found
+  return null;
+}
+
+function getCountryLanguage(countryCode?: string): string {
+  const languageMap: Record<string, string> = {
+    'sa': 'ar', // Saudi Arabia - Arabic
+    'ae': 'ar', // UAE - Arabic
+    'eg': 'ar', // Egypt - Arabic
+    'gb': 'en', // UK - English
+    'us': 'en', // US - English
+    'in': 'en', // India - English
+  };
+  
+  return countryCode ? (languageMap[countryCode.toLowerCase()] || 'en') : 'en';
+}
 import { 
   sourceConfig, 
   platformSources,
@@ -337,8 +401,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // For other platforms (Twitter, Facebook, etc), use site: filter
             const siteFilter = (src.id === "google") ? undefined : src.site;
             
-            // Fetch results with pagination, location, and filters - pass to Serper API
-            const searchData = await searchWithSerper(
+            // First attempt: Fetch results with site filter
+            let searchData = await searchWithSerper(
               query, 
               siteFilter, 
               limitNum, 
@@ -350,6 +414,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
               fileTypeFilterValue
             );
             
+            // If no results and we're searching a specific site, try global domain
+            let effectiveSite = siteFilter;
+            if (siteFilter && searchData.results.length === 0) {
+              const globalDomain = getGlobalDomain(siteFilter);
+              if (globalDomain && globalDomain !== siteFilter) {
+                console.log(`🌍 No results from ${siteFilter}, trying global domain ${globalDomain}`);
+                
+                // Determine language: use country's language if available, otherwise use query language or default to English
+                let fallbackLanguage = 'en';
+                if (locationCountryCode) {
+                  fallbackLanguage = getCountryLanguage(locationCountryCode);
+                } else if (languageFilterValue && languageFilterValue !== 'any') {
+                  fallbackLanguage = languageFilterValue;
+                } else {
+                  // Detect language from query
+                  const detectedLang = query.match(/[\u0600-\u06FF]/) ? 'ar' : 'en';
+                  fallbackLanguage = detectedLang;
+                }
+                
+                console.log(`  Using language: ${fallbackLanguage}`);
+                
+                // Retry with global domain
+                const globalSearchData = await searchWithSerper(
+                  query,
+                  globalDomain,
+                  limitNum,
+                  pageNum,
+                  undefined, // No country code for global search
+                  undefined, // No city for global search
+                  timeFilterValue,
+                  fallbackLanguage, // Use appropriate language
+                  fileTypeFilterValue
+                );
+                
+                if (globalSearchData.results.length > 0) {
+                  console.log(`✅ Found ${globalSearchData.results.length} results from global ${globalDomain}`);
+                  searchData = globalSearchData;
+                  effectiveSite = globalDomain;
+                }
+              }
+            }
+            
             // Store corrected query and related searches from first source (usually Google)
             if (!correctedQuery && searchData.correctedQuery) {
               correctedQuery = searchData.correctedQuery;
@@ -360,7 +466,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             return searchData.results.map((result, idx) => {
               // Extract domain from the result link for better favicon and source name
-              let domain = src.site;
+              let domain = effectiveSite || src.site;
               let displayName = src.name;
               
               if (!siteFilter) {
@@ -399,6 +505,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const allResults = await Promise.all(searchPromises);
         flatResults = allResults.flat();
+        
+        // Note: No strict filtering needed here anymore because we're searching a specific site
+        // The site: filter in Serper API already ensures results come from the target site
+        // If we did a global fallback, those results are also from a valid global version of the site
+        
+        // Just log the result count for debugging
+        if (sourceStr && sourceStr !== "all" && sources.length === 1) {
+          console.log(`✅ Got ${flatResults.length} results from ${sources[0].name}`);
+        }
 
         // Sort results
         flatResults = sortResults(flatResults, sortBy);

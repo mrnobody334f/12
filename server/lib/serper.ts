@@ -298,6 +298,7 @@ export function extractDomainsFromResults(
   });
 }
 
+
 export async function searchWithSerper(
   query: string, 
   site?: string, 
