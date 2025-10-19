@@ -93,6 +93,75 @@ function detectLanguage(text: string): string {
   return 'en';
 }
 
+export function extractDomainFromUrl(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    let domain = urlObj.hostname;
+    
+    if (domain.startsWith('www.')) {
+      domain = domain.substring(4);
+    }
+    
+    return domain;
+  } catch (error) {
+    return '';
+  }
+}
+
+export function getDomainName(domain: string): string {
+  const parts = domain.split('.');
+  if (parts.length >= 2) {
+    return parts[parts.length - 2];
+  }
+  return domain;
+}
+
+export function extractDomainsFromResults(results: Array<{link: string, title: string}>): Array<{
+  id: string;
+  name: string;
+  site: string;
+  icon: string;
+}> {
+  const domainMap = new Map<string, {title: string, count: number}>();
+  
+  results.forEach((result) => {
+    const domain = extractDomainFromUrl(result.link);
+    if (domain && !domain.includes('google.') && !domain.includes('youtube.') && 
+        !domain.includes('twitter.') && !domain.includes('facebook.') && 
+        !domain.includes('instagram.') && !domain.includes('tiktok.') && 
+        !domain.includes('reddit.')) {
+      if (domainMap.has(domain)) {
+        const existing = domainMap.get(domain)!;
+        domainMap.set(domain, {
+          title: existing.title,
+          count: existing.count + 1
+        });
+      } else {
+        domainMap.set(domain, {
+          title: result.title,
+          count: 1
+        });
+      }
+    }
+  });
+  
+  const sortedDomains = Array.from(domainMap.entries())
+    .sort((a, b) => b[1].count - a[1].count)
+    .slice(0, 10);
+  
+  return sortedDomains.map(([domain, data]) => {
+    const domainName = getDomainName(domain);
+    const capitalizedName = domainName.charAt(0).toUpperCase() + domainName.slice(1);
+    
+    return {
+      id: domain.replace(/\./g, '-'),
+      name: capitalizedName,
+      site: domain,
+      icon: 'Globe'
+    };
+  });
+}
+
 export async function searchWithSerper(
   query: string, 
   site?: string, 
