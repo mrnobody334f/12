@@ -654,6 +654,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Fetch results from next page
+      // Note: We exclude city to get broader results and more domains
       try {
         const searchData = await searchWithSerper(
           query, 
@@ -661,7 +662,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           20, // Get more results
           pageNum, 
           locationCountryCode, 
-          locationCity
+          undefined // Don't use city for domain extraction - get broader results
         );
         
         // Extract domains from these results, filtered by intent
