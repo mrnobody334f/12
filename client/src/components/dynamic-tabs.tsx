@@ -22,7 +22,7 @@ interface DynamicTabsProps {
 }
 
 // Function to generate platform-specific search URLs
-function getPlatformSearchUrl(platformId: string, query: string): string {
+function getPlatformSearchUrl(platformId: string, query: string, site?: string): string {
   const encodedQuery = encodeURIComponent(query);
   
   const urlMap: Record<string, string> = {
@@ -33,9 +33,38 @@ function getPlatformSearchUrl(platformId: string, query: string): string {
     tiktok: `https://www.tiktok.com/search?q=${encodedQuery}`,
     reddit: `https://www.reddit.com/search/?q=${encodedQuery}`,
     youtube: `https://www.youtube.com/results?search_query=${encodedQuery}`,
+    // Shopping sites
+    amazon: `https://www.amazon.com/s?k=${encodedQuery}`,
+    ebay: `https://www.ebay.com/sch/i.html?_nkw=${encodedQuery}`,
+    walmart: `https://www.walmart.com/search?q=${encodedQuery}`,
+    aliexpress: `https://www.aliexpress.com/wholesale?SearchText=${encodedQuery}`,
+    bestbuy: `https://www.bestbuy.com/site/searchpage.jsp?st=${encodedQuery}`,
+    // News sites
+    cnn: `https://www.cnn.com/search?q=${encodedQuery}`,
+    bbc: `https://www.bbc.com/search?q=${encodedQuery}`,
+    reuters: `https://www.reuters.com/search/news?blob=${encodedQuery}`,
+    nytimes: `https://www.nytimes.com/search?query=${encodedQuery}`,
+    techcrunch: `https://search.techcrunch.com/search?p=${encodedQuery}`,
+    // Learning sites
+    wikipedia: `https://en.wikipedia.org/wiki/Special:Search?search=${encodedQuery}`,
+    medium: `https://medium.com/search?q=${encodedQuery}`,
+    stackoverflow: `https://stackoverflow.com/search?q=${encodedQuery}`,
+    // Entertainment sites
+    pinterest: `https://www.pinterest.com/search/pins/?q=${encodedQuery}`,
   };
   
-  return urlMap[platformId] || `https://www.google.com/search?q=${encodedQuery}`;
+  // If we have a specific URL mapping, use it
+  if (urlMap[platformId]) {
+    return urlMap[platformId];
+  }
+  
+  // Otherwise, if we have a site domain, use Google site search
+  if (site && site.trim()) {
+    return `https://www.google.com/search?q=site:${site}+${encodedQuery}`;
+  }
+  
+  // Default to Google search
+  return `https://www.google.com/search?q=${encodedQuery}`;
 }
 
 // Platform-specific tabs that are always shown
@@ -55,11 +84,12 @@ export function DynamicTabs({ sources, intentSources, activeSource, onSourceChan
     return (Icons as any)[iconName] || Globe;
   };
 
-  // Convert intent-based sources to tabs format
+  // Convert intent-based sources to tabs format (keep site info)
   const intentTabs = intentSources?.map(source => ({
     id: source.id,
     name: source.name,
     icon: getIcon(source.icon),
+    site: source.site,
   })) || [];
   
   const tabsToShow = platformTabs;
@@ -67,11 +97,12 @@ export function DynamicTabs({ sources, intentSources, activeSource, onSourceChan
 
   // Get active tab details (check both platform and intent tabs)
   const activeTab = allTabs.find(tab => tab.id === activeSource);
+  const activeSite = intentSources?.find(s => s.id === activeSource)?.site;
   const showOpenButton = searchQuery && activeSource !== "all" && activeTab;
 
   const handleOpenInNewTab = () => {
     if (searchQuery && activeSource) {
-      const url = getPlatformSearchUrl(activeSource, searchQuery);
+      const url = getPlatformSearchUrl(activeSource, searchQuery, activeSite);
       window.open(url, '_blank', 'noopener,noreferrer');
     }
   };
