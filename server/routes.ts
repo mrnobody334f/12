@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { searchWithSerper, getGoogleSuggestions } from "./lib/serper";
+import { searchWithSerper, getGoogleSuggestions, extractDomainsFromResults } from "./lib/serper";
 import { detectIntent, generateSummary } from "./lib/openrouter";
 import { cache } from "./lib/cache";
 import { storage } from "./storage";
@@ -266,25 +266,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let sources;
       let intentSpecificSources;
       
-      if (source && source !== "all") {
-        console.log(`🔍 Filtering by source: "${source}"`);
+      const sourceStr = source && typeof source === "string" ? source : undefined;
+      
+      if (sourceStr && sourceStr !== "all") {
+        console.log(`🔍 Filtering by source: "${sourceStr}"`);
         // First, check if it's a platform source (Google, Twitter, etc.)
-        const platformSource = Object.values(platformSources).find(p => p.id === source);
+        const platformSource = Object.values(platformSources).find(p => p.id === sourceStr);
         if (platformSource) {
           console.log(`✅ Found platform source: ${platformSource.name}`);
           sources = [platformSource];
         } else {
-          // If not a platform source, it might be an intent-specific source (Amazon, CNN, etc.)
-          // Search in the appropriate intent's sourceConfig
-          const intentSources = sourceConfig[intent] || sourceConfig.general;
-          const intentSource = intentSources.find(s => s.id === source);
-          if (intentSource) {
-            console.log(`✅ Found intent-specific source: ${intentSource.name} (${intentSource.site})`);
-            sources = [intentSource];
+          // Check if it's a dynamic domain tab (format: domain-com)
+          const isDynamicDomain = sourceStr.includes('-') && !Object.values(sourceConfig).flat().some(s => s.id === sourceStr);
+          
+          if (isDynamicDomain) {
+            // Convert id back to domain (e.g., "amazon-com" -> "amazon.com")
+            const domain = sourceStr.replace(/-/g, '.');
+            const domainName = domain.split('.')[0];
+            const capitalizedName = domainName.charAt(0).toUpperCase() + domainName.slice(1);
+            
+            console.log(`✅ Found dynamic domain tab: ${capitalizedName} (${domain})`);
+            sources = [{
+              id: sourceStr,
+              name: capitalizedName,
+              site: domain,
+              icon: 'Globe'
+            }];
           } else {
-            console.log(`⚠️ Source "${source}" not found, using all ${intent} sources`);
-            // Fallback: if source not found anywhere, use all sources for the intent
-            sources = intentSources;
+            // If not a platform source or dynamic domain, it might be a static source from sourceConfig
+            const intentSources = sourceConfig[intent] || sourceConfig.general;
+            const intentSource = intentSources.find(s => s.id === sourceStr);
+            if (intentSource) {
+              console.log(`✅ Found static source: ${intentSource.name} (${intentSource.site})`);
+              sources = [intentSource];
+            } else {
+              console.log(`⚠️ Source "${sourceStr}" not found, using all ${intent} sources`);
+              sources = intentSources;
+            }
           }
         }
         console.log(`📊 Using ${sources.length} source(s):`, sources.map(s => s.name).join(', '));
@@ -292,17 +310,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // For "All" tab, just use Google (no site filters)
         sources = [platformSources.google];
       }
-      
-      // Always send intent-specific sources for UI display
-      // Only include them if the intent is not "general"
-      if (intent !== "general") {
-        intentSpecificSources = sourceConfig[intent] || [];
-      }
 
       // Create cache key for this specific search (include location and filters in key)
       const locationKey = `${locationCountryCode || ''}:${locationCity || ''}`;
       const filterKey = `${timeFilterValue}:${languageFilterValue}:${fileTypeFilterValue}`;
-      const searchCacheKey = `search:${query}:${source || 'all'}:${pageNum}:${limitNum}:${sortBy}:${locationKey}:${filterKey}`;
+      const searchCacheKey = `search:${query}:${sourceStr || 'all'}:${pageNum}:${limitNum}:${sortBy}:${locationKey}:${filterKey}`;
       const cachedSearch = cache.get<SearchResult[]>(searchCacheKey);
       
       let flatResults: SearchResult[];
@@ -396,6 +408,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         if (relatedSearches) {
           cache.set(`${searchCacheKey}:relatedSearches`, relatedSearches, 5 * 60 * 1000);
+        }
+      }
+
+      // Extract dynamic domain tabs from results (for "All" tab only)
+      if (!sourceStr || sourceStr === "all") {
+        // Extract domains from the first 15 results to create dynamic tabs
+        const dynamicDomains = extractDomainsFromResults(flatResults.slice(0, 15));
+        intentSpecificSources = dynamicDomains;
+        
+        // Cache the dynamic domains for this query
+        const domainsCacheKey = `domains:${query}:${locationKey}`;
+        cache.set(domainsCacheKey, dynamicDomains, 10 * 60 * 1000); // Cache for 10 minutes
+        
+        console.log(`📋 Extracted ${dynamicDomains.length} dynamic domain tabs:`, dynamicDomains.map(d => d.name).join(', '));
+      } else {
+        // For filtered searches, try to get cached dynamic domains
+        const domainsCacheKey = `domains:${query}:${locationKey}`;
+        const cachedDomains = cache.get<typeof intentSpecificSources>(domainsCacheKey);
+        
+        if (cachedDomains) {
+          intentSpecificSources = cachedDomains;
         }
       }
 
