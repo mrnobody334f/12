@@ -110,6 +110,16 @@ export const aiSummarySchema = z.object({
 
 export type AISummary = z.infer<typeof aiSummarySchema>;
 
+// Search filters
+export const timeFilterOptions = ["any", "day", "week", "month", "year"] as const;
+export type TimeFilter = typeof timeFilterOptions[number];
+
+export const languageFilterOptions = ["any", "ar", "en", "fr", "es", "de"] as const;
+export type LanguageFilter = typeof languageFilterOptions[number];
+
+export const fileTypeFilterOptions = ["any", "pdf", "doc", "ppt", "xls"] as const;
+export type FileTypeFilter = typeof fileTypeFilterOptions[number];
+
 // Search request/response with pagination
 export const searchRequestSchema = z.object({
   query: z.string().min(1),
@@ -121,6 +131,9 @@ export const searchRequestSchema = z.object({
   country: z.string().optional(),
   countryCode: z.string().optional(),
   city: z.string().optional(),
+  timeFilter: z.enum(timeFilterOptions).optional(),
+  languageFilter: z.enum(languageFilterOptions).optional(),
+  fileTypeFilter: z.enum(fileTypeFilterOptions).optional(),
 });
 
 export type SearchRequest = z.infer<typeof searchRequestSchema>;
@@ -144,6 +157,8 @@ export const searchResponseSchema = z.object({
     hasPrevious: z.boolean(),
   }),
   location: locationSchema.optional(),
+  correctedQuery: z.string().optional(),
+  relatedSearches: z.array(z.string()).optional(),
 });
 
 export type SearchResponse = z.infer<typeof searchResponseSchema>;

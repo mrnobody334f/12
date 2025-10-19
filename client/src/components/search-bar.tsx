@@ -1,9 +1,10 @@
-import { Search, X, Clock, TrendingUp } from "lucide-react";
+import { Search, X, Clock, TrendingUp, Mic, MicOff, Keyboard } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import type { Suggestion } from "@shared/schema";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -14,7 +15,11 @@ interface SearchBarProps {
 export function SearchBar({ onSearch, initialQuery = "", isSearching = false }: SearchBarProps) {
   const [query, setQuery] = useState(initialQuery);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [isVoiceSupported, setIsVoiceSupported] = useState(false);
   const searchBarRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
+  const { toast } = useToast();
 
   const { data: suggestionsData } = useQuery<{ suggestions: Suggestion[] }>({
     queryKey: [`/api/suggestions?query=${encodeURIComponent(query)}`],
@@ -33,6 +38,52 @@ export function SearchBar({ onSearch, initialQuery = "", isSearching = false }: 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    // Check if Web Speech API is supported
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      setIsVoiceSupported(true);
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'ar-SA'; // Default to Arabic, can be changed
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setQuery(transcript);
+        setIsListening(false);
+        // Automatically search after voice input
+        onSearch(transcript);
+        toast({
+          title: "Voice detected",
+          description: `Searching for: "${transcript}"`,
+        });
+      };
+
+      recognition.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+        toast({
+          title: "Voice input error",
+          description: event.error === 'no-speech' ? 'No speech detected. Please try again.' : 'An error occurred. Please try again.',
+          variant: "destructive",
+        });
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
+    };
+  }, [onSearch, toast]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,6 +112,41 @@ export function SearchBar({ onSearch, initialQuery = "", isSearching = false }: 
   const handleInputFocus = () => {
     if (query.length > 1) {
       setShowSuggestions(true);
+    }
+  };
+
+  const handleVoiceSearch = async () => {
+    if (!isVoiceSupported || !recognitionRef.current) {
+      toast({
+        title: "Voice search not supported",
+        description: "Your browser doesn't support voice search. Please use a modern browser.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+      return;
+    }
+
+    try {
+      // Request microphone permission
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+      recognitionRef.current.start();
+      setIsListening(true);
+      toast({
+        title: "Listening...",
+        description: "Speak now to search",
+      });
+    } catch (error) {
+      console.error('Microphone permission error:', error);
+      toast({
+        title: "Microphone access denied",
+        description: "Please allow microphone access to use voice search.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -93,25 +179,45 @@ export function SearchBar({ onSearch, initialQuery = "", isSearching = false }: 
               autoComplete="off"
             />
             
-            {query && (
+            <div className="flex items-center gap-1 mr-2">
+              {query && (
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  className="p-2 rounded-full hover-elevate active-elevate-2 text-muted-foreground hover:text-foreground transition-colors"
+                  data-testid="button-clear-search"
+                  title="Clear search"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+              
+              {isVoiceSupported && (
+                <button
+                  type="button"
+                  onClick={handleVoiceSearch}
+                  className={cn(
+                    "p-2 rounded-full hover-elevate active-elevate-2 transition-colors",
+                    isListening 
+                      ? "text-primary bg-primary/10 animate-pulse" 
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                  data-testid="button-voice-search"
+                  title="Voice search"
+                >
+                  {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                </button>
+              )}
+
               <button
-                type="button"
-                onClick={handleClear}
-                className="mr-2 p-2 rounded-full hover-elevate active-elevate-2 text-muted-foreground hover:text-foreground transition-colors"
-                data-testid="button-clear-search"
+                type="submit"
+                disabled={!query.trim() || isSearching}
+                className="px-6 h-10 bg-primary text-primary-foreground rounded-xl font-medium hover-elevate active-elevate-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                data-testid="button-search"
               >
-                <X className="h-4 w-4" />
+                {isSearching ? "Searching..." : "Search"}
               </button>
-            )}
-            
-            <button
-              type="submit"
-              disabled={!query.trim() || isSearching}
-              className="mr-2 px-6 h-10 bg-primary text-primary-foreground rounded-xl font-medium hover-elevate active-elevate-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-              data-testid="button-search"
-            >
-              {isSearching ? "Searching..." : "Search"}
-            </button>
+            </div>
           </div>
         </div>
       </form>

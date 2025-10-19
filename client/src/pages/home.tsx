@@ -14,6 +14,9 @@ import { ResultCard } from "@/components/result-card";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { SearchingSkeleton } from "@/components/loading-skeleton";
+import { CorrectedQuery } from "@/components/corrected-query";
+import { RelatedSearches } from "@/components/related-searches";
+import { SearchTools, type TimeFilter, type LanguageFilter, type FileTypeFilter } from "@/components/search-tools";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -34,6 +37,9 @@ export default function Home() {
   const [city, setCity] = useState("");
   const [userLocation, setUserLocation] = useState<{country: string; countryCode: string; city: string} | null>(null);
   const [isManualLocation, setIsManualLocation] = useState(false);
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>("any");
+  const [languageFilter, setLanguageFilter] = useState<LanguageFilter>("any");
+  const [fileTypeFilter, setFileTypeFilter] = useState<FileTypeFilter>("any");
   const { toast} = useToast();
 
   const { data: detectedLocation } = useQuery<{country: string; countryCode: string; city: string}>({
@@ -50,11 +56,13 @@ export default function Home() {
     ? `&countryCode=${encodeURIComponent(effectiveCountryCode)}&country=${encodeURIComponent(effectiveCountry)}&city=${encodeURIComponent(effectiveCity)}`
     : "";
 
+  const filterParams = `&timeFilter=${timeFilter}&languageFilter=${languageFilter}&fileTypeFilter=${fileTypeFilter}`;
+
   const { data, isLoading, error, refetch } = useQuery<SearchResponse>({
     queryKey: [
       `/api/search?query=${encodeURIComponent(searchQuery)}&source=${activeSource}&page=${currentPage}&limit=20&sort=${sortBy}&autoDetect=${autoDetectIntent}${
         !autoDetectIntent && manualIntent ? `&intent=${manualIntent}` : ""
-      }${locationParams}`,
+      }${locationParams}${filterParams}`,
     ],
     enabled: !!searchQuery,
   });
@@ -144,6 +152,32 @@ export default function Home() {
 
   const handleBookmarkClick = () => {
     bookmarkMutation.mutate();
+  };
+
+  const handleTimeFilterChange = (filter: TimeFilter) => {
+    setTimeFilter(filter);
+    setCurrentPage(1);
+    setAccumulatedResults([]);
+  };
+
+  const handleLanguageFilterChange = (filter: LanguageFilter) => {
+    setLanguageFilter(filter);
+    setCurrentPage(1);
+    setAccumulatedResults([]);
+  };
+
+  const handleFileTypeFilterChange = (filter: FileTypeFilter) => {
+    setFileTypeFilter(filter);
+    setCurrentPage(1);
+    setAccumulatedResults([]);
+  };
+
+  const handleClearFilters = () => {
+    setTimeFilter("any");
+    setLanguageFilter("any");
+    setFileTypeFilter("any");
+    setCurrentPage(1);
+    setAccumulatedResults([]);
   };
 
   // Load cached results from localStorage on mount
@@ -328,6 +362,15 @@ export default function Home() {
 
         {hasSearched && !isLoading && !error && data && (
           <div className="space-y-6">
+            {/* Corrected Query - "Did you mean..." */}
+            {data.correctedQuery && data.correctedQuery !== searchQuery && (
+              <CorrectedQuery
+                originalQuery={searchQuery}
+                correctedQuery={data.correctedQuery}
+                onSearch={handleSearch}
+              />
+            )}
+
             {/* Location Display */}
             {data.location && (data.location.city || data.location.country) ? (
               <motion.div
@@ -363,13 +406,24 @@ export default function Home() {
               <AISummaryCard summary={data.summary} query={searchQuery} />
             )}
 
-            {/* Sort Options */}
+            {/* Search Tools and Sort Options */}
             {filteredResults.length > 0 && (
-              <SortOptions
-                selectedSort={sortBy}
-                onSortChange={handleSortChange}
-                resultCount={pagination?.totalResults || filteredResults.length}
-              />
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <SearchTools
+                  timeFilter={timeFilter}
+                  languageFilter={languageFilter}
+                  fileTypeFilter={fileTypeFilter}
+                  onTimeFilterChange={handleTimeFilterChange}
+                  onLanguageFilterChange={handleLanguageFilterChange}
+                  onFileTypeFilterChange={handleFileTypeFilterChange}
+                  onClearFilters={handleClearFilters}
+                />
+                <SortOptions
+                  selectedSort={sortBy}
+                  onSortChange={handleSortChange}
+                  resultCount={pagination?.totalResults || filteredResults.length}
+                />
+              </div>
             )}
 
             {/* Results */}
@@ -411,6 +465,14 @@ export default function Home() {
                       hasPrevious={pagination.hasPrevious}
                     />
                   </div>
+                )}
+
+                {/* Related Searches - "People also searched for" */}
+                {data.relatedSearches && data.relatedSearches.length > 0 && (
+                  <RelatedSearches
+                    searches={data.relatedSearches}
+                    onSearch={handleSearch}
+                  />
                 )}
               </div>
             ) : (

@@ -11,7 +11,47 @@ interface SerperResponse {
   organic?: SerperResult[];
   searchParameters?: {
     q: string;
+    correctedQuery?: string;
   };
+  relatedSearches?: Array<{
+    query: string;
+  }>;
+}
+
+export interface SerperSearchData {
+  results: SerperResult[];
+  correctedQuery?: string;
+  relatedSearches?: string[];
+}
+
+export async function getGoogleSuggestions(query: string): Promise<string[]> {
+  if (!query || query.trim().length === 0) {
+    return [];
+  }
+
+  try {
+    // Use Google's autocomplete API
+    const url = `http://suggestqueries.google.com/complete/search?client=firefox&q=${encodeURIComponent(query)}`;
+    
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      console.error(`Google suggestions API error: ${response.status}`);
+      return [];
+    }
+
+    const data = await response.json();
+    
+    // Google returns an array where the second element is the suggestions array
+    if (Array.isArray(data) && Array.isArray(data[1])) {
+      return data[1].slice(0, 8); // Return up to 8 suggestions
+    }
+    
+    return [];
+  } catch (error) {
+    console.error("Google suggestions error:", error);
+    return [];
+  }
 }
 
 function detectLanguage(text: string): string {
@@ -36,15 +76,18 @@ export async function searchWithSerper(
   numResults: number = 10,
   page: number = 1,
   countryCode?: string,
-  city?: string
-): Promise<SerperResult[]> {
+  city?: string,
+  timeFilter?: string,
+  languageFilter?: string,
+  fileTypeFilter?: string
+): Promise<SerperSearchData> {
   const apiKey = process.env.SERPER_API_KEY;
   
   if (!apiKey) {
     throw new Error("SERPER_API_KEY is not configured");
   }
 
-  // Build the search query with location if provided
+  // Build the search query with location and filters
   let enhancedQuery = query;
   
   // Add city to query for better local results
@@ -53,6 +96,12 @@ export async function searchWithSerper(
     const locationKeyword = detectedLanguage === 'ar' ? 'في' : 'in';
     enhancedQuery = `${query} ${locationKeyword} ${city}`;
     console.log(`Enhanced query with city: "${query}" → "${enhancedQuery}"`);
+  }
+  
+  // Add file type filter to query if specified
+  if (fileTypeFilter && fileTypeFilter !== 'any') {
+    enhancedQuery = `${enhancedQuery} filetype:${fileTypeFilter}`;
+    console.log(`Added file type filter: ${fileTypeFilter}`);
   }
   
   // Don't use site filter if site is undefined or empty - get real Google results
@@ -67,12 +116,25 @@ export async function searchWithSerper(
       num: Math.min(numResults, 100), // Serper supports up to 100 results
       autocorrect: true,
       page: page,
-      hl: detectedLanguage,
+      hl: languageFilter && languageFilter !== 'any' ? languageFilter : detectedLanguage,
     };
 
     // Add country code only if provided (no default fallback, no city)
     if (countryCode && countryCode.toLowerCase() !== 'global' && /^[a-z]{2}$/i.test(countryCode)) {
       requestBody.gl = countryCode.toLowerCase();
+    }
+    
+    // Add time filter if specified
+    if (timeFilter && timeFilter !== 'any') {
+      const timeRanges: { [key: string]: string } = {
+        'day': 'd',    // past day
+        'week': 'w',   // past week
+        'month': 'm',  // past month
+        'year': 'y',   // past year
+      };
+      if (timeRanges[timeFilter]) {
+        requestBody.tbs = `qdr:${timeRanges[timeFilter]}`;
+      }
     }
     
     const response = await fetch("https://google.serper.dev/search", {
@@ -97,14 +159,30 @@ export async function searchWithSerper(
       console.log(`First result: ${data.organic[0].title} - ${data.organic[0].link}`);
     }
     
-    return (data.organic || []).map((result) => ({
-      title: result.title,
-      link: result.link,
-      snippet: result.snippet,
-      position: result.position,
-      thumbnail: result.thumbnail,
-      date: result.date,
-    }));
+    // Extract corrected query if available
+    const correctedQuery = data.searchParameters?.correctedQuery;
+    if (correctedQuery && correctedQuery !== query) {
+      console.log(`Serper suggested correction: "${query}" → "${correctedQuery}"`);
+    }
+    
+    // Extract related searches
+    const relatedSearches = (data.relatedSearches || []).map(rs => rs.query);
+    if (relatedSearches.length > 0) {
+      console.log(`Related searches found: ${relatedSearches.length}`);
+    }
+    
+    return {
+      results: (data.organic || []).map((result) => ({
+        title: result.title,
+        link: result.link,
+        snippet: result.snippet,
+        position: result.position,
+        thumbnail: result.thumbnail,
+        date: result.date,
+      })),
+      correctedQuery,
+      relatedSearches,
+    };
   } catch (error) {
     console.error("Serper search error:", error);
     throw error;

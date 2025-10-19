@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { searchWithSerper } from "./lib/serper";
+import { searchWithSerper, getGoogleSuggestions } from "./lib/serper";
 import { detectIntent, generateSummary } from "./lib/openrouter";
 import { cache } from "./lib/cache";
 import { storage } from "./storage";
@@ -210,6 +210,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         country,
         countryCode,
         city,
+        timeFilter = "any",
+        languageFilter = "any",
+        fileTypeFilter = "any",
       } = req.query;
 
       if (!query || typeof query !== "string") {
@@ -225,6 +228,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const locationCountry = country && typeof country === "string" ? country : undefined;
       const locationCountryCode = countryCode && typeof countryCode === "string" ? countryCode : undefined;
       const locationCity = city && typeof city === "string" ? city : undefined;
+      
+      // Extract filter parameters
+      const timeFilterValue = timeFilter && typeof timeFilter === "string" ? timeFilter : "any";
+      const languageFilterValue = languageFilter && typeof languageFilter === "string" ? languageFilter : "any";
+      const fileTypeFilterValue = fileTypeFilter && typeof fileTypeFilter === "string" ? fileTypeFilter : "any";
 
       // Detect or use provided intent
       let intent: IntentType = "general";
@@ -269,16 +277,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sources = [platformSources.google];
       }
 
-      // Create cache key for this specific search (include location in key)
+      // Create cache key for this specific search (include location and filters in key)
       const locationKey = `${locationCountryCode || ''}:${locationCity || ''}`;
-      const searchCacheKey = `search:${query}:${source || 'all'}:${pageNum}:${limitNum}:${sortBy}:${locationKey}`;
+      const filterKey = `${timeFilterValue}:${languageFilterValue}:${fileTypeFilterValue}`;
+      const searchCacheKey = `search:${query}:${source || 'all'}:${pageNum}:${limitNum}:${sortBy}:${locationKey}:${filterKey}`;
       const cachedSearch = cache.get<SearchResult[]>(searchCacheKey);
       
       let flatResults: SearchResult[];
+      let correctedQuery: string | undefined;
+      let relatedSearches: string[] | undefined;
       
       if (cachedSearch) {
         console.log(`Using cached results for page ${pageNum}`);
         flatResults = cachedSearch;
+        // Get corrected query and related searches from cache
+        correctedQuery = cache.get<string>(`${searchCacheKey}:correctedQuery`) || undefined;
+        relatedSearches = cache.get<string[]>(`${searchCacheKey}:relatedSearches`) || undefined;
       } else {
         // Fetch results from sources for this specific page
         const searchPromises = sources.map(async (src) => {
@@ -287,10 +301,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // For other platforms (Twitter, Facebook, etc), use site: filter
             const siteFilter = (src.id === "google") ? undefined : src.site;
             
-            // Fetch results with pagination and location - pass page number and location to Serper API
-            const results = await searchWithSerper(query, siteFilter, limitNum, pageNum, locationCountryCode, locationCity);
+            // Fetch results with pagination, location, and filters - pass to Serper API
+            const searchData = await searchWithSerper(
+              query, 
+              siteFilter, 
+              limitNum, 
+              pageNum, 
+              locationCountryCode, 
+              locationCity,
+              timeFilterValue,
+              languageFilterValue,
+              fileTypeFilterValue
+            );
             
-            return results.map((result, idx) => {
+            // Store corrected query and related searches from first source (usually Google)
+            if (!correctedQuery && searchData.correctedQuery) {
+              correctedQuery = searchData.correctedQuery;
+            }
+            if (!relatedSearches && searchData.relatedSearches && searchData.relatedSearches.length > 0) {
+              relatedSearches = searchData.relatedSearches;
+            }
+            
+            return searchData.results.map((result, idx) => {
               // Extract domain from the result link for better favicon and source name
               let domain = src.site;
               let displayName = src.name;
@@ -329,8 +361,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Sort results
         flatResults = sortResults(flatResults, sortBy);
         
-        // Cache the results for 5 minutes
+        // Cache the results and metadata for 5 minutes
         cache.set(searchCacheKey, flatResults, 5 * 60 * 1000);
+        if (correctedQuery) {
+          cache.set(`${searchCacheKey}:correctedQuery`, correctedQuery, 5 * 60 * 1000);
+        }
+        if (relatedSearches) {
+          cache.set(`${searchCacheKey}:relatedSearches`, relatedSearches, 5 * 60 * 1000);
+        }
       }
 
       // Calculate pagination metadata
@@ -367,6 +405,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           countryCode: locationCountryCode,
           city: locationCity,
         } : undefined,
+        correctedQuery,
+        relatedSearches,
       };
 
       res.json(response);
@@ -378,41 +418,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Autocomplete/Suggestions endpoint
   app.get("/api/suggestions", async (req, res) => {
+    const { query } = req.query;
+
+    if (!query || typeof query !== "string" || query.trim().length === 0) {
+      return res.json({ suggestions: [] });
+    }
+
     try {
-      const { query } = req.query;
-
-      if (!query || typeof query !== "string") {
-        return res.json({ suggestions: [] });
-      }
-
-      // Get recent searches matching the query
+      // Get suggestions from Google Autocomplete API
+      const googleSuggestions = await getGoogleSuggestions(query);
+      
+      // Get recent searches matching the query for additional context
       const history = storage.getSearchHistory(20);
       const historySuggestions = history
-        .filter(h => h.query.toLowerCase().includes(query.toLowerCase()))
-        .slice(0, 5)
+        .filter(h => 
+          h.query.toLowerCase().includes(query.toLowerCase()) &&
+          !googleSuggestions.some(gs => gs.toLowerCase() === h.query.toLowerCase())
+        )
+        .slice(0, 3)
         .map(h => ({
           query: h.query,
           type: "history" as const,
         }));
 
-      // Popular trending suggestions (could be enhanced with real trending data)
-      const trendingSuggestions = [
-        `${query} 2025`,
-        `${query} news`,
-        `${query} tutorial`,
-        `${query} reviews`,
-        `best ${query}`,
-      ].map(q => ({
+      // Map Google suggestions to our format
+      const apiSuggestions = googleSuggestions.map(q => ({
         query: q,
         type: "suggestion" as const,
       }));
 
-      const allSuggestions = [...historySuggestions, ...trendingSuggestions].slice(0, 8);
+      // Combine: prioritize Google suggestions, then add unique history items
+      const allSuggestions = [...apiSuggestions, ...historySuggestions].slice(0, 8);
 
       res.json({ suggestions: allSuggestions });
     } catch (error) {
       console.error("Suggestions error:", error);
-      res.status(500).json({ error: "Failed to get suggestions" });
+      // Fallback to basic suggestions on error
+      const fallbackSuggestions = [
+        `${query} 2025`,
+        `${query} news`,
+        `${query} tutorial`,
+      ].map(q => ({
+        query: q,
+        type: "suggestion" as const,
+      }));
+      res.json({ suggestions: fallbackSuggestions });
     }
   });
 
