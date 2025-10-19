@@ -478,6 +478,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // More tabs endpoint - fetch additional domain tabs from next page of results
+  app.get("/api/more-tabs", async (req, res) => {
+    try {
+      const { 
+        query, 
+        page = "2",
+        countryCode,
+        city,
+      } = req.query;
+
+      if (!query || typeof query !== "string") {
+        return res.status(400).json({ error: "Query parameter is required" });
+      }
+
+      const pageNum = parseInt(page as string, 10);
+      const locationCountryCode = countryCode && typeof countryCode === "string" ? countryCode : undefined;
+      const locationCity = city && typeof city === "string" ? city : undefined;
+      const locationKey = `${locationCountryCode || ''}:${locationCity || ''}`;
+      
+      // Check if we have cached domains for this page
+      const domainsCacheKey = `domains:${query}:${locationKey}:page${pageNum}`;
+      const cachedDomains = cache.get<Array<{id: string, name: string, site: string, icon: string}>>(domainsCacheKey);
+      
+      if (cachedDomains) {
+        console.log(`Using cached more-tabs for page ${pageNum}`);
+        return res.json({ domains: cachedDomains });
+      }
+      
+      // Fetch results from next page
+      try {
+        const searchData = await searchWithSerper(
+          query, 
+          undefined, // No site filter - get real Google results
+          20, // Get more results
+          pageNum, 
+          locationCountryCode, 
+          locationCity
+        );
+        
+        // Extract domains from these results
+        const dynamicDomains = extractDomainsFromResults(searchData.results);
+        
+        // Cache the domains for 10 minutes
+        cache.set(domainsCacheKey, dynamicDomains, 10 * 60 * 1000);
+        
+        console.log(`📋 Extracted ${dynamicDomains.length} more domain tabs from page ${pageNum}:`, dynamicDomains.map(d => d.name).join(', '));
+        
+        res.json({ domains: dynamicDomains });
+      } catch (error) {
+        console.error("Error fetching more tabs:", error);
+        res.status(500).json({ error: "Failed to fetch more tabs" });
+      }
+    } catch (error) {
+      console.error("More tabs error:", error);
+      res.status(500).json({ error: "Failed to get more tabs" });
+    }
+  });
+
   // Autocomplete/Suggestions endpoint
   app.get("/api/suggestions", async (req, res) => {
     const { query } = req.query;
