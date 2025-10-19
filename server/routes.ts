@@ -550,6 +550,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const domainsCacheKey = `domains:${query}:${intent}:${locationKey}`;
         cache.set(domainsCacheKey, dynamicDomains, 10 * 60 * 1000); // Cache for 10 minutes
         
+        // ALSO cache these domains as popular sites for this country+intent (24 hour cache)
+        if (locationCountryCode && dynamicDomains.length > 0) {
+          const popularSitesCacheKey = `popular-sites:${locationCountryCode}:${intent}`;
+          // Only cache if we don't already have popular sites cached for this combination
+          const existingPopularSites = cache.get(popularSitesCacheKey);
+          if (!existingPopularSites) {
+            // Take the top 10 domains
+            const topDomains = dynamicDomains.slice(0, 10);
+            cache.set(popularSitesCacheKey, topDomains, 24 * 60 * 60 * 1000); // 24 hours
+            console.log(`💾 Cached ${topDomains.length} popular sites for ${locationCountryCode}/${intent} (24h):`, topDomains.map(d => d.name).join(', '));
+          }
+        }
+        
         console.log(`📋 Extracted ${dynamicDomains.length} ${intent} domain tabs:`, dynamicDomains.map(d => d.name).join(', '));
       } else if (shouldShowIntentTabs && intent !== "general") {
         // For filtered searches, try to get cached dynamic domains
