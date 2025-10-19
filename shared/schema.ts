@@ -71,7 +71,7 @@ export const sourceConfig = {
   ],
 };
 
-// Search result schema with enhanced metadata
+// Search result schema with enhanced metadata and rich snippets
 export const searchResultSchema = z.object({
   title: z.string(),
   link: z.string().url(),
@@ -80,10 +80,18 @@ export const searchResultSchema = z.object({
   sourceName: z.string().optional(),
   favicon: z.string().optional(),
   thumbnail: z.string().optional(),
+  image: z.string().optional(), // Main image for rich snippet
   position: z.number().optional(),
   date: z.string().optional(),
   views: z.number().optional(),
   engagement: z.number().optional(),
+  rating: z.number().optional(), // Rating value (e.g., 4.5)
+  ratingCount: z.number().optional(), // Number of ratings
+  price: z.string().optional(), // Price for shopping results
+  sitelinks: z.array(z.object({
+    title: z.string(),
+    link: z.string(),
+  })).optional(), // Additional links under the main result
 });
 
 export type SearchResult = z.infer<typeof searchResultSchema>;

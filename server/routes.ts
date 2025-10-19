@@ -347,6 +347,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 favicon: `https://www.google.com/s2/favicons?domain=${domain}&sz=32`,
                 views: Math.floor(Math.random() * 100000),
                 engagement: Math.floor(Math.random() * 10000),
+                // Pass through rich snippet data from Serper
+                rating: result.rating,
+                ratingCount: result.ratingCount,
+                price: result.price,
+                sitelinks: result.sitelinks,
+                image: result.image,
               };
             });
           } catch (error) {

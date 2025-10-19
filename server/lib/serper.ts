@@ -4,7 +4,15 @@ interface SerperResult {
   snippet: string;
   position?: number;
   thumbnail?: string;
+  imageUrl?: string;
   date?: string;
+  rating?: number;
+  ratingCount?: number;
+  price?: string;
+  sitelinks?: Array<{
+    title: string;
+    link: string;
+  }>;
 }
 
 interface SerperResponse {
@@ -19,7 +27,22 @@ interface SerperResponse {
 }
 
 export interface SerperSearchData {
-  results: SerperResult[];
+  results: Array<{
+    title: string;
+    link: string;
+    snippet: string;
+    position?: number;
+    thumbnail?: string;
+    image?: string;
+    date?: string;
+    rating?: number;
+    ratingCount?: number;
+    price?: string;
+    sitelinks?: Array<{
+      title: string;
+      link: string;
+    }>;
+  }>;
   correctedQuery?: string;
   relatedSearches?: string[];
 }
@@ -178,7 +201,12 @@ export async function searchWithSerper(
         snippet: result.snippet,
         position: result.position,
         thumbnail: result.thumbnail,
+        image: result.imageUrl || result.thumbnail,
         date: result.date,
+        rating: result.rating,
+        ratingCount: result.ratingCount,
+        price: result.price,
+        sitelinks: result.sitelinks,
       })),
       correctedQuery,
       relatedSearches,
