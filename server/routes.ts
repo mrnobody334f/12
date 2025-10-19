@@ -264,6 +264,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Determine sources based on filter or intent
       let sources;
+      let intentSpecificSources;
       
       if (source && source !== "all") {
         const platformSource = Object.values(platformSources).find(p => p.id === source);
@@ -275,6 +276,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         // For "All" tab, just use Google (no site filters)
         sources = [platformSources.google];
+      }
+      
+      // Always send intent-specific sources for UI display
+      // Only include them if the intent is not "general"
+      if (intent !== "general") {
+        intentSpecificSources = sourceConfig[intent] || [];
       }
 
       // Create cache key for this specific search (include location and filters in key)
@@ -399,6 +406,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         results: paginatedResults,
         summary,
         sources,
+        intentSources: intentSpecificSources,
         pagination: {
           currentPage: pageNum,
           totalPages,

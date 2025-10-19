@@ -237,6 +237,8 @@ export default function Home() {
 
   const filteredResults = accumulatedResults.length > 0 ? accumulatedResults : (data?.results || []);
   const currentSources = data?.sources || [];
+  const intentSources = data?.intentSources || [];
+  const detectedIntent = data?.intent;
   const hasSearched = searchQuery.length > 0;
   const pagination = data?.pagination;
 
@@ -340,9 +342,11 @@ export default function Home() {
       {hasSearched && !isLoading && (
         <DynamicTabs
           sources={currentSources}
+          intentSources={intentSources}
           activeSource={activeSource}
           onSourceChange={handleSourceChange}
           searchQuery={searchQuery}
+          detectedIntent={detectedIntent}
           showPlatformTabs={true}
         />
       )}

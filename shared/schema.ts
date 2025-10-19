@@ -157,6 +157,12 @@ export const searchResponseSchema = z.object({
     site: z.string(),
     icon: z.string(),
   })),
+  intentSources: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    site: z.string(),
+    icon: z.string(),
+  })).optional(),
   pagination: z.object({
     currentPage: z.number(),
     totalPages: z.number(),
