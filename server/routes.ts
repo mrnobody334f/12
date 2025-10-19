@@ -702,9 +702,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const country = typeof countryCode === "string" ? countryCode : undefined;
       const globalMode = isGlobal === "true";
 
-      const sites = getPopularSites(country, intent, globalMode);
+      let sites;
 
-      console.log(`🌍 Popular sites for ${globalMode ? 'global' : country} / ${intent}:`, sites.map(s => s.name).join(', '));
+      // For non-general intents and non-global mode, try cache first
+      if (!globalMode && country && intent !== "general") {
+        const popularSitesCacheKey = `popular-sites:${country}:${intent}`;
+        const cachedSites = cache.get<Array<{id: string, name: string, site: string, icon: string}>>(popularSitesCacheKey);
+        
+        if (cachedSites && cachedSites.length > 0) {
+          sites = cachedSites;
+          console.log(`✅ Using cached popular sites for ${country}/${intent}:`, sites.map(s => s.name).join(', '));
+        }
+      }
+
+      // If no cached sites, fallback to global sites
+      if (!sites) {
+        sites = getPopularSites(country, intent, globalMode);
+        console.log(`🌍 Using global popular sites for ${globalMode ? 'global' : country || 'unknown'} / ${intent}:`, sites.map(s => s.name).join(', '));
+      }
 
       res.json({ sites });
     } catch (error) {
