@@ -1,9 +1,11 @@
 import { motion } from "framer-motion";
-import { Globe, LucideIcon, Search, Twitter, Facebook, Instagram, Music, MessageSquare, Youtube, ExternalLink, Plus, ChevronLeft } from "lucide-react";
+import { Globe, LucideIcon, Search, Twitter, Facebook, Instagram, Music, MessageSquare, Youtube, ExternalLink, Plus, ChevronLeft, Globe2 } from "lucide-react";
 import * as Icons from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 interface TabSource {
   id: string;
@@ -87,6 +89,14 @@ export function DynamicTabs({ sources, intentSources, activeSource, onSourceChan
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showingMore, setShowingMore] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isGlobalMode, setIsGlobalMode] = useState(false);
+  
+  // Fetch popular sites based on country and intent
+  const countryParam = location?.countryCode && location.countryCode !== 'global' ? location.countryCode : '';
+  const { data: popularSitesData } = useQuery<{ sites: TabSource[] }>({
+    queryKey: [`/api/popular-sites?intent=${detectedIntent}&countryCode=${countryParam}&isGlobal=${isGlobalMode}`],
+    enabled: !!detectedIntent && detectedIntent !== 'general',
+  });
   
   const getIcon = (iconName: string): LucideIcon => {
     return (Icons as any)[iconName] || Globe;
@@ -112,13 +122,23 @@ export function DynamicTabs({ sources, intentSources, activeSource, onSourceChan
     setShowingMore(false);
   };
 
-  // Convert intent-based sources to tabs format (keep site info)
-  const baseIntentTabs = intentSources?.map(source => ({
-    id: source.id,
-    name: source.name,
-    icon: getIcon(source.icon),
-    site: source.site,
-  })) || [];
+  // Use popular sites from API if available, otherwise fall back to old intentSources
+  const popularSites = popularSitesData?.sites || [];
+  
+  // Convert popular sites to tabs format
+  const baseIntentTabs = popularSites.length > 0 
+    ? popularSites.map(source => ({
+        id: source.id,
+        name: source.name,
+        icon: getIcon(source.icon),
+        site: source.site,
+      }))
+    : (intentSources?.map(source => ({
+        id: source.id,
+        name: source.name,
+        icon: getIcon(source.icon),
+        site: source.site,
+      })) || []);
   
   // Combine base and additional tabs
   const intentTabs = [...baseIntentTabs, ...additionalTabs.map(source => ({
@@ -155,6 +175,18 @@ export function DynamicTabs({ sources, intentSources, activeSource, onSourceChan
   };
 
   const intentModeLabel = getIntentModeLabel(detectedIntent);
+  
+  // Get location display
+  const getLocationDisplay = () => {
+    if (isGlobalMode) {
+      return "Global Sites";
+    }
+    if (location?.countryCode && location.countryCode !== 'global') {
+      // You could add a country code to name mapping here
+      return `Popular in ${location.countryCode.toUpperCase()}`;
+    }
+    return "Suggested Sites";
+  };
 
   return (
     <div className="w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-16 z-40">
@@ -199,7 +231,31 @@ export function DynamicTabs({ sources, intentSources, activeSource, onSourceChan
                 {intentModeLabel || "Suggested Sites"}
               </span>
               <div className="flex-1 h-px bg-border"></div>
+              
+              {/* Global Toggle */}
+              {detectedIntent && detectedIntent !== 'general' && (
+                <Button
+                  variant={isGlobalMode ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setIsGlobalMode(!isGlobalMode)}
+                  className="gap-2 h-7"
+                  data-testid="button-toggle-global"
+                >
+                  <Globe2 className="h-3.5 w-3.5" />
+                  <span className="text-xs">Global</span>
+                </Button>
+              )}
             </div>
+            
+            {/* Location indicator */}
+            {!isGlobalMode && location?.countryCode && location.countryCode !== 'global' && (
+              <div className="flex items-center gap-2 mb-2">
+                <Badge variant="secondary" className="text-xs gap-1" data-testid="badge-location-mode">
+                  <Globe className="h-3 w-3" />
+                  {getLocationDisplay()}
+                </Badge>
+              </div>
+            )}
             <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
               {intentTabs.map((tab) => {
                 const Icon = typeof tab.icon === 'string' ? getIcon(tab.icon) : tab.icon;

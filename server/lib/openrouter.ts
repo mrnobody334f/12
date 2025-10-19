@@ -56,42 +56,47 @@ function detectIntentByKeywords(query: string): IntentType {
   
   // Shopping keywords with weights (higher weight = more specific to shopping)
   const shoppingPatterns = [
-    { pattern: /\b(buy|purchase|shop|order)\b/i, weight: 3 },
-    { pattern: /\b(price|cost|cheap|expensive|affordable)\b/i, weight: 2.5 },
-    { pattern: /\b(deal|sale|discount|offer|coupon)\b/i, weight: 2.5 },
-    { pattern: /\b(store|market|mall|retail)\b/i, weight: 2 },
-    { pattern: /\b(product|item|merchandise)\b/i, weight: 2 },
-    { pattern: /\b(review|compare|best|top|vs)\b/i, weight: 1.5 },
-    { pattern: /\b(اشتري|شراء|سعر|متجر|منتج|أفضل)\b/i, weight: 3 }
+    { pattern: /\b(buy|purchase|shop|order|shopping)\b/i, weight: 4 },
+    { pattern: /\b(price|cost|cheap|expensive|affordable|budget)\b/i, weight: 3.5 },
+    { pattern: /\b(deal|sale|discount|offer|coupon|promo)\b/i, weight: 3.5 },
+    { pattern: /\b(store|market|mall|retail|seller)\b/i, weight: 2.5 },
+    { pattern: /\b(product|item|merchandise|goods)\b/i, weight: 2.5 },
+    { pattern: /\b(review|compare|comparison|best|top rated|vs)\b/i, weight: 2 },
+    { pattern: /\b(online shopping|e-commerce|checkout|cart)\b/i, weight: 4 },
+    { pattern: /\b(اشتري|شراء|سعر|متجر|منتج|أفضل|تسوق|عروض)\b/i, weight: 4 }
   ];
   
   // News keywords
   const newsPatterns = [
-    { pattern: /\b(news|latest|breaking|headline)\b/i, weight: 3 },
-    { pattern: /\b(today|yesterday|tomorrow|current)\b/i, weight: 2 },
-    { pattern: /\b(update|report|announce|develop)\b/i, weight: 2.5 },
-    { pattern: /\b(recent|new|just|now)\b/i, weight: 1.5 },
-    { pattern: /\b(أخبار|جديد|اليوم|عاجل)\b/i, weight: 3 }
+    { pattern: /\b(news|latest|breaking|headline|press)\b/i, weight: 4 },
+    { pattern: /\b(today|yesterday|this week|current events)\b/i, weight: 2.5 },
+    { pattern: /\b(update|updates|report|announce|announcement)\b/i, weight: 3 },
+    { pattern: /\b(recent|new|just|now|live)\b/i, weight: 2 },
+    { pattern: /\b(happening|event|incident|story)\b/i, weight: 2.5 },
+    { pattern: /\b(أخبار|جديد|اليوم|عاجل|آخر الأخبار)\b/i, weight: 4 }
   ];
   
   // Learning keywords
   const learningPatterns = [
-    { pattern: /\b(how to|tutorial|guide)\b/i, weight: 3 },
-    { pattern: /\b(learn|study|course|education)\b/i, weight: 2.5 },
-    { pattern: /\b(what is|explain|definition|meaning)\b/i, weight: 2.5 },
-    { pattern: /\b(teach|training|lesson|class)\b/i, weight: 2 },
-    { pattern: /\b(كيف|تعلم|شرح|دورة|درس)\b/i, weight: 3 }
+    { pattern: /\b(how to|tutorial|guide|step by step)\b/i, weight: 4 },
+    { pattern: /\b(learn|learning|study|course|education)\b/i, weight: 3.5 },
+    { pattern: /\b(what is|what are|explain|definition|meaning)\b/i, weight: 3.5 },
+    { pattern: /\b(teach|teaching|training|lesson|class)\b/i, weight: 2.5 },
+    { pattern: /\b(why|how|when|where|understanding)\b/i, weight: 2 },
+    { pattern: /\b(documentation|docs|manual|reference)\b/i, weight: 2.5 },
+    { pattern: /\b(كيف|كيفية|تعلم|شرح|دورة|درس|تعليم)\b/i, weight: 4 }
   ];
   
   // Entertainment keywords
   const entertainmentPatterns = [
-    { pattern: /\b(video|movie|film|cinema)\b/i, weight: 2.5 },
-    { pattern: /\b(music|song|album|artist)\b/i, weight: 2.5 },
-    { pattern: /\b(watch|stream|play|download)\b/i, weight: 2 },
-    { pattern: /\b(episode|series|show|season)\b/i, weight: 2.5 },
-    { pattern: /\b(funny|comedy|meme|viral)\b/i, weight: 2 },
-    { pattern: /\b(trending|popular|hit)\b/i, weight: 1.5 },
-    { pattern: /\b(فيديو|فيلم|أغنية|مشاهدة|تحميل)\b/i, weight: 2.5 }
+    { pattern: /\b(video|movie|film|cinema|movies)\b/i, weight: 3.5 },
+    { pattern: /\b(music|song|album|artist|singer)\b/i, weight: 3.5 },
+    { pattern: /\b(watch|stream|streaming|play|download)\b/i, weight: 2.5 },
+    { pattern: /\b(episode|series|show|season|tv)\b/i, weight: 3 },
+    { pattern: /\b(funny|comedy|meme|viral|trending)\b/i, weight: 2.5 },
+    { pattern: /\b(game|gaming|gameplay|gamer)\b/i, weight: 3 },
+    { pattern: /\b(entertainment|fun|enjoy)\b/i, weight: 2 },
+    { pattern: /\b(فيديو|فيلم|أغنية|مشاهدة|تحميل|ترفيه)\b/i, weight: 3.5 }
   ];
   
   // Calculate scores for each intent
@@ -141,14 +146,32 @@ export async function detectIntent(query: string): Promise<IntentType> {
     const messages: OpenRouterMessage[] = [
       {
         role: "system",
-        content: `You are an expert at understanding search intent. Classify the following search query into one of these categories:
-- shopping: User wants to buy or compare products
-- news: User wants current events or updates
-- learning: Educational or informational intent
-- entertainment: Searching for videos, trends, social content
-- general: Catch-all default for other queries
+        content: `You are an expert at understanding user search intent. Analyze the query and classify it into ONE of these categories:
 
-Respond with ONLY the category name, nothing else.`,
+1. **shopping**: User wants to buy, compare, or research products/services
+   - Keywords: buy, price, cheap, expensive, shop, store, purchase, best, review, deal, sale
+   - Examples: "buy laptop", "best headphones 2025", "iPhone 15 price"
+
+2. **news**: User wants current events, breaking news, or recent updates
+   - Keywords: news, latest, breaking, today, update, headline, recent
+   - Examples: "latest tech news", "breaking news today", "bitcoin news"
+
+3. **learning**: User wants to learn, understand, or get educated about something
+   - Keywords: how to, tutorial, guide, learn, what is, explain, course, study
+   - Examples: "how to code", "what is AI", "python tutorial"
+
+4. **entertainment**: User wants videos, music, movies, games, or trending content
+   - Keywords: video, movie, music, watch, stream, funny, meme, trending
+   - Examples: "funny cat videos", "watch movies online", "latest songs"
+
+5. **general**: All other queries that don't fit the above categories
+   - Default for informational lookups, definitions, or mixed intent
+
+CRITICAL RULES:
+- Analyze the PRIMARY intent of the query
+- If unclear, default to "general"
+- Respond with ONLY ONE word: shopping, news, learning, entertainment, or general
+- Do NOT add explanations, punctuation, or extra text`,
       },
       {
         role: "user",

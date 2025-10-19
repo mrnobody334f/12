@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { searchWithSerper, getGoogleSuggestions, extractDomainsFromResults } from "./lib/serper";
 import { detectIntent, generateSummary } from "./lib/openrouter";
+import { getPopularSites } from "./lib/popular-sites";
 import { cache } from "./lib/cache";
 import { storage } from "./storage";
 import { 
@@ -80,10 +81,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = {
         country: data.country || '',
         countryCode: (data.countryCode || '').toLowerCase(),
+        // Return city for information but frontend will only use country on auto-detect
         city: data.city || ''
       };
       
-      console.log(`Detected location: ${result.city}, ${result.country} (${result.countryCode})`);
+      console.log(`Detected location (GeoIP): ${result.country} (${result.countryCode}) - City: ${result.city}`);
       
       res.json(result);
     } catch (error) {
@@ -557,6 +559,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("More tabs error:", error);
       res.status(500).json({ error: "Failed to get more tabs" });
+    }
+  });
+
+  // Get popular sites for country and intent
+  app.get("/api/popular-sites", async (req, res) => {
+    try {
+      const { intent, countryCode, isGlobal = "false" } = req.query;
+
+      if (!intent || typeof intent !== "string") {
+        return res.status(400).json({ error: "Intent parameter is required" });
+      }
+
+      const country = typeof countryCode === "string" ? countryCode : undefined;
+      const globalMode = isGlobal === "true";
+
+      const sites = getPopularSites(country, intent, globalMode);
+
+      console.log(`🌍 Popular sites for ${globalMode ? 'global' : country} / ${intent}:`, sites.map(s => s.name).join(', '));
+
+      res.json({ sites });
+    } catch (error) {
+      console.error("Popular sites error:", error);
+      res.status(500).json({ error: "Failed to get popular sites" });
     }
   });
 

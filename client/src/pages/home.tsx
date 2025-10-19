@@ -48,6 +48,17 @@ export default function Home() {
     staleTime: Infinity,
   });
 
+  // Auto-set country from GeoIP on first load (country only, no city)
+  useEffect(() => {
+    if (detectedLocation && !country && !countryCode && !isManualLocation) {
+      // Use only country from GeoIP, not city
+      setCountry(detectedLocation.country);
+      setCountryCode(detectedLocation.countryCode);
+      // Don't set city - leave it empty
+      setCity("");
+    }
+  }, [detectedLocation, country, countryCode, isManualLocation]);
+
   const effectiveCountry = country;
   const effectiveCountryCode = countryCode;
   const effectiveCity = city;
