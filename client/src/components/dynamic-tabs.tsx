@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Globe, LucideIcon, Search, Twitter, Facebook, Instagram, Music, MessageSquare, Youtube, ExternalLink, Plus, ChevronLeft, Globe2 } from "lucide-react";
+import { Globe, LucideIcon, Search, Twitter, Facebook, Instagram, Music, MessageSquare, Youtube, ExternalLink, Plus, ChevronLeft, Globe2, ShoppingBag, Newspaper, BookOpen, Film } from "lucide-react";
 import * as Icons from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -144,18 +144,34 @@ export function DynamicTabs({ sources, intentSources, activeSource, onSourceChan
     }
   };
 
-  // Get intent mode label
-  const getIntentModeLabel = (intent?: string) => {
-    const labels: Record<string, string> = {
-      shopping: "Shopping Mode",
-      news: "News Mode",
-      learning: "Learning Mode",
-      entertainment: "Entertainment Mode",
+  // Get intent mode label with color and icon
+  const getIntentModeConfig = (intent?: string) => {
+    const configs: Record<string, { label: string; color: string; icon: any }> = {
+      shopping: { 
+        label: "Shopping Mode", 
+        color: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30",
+        icon: ShoppingBag
+      },
+      news: { 
+        label: "News Mode", 
+        color: "bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30",
+        icon: Newspaper
+      },
+      learning: { 
+        label: "Learning Mode", 
+        color: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30",
+        icon: BookOpen
+      },
+      entertainment: { 
+        label: "Entertainment Mode", 
+        color: "bg-pink-500/15 text-pink-700 dark:text-pink-400 border-pink-500/30",
+        icon: Film
+      },
     };
-    return intent ? labels[intent] : null;
+    return intent ? configs[intent] : null;
   };
 
-  const intentModeLabel = getIntentModeLabel(detectedIntent);
+  const intentModeConfig = getIntentModeConfig(detectedIntent);
   
   // Get location display
   const getLocationDisplay = () => {
@@ -205,9 +221,31 @@ export function DynamicTabs({ sources, intentSources, activeSource, onSourceChan
         {intentTabs.length > 0 && (
           <div className="pb-3">
             <div className="flex items-center gap-3 mb-2">
-              <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">
-                {intentModeLabel || "Top Sites from Results"}
-              </span>
+              {intentModeConfig ? (
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Badge 
+                    className={cn(
+                      "text-xs font-semibold uppercase tracking-wider gap-1.5 px-3 py-1 border",
+                      intentModeConfig.color
+                    )}
+                    data-testid="badge-intent-mode"
+                  >
+                    {(() => {
+                      const IntentIcon = intentModeConfig.icon;
+                      return <IntentIcon className="h-3.5 w-3.5" />;
+                    })()}
+                    {intentModeConfig.label}
+                  </Badge>
+                </motion.div>
+              ) : (
+                <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">
+                  Top Sites from Results
+                </span>
+              )}
               <div className="flex-1 h-px bg-border"></div>
             </div>
             

@@ -57,40 +57,39 @@ function detectIntentByKeywords(query: string): IntentType {
   // Shopping keywords with weights (higher weight = more specific to shopping)
   // Supports: English, Arabic, French, Spanish, German, Turkish, Persian, Hindi, Portuguese, Italian
   const shoppingPatterns = [
-    // High priority - Direct purchase intent (English)
-    { pattern: /\b(buy|purchase|shop|order|shopping|buying)\b/i, weight: 5 },
+    // Very high priority - Direct purchase intent with context (English)
+    { pattern: /\b(online shopping|e-commerce|place order|order online|checkout|cart|add to cart)\b/i, weight: 5 },
+    { pattern: /(تسوق اونلاين|تسوق عبر الانترنت|شراء اونلاين)/i, weight: 5 },
+    
+    // High priority - Direct purchase intent (English) - removed generic "order"
+    { pattern: /\b(buy|purchase|shop for|shopping|buying)\b/i, weight: 5 },
     // High priority - Direct purchase intent (Arabic)
     { pattern: /(شراء|اشتري|شري|اشتريت|ابي اشتري|بشتري|نشتري)/i, weight: 5 },
     // High priority - Direct purchase intent (Other languages)
     { pattern: /\b(acheter|comprar|kaufen|satın al|خرید|خريد|खरीदें|compre|acquistare)\b/i, weight: 5 },
     
     // Price & cost (Multiple languages)
-    { pattern: /\b(price|cost|cheap|expensive|affordable|budget|pricing)\b/i, weight: 4 },
-    { pattern: /(سعر|اسعار|تكلفة|رخيص|غالي|ثمن|كم سعر)/i, weight: 4 },
-    { pattern: /\b(prix|precio|preis|fiyat|قیمت|मूल्य|preço|prezzo)\b/i, weight: 4 },
+    { pattern: /\b(price|cost|cheap|expensive|affordable|budget|pricing)\b/i, weight: 3.5 },
+    { pattern: /(سعر|اسعار|تكلفة|رخيص|غالي|ثمن|كم سعر)/i, weight: 3.5 },
+    { pattern: /\b(prix|precio|preis|fiyat|قیمت|मूल्य|preço|prezzo)\b/i, weight: 3.5 },
     
     // Deals & discounts
-    { pattern: /\b(deal|sale|discount|offer|coupon|promo|deals|sales)\b/i, weight: 4 },
-    { pattern: /(عرض|عروض|خصم|خصومات|تخفيض|تخفيضات|تنزيلات)/i, weight: 4 },
-    { pattern: /\b(offre|oferta|angebot|indirim|تخفیف|ऑफ़र|oferta|offerta)\b/i, weight: 4 },
+    { pattern: /\b(deal|sale|discount|offer|coupon|promo|deals|sales)\b/i, weight: 3.5 },
+    { pattern: /(عرض|عروض|خصم|خصومات|تخفيض|تخفيضات|تنزيلات)/i, weight: 3.5 },
+    { pattern: /\b(offre|oferta|angebot|indirim|تخفیف|ऑफ़र|oferta|offerta)\b/i, weight: 3.5 },
     
-    // Store & marketplace
-    { pattern: /\b(store|market|mall|retail|seller|marketplace|amazon|ebay)\b/i, weight: 3 },
-    { pattern: /(متجر|متاجر|سوق|محل|محلات|بائع|موقع)/i, weight: 3 },
-    { pattern: /\b(magasin|tienda|geschäft|mağaza|فروشگاه|दुकान|loja|negozio)\b/i, weight: 3 },
+    // Store & marketplace - reduced weight for generic terms
+    { pattern: /\b(online store|shop online|marketplace|amazon|ebay)\b/i, weight: 3 },
+    { pattern: /(متجر|متاجر|سوق|محل|محلات|بائع)/i, weight: 2.5 },
+    { pattern: /\b(magasin|tienda|geschäft|mağaza|فروشگاه|दुकान|loja|negozio)\b/i, weight: 2.5 },
     
-    // Product & items
-    { pattern: /\b(product|item|merchandise|goods|products|items)\b/i, weight: 3 },
-    { pattern: /(منتج|منتجات|سلعة|سلع|بضاعة|مواد)/i, weight: 3 },
-    { pattern: /\b(produit|producto|produkt|ürün|محصول|उत्पाद|produto|prodotto)\b/i, weight: 3 },
+    // Product & items - only in shopping context
+    { pattern: /\b(product review|shop product|buy product)\b/i, weight: 3 },
+    { pattern: /(منتج|منتجات|سلعة|سلع)/i, weight: 2.5 },
     
-    // Reviews & comparisons
-    { pattern: /\b(review|compare|comparison|best|top rated|vs|reviews)\b/i, weight: 2.5 },
-    { pattern: /(مراجعة|مراجعات|تقييم|مقارنة|أفضل|الأفضل|احسن)/i, weight: 2.5 },
-    
-    // Online shopping specific
-    { pattern: /\b(online shopping|e-commerce|checkout|cart|add to cart)\b/i, weight: 5 },
-    { pattern: /(تسوق اونلاين|تسوق عبر الانترنت|شراء اونلاين)/i, weight: 5 },
+    // Reviews & comparisons - reduced weight
+    { pattern: /\b(product review|shopping review|price comparison)\b/i, weight: 2.5 },
+    { pattern: /(مراجعة منتج|مقارنة اسعار)/i, weight: 2.5 },
     
     // Common shopping items (to catch queries like "احذيه", "shoes", etc.)
     { pattern: /(حذاء|احذية|أحذية|حذية|شوز|احذيه)/i, weight: 3.5 },
@@ -194,11 +193,11 @@ function detectIntentByKeywords(query: string): IntentType {
     learning: scores.learning,
     entertainment: scores.entertainment,
     maxScore,
-    detected: maxScore >= 1.5 ? 'specific intent' : 'general'
+    detected: maxScore >= 2 ? 'specific intent' : 'general'
   });
   
-  // Lower threshold to 1.5 to be more sensitive to intent keywords
-  if (maxScore >= 1.5) {
+  // Threshold of 2 balances sensitivity with accuracy
+  if (maxScore >= 2) {
     if (scores.shopping === maxScore) return 'shopping';
     if (scores.news === maxScore) return 'news';
     if (scores.learning === maxScore) return 'learning';
