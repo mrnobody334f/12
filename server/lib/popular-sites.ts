@@ -249,6 +249,124 @@ export const countrySites: Record<string, {
   },
 };
 
+// Extract domain from URL
+function extractDomain(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    let domain = urlObj.hostname;
+    
+    // Remove www. prefix
+    domain = domain.replace(/^www\./, '');
+    
+    return domain;
+  } catch {
+    return '';
+  }
+}
+
+// Convert domain to a readable site name
+function domainToSiteName(domain: string): string {
+  // Remove TLD (.com, .org, etc.)
+  const namePart = domain.split('.')[0];
+  
+  // Capitalize first letter of each word
+  return namePart
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+// Get appropriate icon based on domain and intent
+function getIconForSite(domain: string, intent: string): string {
+  const lowerDomain = domain.toLowerCase();
+  
+  // Specific domain icons
+  if (lowerDomain.includes('youtube')) return 'Youtube';
+  if (lowerDomain.includes('facebook')) return 'Facebook';
+  if (lowerDomain.includes('twitter') || lowerDomain.includes('x.com')) return 'Twitter';
+  if (lowerDomain.includes('instagram')) return 'Camera';
+  if (lowerDomain.includes('linkedin')) return 'Briefcase';
+  if (lowerDomain.includes('amazon')) return 'ShoppingBag';
+  if (lowerDomain.includes('ebay')) return 'ShoppingCart';
+  if (lowerDomain.includes('wikipedia')) return 'BookMarked';
+  if (lowerDomain.includes('reddit')) return 'MessageSquare';
+  if (lowerDomain.includes('netflix')) return 'Tv';
+  if (lowerDomain.includes('spotify')) return 'Music';
+  
+  // Intent-based icons
+  switch (intent) {
+    case 'shopping':
+      return 'Store';
+    case 'news':
+      return 'Newspaper';
+    case 'learning':
+      return 'BookOpen';
+    case 'entertainment':
+      return 'Film';
+    default:
+      return 'Globe';
+  }
+}
+
+// Extract popular sites from search results
+export function extractSitesFromResults(
+  results: Array<{ link: string; source?: string }>,
+  intent: string,
+  limit: number = 10
+): SiteConfig[] {
+  if (!results || results.length === 0) {
+    return [];
+  }
+
+  // Count domain occurrences and track first appearance
+  const domainStats = new Map<string, { 
+    count: number; 
+    firstIndex: number; 
+    source?: string;
+  }>();
+
+  results.forEach((result, index) => {
+    const domain = extractDomain(result.link);
+    if (!domain) return;
+
+    const existing = domainStats.get(domain);
+    if (existing) {
+      existing.count++;
+    } else {
+      domainStats.set(domain, {
+        count: 1,
+        firstIndex: index,
+        source: result.source,
+      });
+    }
+  });
+
+  // Sort by: 1) count (descending), 2) first appearance (ascending)
+  const sortedDomains = Array.from(domainStats.entries())
+    .sort((a, b) => {
+      // First sort by count (higher is better)
+      if (b[1].count !== a[1].count) {
+        return b[1].count - a[1].count;
+      }
+      // Then by first appearance (lower index is better)
+      return a[1].firstIndex - b[1].firstIndex;
+    })
+    .slice(0, limit);
+
+  // Convert to SiteConfig format
+  return sortedDomains.map(([domain, stats]) => {
+    const siteName = stats.source || domainToSiteName(domain);
+    const id = domain.replace(/\./g, '-');
+    
+    return {
+      id,
+      name: siteName,
+      site: domain,
+      icon: getIconForSite(domain, intent),
+    };
+  });
+}
+
 // Get popular sites for a specific country and intent
 export function getPopularSites(
   countryCode: string | undefined,
