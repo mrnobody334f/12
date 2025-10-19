@@ -122,72 +122,111 @@ function isSiteOfType(domain: string, title: string, snippet: string, intent: st
   const lowerSnippet = snippet.toLowerCase();
   const combinedText = `${lowerDomain} ${lowerTitle} ${lowerSnippet}`;
   
+  // Known major sites for each category (allow lists)
+  const knownShoppingSites = [
+    'amazon', 'ebay', 'walmart', 'alibaba', 'aliexpress', 'etsy', 'shopify', 'target',
+    'bestbuy', 'homedepot', 'lowes', 'costco', 'macys', 'kohls', 'wayfair', 'overstock',
+    'noon', 'souq', 'jarir', 'extra', 'carrefour', 'lulu', 'shein', 'zara', 'h&m',
+    'nike', 'adidas', 'ikea', 'sephora', 'ulta', 'nordstrom', 'newegg'
+  ];
+  
+  const knownNewsSites = [
+    'cnn', 'bbc', 'reuters', 'bloomberg', 'foxnews', 'nytimes', 'washingtonpost',
+    'theguardian', 'theatlantic', 'forbes', 'fortune', 'wsj', 'usatoday', 'nbcnews',
+    'abcnews', 'cbsnews', 'apnews', 'politico', 'thehill', 'npr', 'pbs', 'vice',
+    'aljazeera', 'alarabiya', 'skynews', 'france24', 'dw', 'rt', 'sputnik',
+    'youm7', 'elwatan', 'almostshar', 'almasryalyoum', 'alyaum', 'okaz', 'alriyadh'
+  ];
+  
+  const knownLearningSites = [
+    'wikipedia', 'wikihow', 'britannica', 'stackoverflow', 'stackexchange', 'github',
+    'medium', 'dev.to', 'freecodecamp', 'w3schools', 'mdn', 'geeksforgeeks',
+    'coursera', 'udemy', 'edx', 'khanacademy', 'skillshare', 'pluralsight', 'linkedin.com/learning',
+    'mit.edu', 'stanford.edu', 'harvard.edu', 'yale.edu', 'oxford.ac.uk', 'cambridge.org',
+    'edraak', 'rwaq', 'maharatech'
+  ];
+  
+  const knownEntertainmentSites = [
+    'youtube', 'tiktok', 'netflix', 'hulu', 'disneyplus', 'primevideo', 'hbomax',
+    'spotify', 'applemusic', 'soundcloud', 'twitch', 'mixer', 'dlive',
+    'instagram', 'pinterest', 'tumblr', 'deviantart', 'artstation',
+    'ign', 'gamespot', 'kotaku', 'polygon', 'steam', 'epicgames', 'playstation', 'xbox'
+  ];
+  
   // Sites to EXCLUDE from each category
-  const excludeFromShopping = ['pinterest', 'wikipedia', 'wiki', 'youtube', 'facebook', 'twitter', 'instagram'];
-  const excludeFromNews = ['amazon', 'ebay', 'shop', 'store', 'alibaba', 'pinterest', 'instagram'];
-  const excludeFromLearning = ['amazon', 'ebay', 'shop', 'store', 'pinterest', 'instagram', 'tiktok'];
+  const excludeFromShopping = ['pinterest', 'wikipedia', 'wiki', 'youtube', 'facebook', 'twitter', 'instagram', 'news', 'press'];
+  const excludeFromNews = ['amazon', 'ebay', 'shop', 'store', 'alibaba', 'pinterest', 'instagram', 'game'];
+  const excludeFromLearning = ['amazon', 'ebay', 'shop', 'store', 'pinterest', 'instagram', 'tiktok', 'game'];
   const excludeFromEntertainment = ['amazon', 'ebay', 'shop', 'store', 'news', 'press'];
   
-  // Shopping sites patterns
+  // Fallback patterns for sites not in the allow lists
   const shoppingPatterns = [
-    'shop', 'store', 'buy', 'cart', 'checkout', 'price', 'product', 'sale', 'order',
-    'amazon', 'ebay', 'walmart', 'alibaba', 'etsy', 'shopify', 'market', 'mall',
-    'noon', 'souq', 'jarir', 'extra', 'carrefour', 'lulu', 'shein', 'fashion',
+    'shop', 'store', 'buy', 'cart', 'checkout', 'price', 'product', 'sale', 'order', 'mall',
     'متجر', 'سوق', 'شراء', 'منتج', 'سعر', 'تسوق', 'طلب', 'أسعار'
   ];
   
-  // News sites patterns
   const newsPatterns = [
-    'news', 'press', 'media', 'times', 'post', 'daily', 'journal', 'gazette', 'herald',
-    'reuters', 'cnn', 'bbc', 'bloomberg', 'aljazeera', 'alarabiya', 'skynews', 'breaking',
+    'news', 'press', 'media', 'times', 'post', 'daily', 'journal', 'gazette', 'herald', 'tribune',
     'أخبار', 'صحيفة', 'جريدة', 'إخباري', 'عاجل', 'خبر'
   ];
   
-  // Learning sites patterns
   const learningPatterns = [
-    'wiki', 'edu', 'learn', 'course', 'tutorial', 'guide', 'university', 'academy',
-    'stackoverflow', 'medium', 'coursera', 'udemy', 'khan', 'education', 'school',
+    '.edu', 'learn', 'course', 'tutorial', 'guide', 'university', 'academy', 'school', 'education',
     'تعليم', 'دورة', 'جامعة', 'تعلم', 'مدرسة', 'تدريب'
   ];
   
-  // Entertainment sites patterns
   const entertainmentPatterns = [
-    'video', 'music', 'game', 'entertainment', 'fun', 'play', 'watch', 'stream',
-    'youtube', 'tiktok', 'netflix', 'spotify', 'twitch', 'instagram', 'pinterest',
+    'video', 'music', 'game', 'entertainment', 'fun', 'play', 'watch', 'stream', 'gaming',
     'ترفيه', 'فيديو', 'لعبة', 'موسيقى', 'مشاهدة', 'العاب'
   ];
   
   switch (intent) {
     case 'shopping':
-      // Exclude non-shopping sites first
+      // Check if in known shopping sites first
+      if (knownShoppingSites.some(site => lowerDomain.includes(site))) {
+        return true;
+      }
+      // Exclude non-shopping sites
       if (excludeFromShopping.some(exclude => lowerDomain.includes(exclude))) {
         return false;
       }
-      // Then check if it matches shopping patterns
+      // Check patterns as fallback
       return shoppingPatterns.some(pattern => combinedText.includes(pattern));
       
     case 'news':
-      // Exclude non-news sites first
+      // Check if in known news sites first
+      if (knownNewsSites.some(site => lowerDomain.includes(site))) {
+        return true;
+      }
+      // Exclude non-news sites
       if (excludeFromNews.some(exclude => lowerDomain.includes(exclude))) {
         return false;
       }
-      // Then check if it matches news patterns
+      // Check patterns as fallback
       return newsPatterns.some(pattern => combinedText.includes(pattern));
       
     case 'learning':
-      // Exclude non-learning sites first
+      // Check if in known learning sites first
+      if (knownLearningSites.some(site => lowerDomain.includes(site))) {
+        return true;
+      }
+      // Exclude non-learning sites
       if (excludeFromLearning.some(exclude => lowerDomain.includes(exclude))) {
         return false;
       }
-      // Then check if it matches learning patterns
+      // Check patterns as fallback
       return learningPatterns.some(pattern => combinedText.includes(pattern));
       
     case 'entertainment':
-      // Exclude non-entertainment sites first
+      // Check if in known entertainment sites first
+      if (knownEntertainmentSites.some(site => lowerDomain.includes(site))) {
+        return true;
+      }
+      // Exclude non-entertainment sites
       if (excludeFromEntertainment.some(exclude => lowerDomain.includes(exclude))) {
         return false;
       }
-      // Then check if it matches entertainment patterns
+      // Check patterns as fallback
       return entertainmentPatterns.some(pattern => combinedText.includes(pattern));
       
     case 'general':

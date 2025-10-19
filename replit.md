@@ -16,6 +16,19 @@ To provide users with a next-generation search experience that:
 **Last Updated**: January 2025
 
 ## Recent Changes
+- **January 2025**: Dynamic tabs system implementation
+  - **Dynamic Domain Extraction**: Tabs are now generated from actual search results (top 10 domains)
+  - **Intent-Based Filtering**: Each mode (shopping, news, learning, entertainment) filters tabs by site type
+    - Shopping mode: Shows only e-commerce sites from search results
+    - News mode: Shows only news/media sites from search results  
+    - Learning mode: Shows only educational sites from search results
+    - Entertainment mode: Shows only entertainment/social sites from search results
+  - **Location-Aware Tabs**: Tabs adapt based on selected country (e.g., SA shows Jarir, Noon; US shows Amazon, Walmart)
+  - **Intelligent Site Classification**: Added pattern matching to identify site types with exclude lists
+  - **Auto-Detect Control**: Tabs only appear when auto-detect is enabled OR manual intent is selected
+  - **More Tabs Feature**: Load additional domain tabs from next page of search results
+  - **Cache Optimization**: Separate cache keys for each intent and location combination
+  
 - **January 2025**: Initial implementation
   - Built complete schema with intent types, search results, and AI summary models
   - Created stunning frontend with React, Framer Motion, and shadcn/ui components
