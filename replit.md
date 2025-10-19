@@ -16,22 +16,34 @@ To provide users with a next-generation search experience that:
 **Last Updated**: January 2025
 
 ## Recent Changes
+- **January 2025**: GeoIP Auto-Detection & Popular Sites System
+  - **Auto Country Detection**: Automatically detects user's country on page load using GeoIP (country only, no city)
+    - Works seamlessly on initial visit without requiring permissions
+    - Preserves manual location overrides
+    - Fallback to 'global' if GeoIP fails
+  - **Enhanced Intent Detection**: Improved AI-powered intent classification
+    - Better prompts for Claude 3.5 Sonnet with clear examples and rules
+    - Enhanced keyword fallback with weighted patterns (40+ patterns per intent)
+    - Support for Arabic keywords across all modes
+    - More accurate classification for shopping, news, learning, entertainment
+  - **Popular Sites Database**: Comprehensive catalog of top sites by country and intent
+    - 6 countries: US, UK, Egypt, Saudi Arabia, UAE, India
+    - 10 sites per country per intent mode (shopping, news, learning, entertainment, general)
+    - Global fallback sites for countries not in database
+    - 300+ curated domains total
+  - **Smart Dynamic Tabs**: Location-aware tabs with global/local toggle
+    - Shows popular sites based on detected or selected country
+    - Global toggle button to switch between local and worldwide sites
+    - Location badge showing current mode (e.g., "Popular in SA")
+    - Graceful fallback to legacy domain extraction if needed
+    - Separate cache keys for each country/intent/mode combination
+  
 - **January 2025**: Dynamic tabs system implementation
   - **Dynamic Domain Extraction**: Tabs are now generated from actual search results (top 10 domains)
   - **Intent-Based Filtering**: Each mode (shopping, news, learning, entertainment) filters tabs by site type
-    - Shopping mode: Shows only e-commerce sites from search results
-    - News mode: Shows only news/media sites from search results  
-    - Learning mode: Shows only educational sites from search results
-    - Entertainment mode: Shows only entertainment/social sites from search results
-  - **Location-Aware Tabs**: Tabs adapt based on selected country (e.g., SA shows Jarir, Noon; US shows Amazon, Walmart)
-  - **Intelligent Site Classification**: Curated allow lists for major sites (100+ vetted domains) plus pattern matching fallback with exclude lists
-    - Shopping: Amazon, eBay, Walmart, Target, Noon, Jarir, and 20+ more
-    - News: CNN, BBC, Guardian, Atlantic, Forbes, Reuters, and 35+ more  
-    - Learning: Wikipedia, Stack Overflow, Medium, MIT, Stanford, and 25+ more
-    - Entertainment: YouTube, TikTok, Netflix, Spotify, Instagram, and 20+ more
+  - **Intelligent Site Classification**: Curated allow lists for major sites (100+ vetted domains)
   - **Auto-Detect Control**: Tabs only appear when auto-detect is enabled OR manual intent is selected
   - **More Tabs Feature**: Load additional domain tabs from next page of search results
-  - **Cache Optimization**: Separate cache keys for each intent and location combination
   
 - **January 2025**: Initial implementation
   - Built complete schema with intent types, search results, and AI summary models
@@ -64,14 +76,16 @@ To provide users with a next-generation search experience that:
   - OpenRouter (Claude 3.5 Sonnet) for AI intent detection and summarization
 
 ### Key Features
-1. **AI Intent Detection**: Automatically classifies queries into shopping, news, learning, entertainment, or general
-2. **Dynamic Source Tabs**: Interface adapts based on detected intent with relevant sources
-3. **Multi-Source Search**: Parallel fetching from Google, YouTube, TikTok, Reddit, Amazon, news sites, etc.
-4. **AI Summarization**: Smart summaries with top recommendations and suggested queries
-5. **Real-time Results**: Live data from Serper.dev API with site-specific queries
-6. **Beautiful UI**: Modern design with smooth animations, gradients, and responsive layout
-7. **Theme Support**: Full light/dark mode toggle with persistent storage
-8. **Caching**: Intelligent caching to reduce API costs and improve performance
+1. **GeoIP Location Detection**: Automatic country detection on page load without requiring permissions
+2. **Enhanced AI Intent Detection**: Improved accuracy with better prompts and 40+ keyword patterns per mode
+3. **Popular Sites System**: Country-aware site recommendations (300+ curated domains across 6 countries)
+4. **Smart Dynamic Tabs**: Location-aware tabs with global/local toggle and intelligent fallback
+5. **Multi-Source Search**: Parallel fetching from Google, YouTube, TikTok, Reddit, Amazon, news sites, etc.
+6. **AI Summarization**: Smart summaries with top recommendations and suggested queries
+7. **Real-time Results**: Live data from Serper.dev API with site-specific queries
+8. **Beautiful UI**: Modern design with smooth animations, gradients, and responsive layout
+9. **Theme Support**: Full light/dark mode toggle with persistent storage
+10. **Intelligent Caching**: Optimized cache keys by country, intent, and mode for better performance
 
 ## Data Model
 
@@ -94,6 +108,9 @@ Each intent type has dedicated sources:
 - `GET /api/search?query={query}&source={source}&intent={intent}` - Main search endpoint
 - `POST /api/intent` - Detect search intent from query
 - `POST /api/summarize` - Generate AI summary for results
+- `GET /api/popular-sites?intent={intent}&countryCode={code}&isGlobal={bool}` - Get popular sites by country and intent
+- `GET /api/geocode?lat={lat}&lng={lng}` - Reverse geocode GPS coordinates to location
+- `GET /api/more-tabs?query={query}&intent={intent}&page={num}` - Load additional domain tabs
 - `GET /api/health` - Health check and cache stats
 
 ## File Structure
@@ -123,7 +140,8 @@ client/
 server/
 ├── lib/
 │   ├── serper.ts (Serper.dev integration)
-│   ├── openrouter.ts (OpenRouter AI integration)
+│   ├── openrouter.ts (OpenRouter AI integration + enhanced intent detection)
+│   ├── popular-sites.ts (Popular sites database by country and intent)
 │   └── cache.ts (in-memory caching)
 ├── routes.ts (API endpoints)
 ├── storage.ts (minimal - no persistent storage needed)
