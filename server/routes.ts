@@ -267,12 +267,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let intentSpecificSources;
       
       if (source && source !== "all") {
+        console.log(`🔍 Filtering by source: "${source}"`);
+        // First, check if it's a platform source (Google, Twitter, etc.)
         const platformSource = Object.values(platformSources).find(p => p.id === source);
         if (platformSource) {
+          console.log(`✅ Found platform source: ${platformSource.name}`);
           sources = [platformSource];
         } else {
-          sources = sourceConfig[intent] || sourceConfig.general;
+          // If not a platform source, it might be an intent-specific source (Amazon, CNN, etc.)
+          // Search in the appropriate intent's sourceConfig
+          const intentSources = sourceConfig[intent] || sourceConfig.general;
+          const intentSource = intentSources.find(s => s.id === source);
+          if (intentSource) {
+            console.log(`✅ Found intent-specific source: ${intentSource.name} (${intentSource.site})`);
+            sources = [intentSource];
+          } else {
+            console.log(`⚠️ Source "${source}" not found, using all ${intent} sources`);
+            // Fallback: if source not found anywhere, use all sources for the intent
+            sources = intentSources;
+          }
         }
+        console.log(`📊 Using ${sources.length} source(s):`, sources.map(s => s.name).join(', '));
       } else {
         // For "All" tab, just use Google (no site filters)
         sources = [platformSources.google];
