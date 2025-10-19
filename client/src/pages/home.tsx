@@ -152,7 +152,8 @@ export default function Home() {
     setCountry(newCountry);
     setCountryCode(newCountryCode);
     setCity(newCity);
-    setIsManualLocation(newCountryCode !== '' && newCountryCode !== 'global');
+    // Mark as manual location whenever user makes any selection (including global)
+    setIsManualLocation(true);
     if (searchQuery) {
       setCurrentPage(1);
       refetch();
