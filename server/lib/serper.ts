@@ -116,35 +116,132 @@ export function getDomainName(domain: string): string {
   return domain;
 }
 
-export function extractDomainsFromResults(results: Array<{link: string, title: string}>): Array<{
+function isSiteOfType(domain: string, title: string, snippet: string, intent: string): boolean {
+  const lowerDomain = domain.toLowerCase();
+  const lowerTitle = title.toLowerCase();
+  const lowerSnippet = snippet.toLowerCase();
+  const combinedText = `${lowerDomain} ${lowerTitle} ${lowerSnippet}`;
+  
+  // Sites to EXCLUDE from each category
+  const excludeFromShopping = ['pinterest', 'wikipedia', 'wiki', 'youtube', 'facebook', 'twitter', 'instagram'];
+  const excludeFromNews = ['amazon', 'ebay', 'shop', 'store', 'alibaba', 'pinterest', 'instagram'];
+  const excludeFromLearning = ['amazon', 'ebay', 'shop', 'store', 'pinterest', 'instagram', 'tiktok'];
+  const excludeFromEntertainment = ['amazon', 'ebay', 'shop', 'store', 'news', 'press'];
+  
+  // Shopping sites patterns
+  const shoppingPatterns = [
+    'shop', 'store', 'buy', 'cart', 'checkout', 'price', 'product', 'sale', 'order',
+    'amazon', 'ebay', 'walmart', 'alibaba', 'etsy', 'shopify', 'market', 'mall',
+    'noon', 'souq', 'jarir', 'extra', 'carrefour', 'lulu', 'shein', 'fashion',
+    'متجر', 'سوق', 'شراء', 'منتج', 'سعر', 'تسوق', 'طلب', 'أسعار'
+  ];
+  
+  // News sites patterns
+  const newsPatterns = [
+    'news', 'press', 'media', 'times', 'post', 'daily', 'journal', 'gazette', 'herald',
+    'reuters', 'cnn', 'bbc', 'bloomberg', 'aljazeera', 'alarabiya', 'skynews', 'breaking',
+    'أخبار', 'صحيفة', 'جريدة', 'إخباري', 'عاجل', 'خبر'
+  ];
+  
+  // Learning sites patterns
+  const learningPatterns = [
+    'wiki', 'edu', 'learn', 'course', 'tutorial', 'guide', 'university', 'academy',
+    'stackoverflow', 'medium', 'coursera', 'udemy', 'khan', 'education', 'school',
+    'تعليم', 'دورة', 'جامعة', 'تعلم', 'مدرسة', 'تدريب'
+  ];
+  
+  // Entertainment sites patterns
+  const entertainmentPatterns = [
+    'video', 'music', 'game', 'entertainment', 'fun', 'play', 'watch', 'stream',
+    'youtube', 'tiktok', 'netflix', 'spotify', 'twitch', 'instagram', 'pinterest',
+    'ترفيه', 'فيديو', 'لعبة', 'موسيقى', 'مشاهدة', 'العاب'
+  ];
+  
+  switch (intent) {
+    case 'shopping':
+      // Exclude non-shopping sites first
+      if (excludeFromShopping.some(exclude => lowerDomain.includes(exclude))) {
+        return false;
+      }
+      // Then check if it matches shopping patterns
+      return shoppingPatterns.some(pattern => combinedText.includes(pattern));
+      
+    case 'news':
+      // Exclude non-news sites first
+      if (excludeFromNews.some(exclude => lowerDomain.includes(exclude))) {
+        return false;
+      }
+      // Then check if it matches news patterns
+      return newsPatterns.some(pattern => combinedText.includes(pattern));
+      
+    case 'learning':
+      // Exclude non-learning sites first
+      if (excludeFromLearning.some(exclude => lowerDomain.includes(exclude))) {
+        return false;
+      }
+      // Then check if it matches learning patterns
+      return learningPatterns.some(pattern => combinedText.includes(pattern));
+      
+    case 'entertainment':
+      // Exclude non-entertainment sites first
+      if (excludeFromEntertainment.some(exclude => lowerDomain.includes(exclude))) {
+        return false;
+      }
+      // Then check if it matches entertainment patterns
+      return entertainmentPatterns.some(pattern => combinedText.includes(pattern));
+      
+    case 'general':
+    default:
+      // For general, accept everything
+      return true;
+  }
+}
+
+export function extractDomainsFromResults(
+  results: Array<{link: string, title: string, snippet?: string}>,
+  intent?: string
+): Array<{
   id: string;
   name: string;
   site: string;
   icon: string;
 }> {
-  const domainMap = new Map<string, {title: string, count: number}>();
+  const domainMap = new Map<string, {title: string, snippet: string, count: number}>();
+  
+  // Exclude major social platforms from tabs (they have their own platform tabs)
+  const excludedDomains = ['google.', 'youtube.', 'twitter.', 'facebook.', 'instagram.', 'tiktok.', 'reddit.'];
   
   results.forEach((result) => {
     const domain = extractDomainFromUrl(result.link);
-    if (domain && !domain.includes('google.') && !domain.includes('youtube.') && 
-        !domain.includes('twitter.') && !domain.includes('facebook.') && 
-        !domain.includes('instagram.') && !domain.includes('tiktok.') && 
-        !domain.includes('reddit.')) {
+    const isExcluded = excludedDomains.some(excluded => domain.includes(excluded));
+    
+    if (domain && !isExcluded) {
+      // If we have an intent, filter by site type
+      if (intent && intent !== 'general') {
+        const matchesIntent = isSiteOfType(domain, result.title, result.snippet || '', intent);
+        if (!matchesIntent) {
+          return; // Skip this result
+        }
+      }
+      
       if (domainMap.has(domain)) {
         const existing = domainMap.get(domain)!;
         domainMap.set(domain, {
           title: existing.title,
+          snippet: existing.snippet,
           count: existing.count + 1
         });
       } else {
         domainMap.set(domain, {
           title: result.title,
+          snippet: result.snippet || '',
           count: 1
         });
       }
     }
   });
   
+  // Sort by count (most frequent first) and take top 10
   const sortedDomains = Array.from(domainMap.entries())
     .sort((a, b) => b[1].count - a[1].count)
     .slice(0, 10);

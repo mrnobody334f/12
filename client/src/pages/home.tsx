@@ -122,6 +122,7 @@ export default function Home() {
 
   const handleIntentChange = (intent: IntentType | undefined) => {
     setManualIntent(intent);
+    setTabsPage(2); // Reset tabs page when intent changes
     if (searchQuery) {
       setCurrentPage(1);
       refetch();
@@ -185,8 +186,15 @@ export default function Home() {
   
   const handleLoadMoreTabs = async () => {
     try {
+      // Only fetch more tabs if we have an active intent
+      const currentIntent = autoDetectIntent ? detectedIntent : manualIntent;
+      if (!currentIntent || currentIntent === 'general') {
+        console.log('No intent active, skipping more tabs');
+        return [];
+      }
+      
       const response = await fetch(
-        `/api/more-tabs?query=${encodeURIComponent(searchQuery)}&page=${tabsPage}${locationParams}`
+        `/api/more-tabs?query=${encodeURIComponent(searchQuery)}&page=${tabsPage}&intent=${currentIntent}${locationParams}`
       );
       
       if (!response.ok) {

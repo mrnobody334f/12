@@ -412,24 +412,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Extract dynamic domain tabs from results (for "All" tab only)
-      if (!sourceStr || sourceStr === "all") {
-        // Extract domains from the first 15 results to create dynamic tabs
-        const dynamicDomains = extractDomainsFromResults(flatResults.slice(0, 15));
+      // Only show intent-specific tabs if:
+      // 1. autoDetect is enabled, OR
+      // 2. manual intent is selected
+      const shouldShowIntentTabs = shouldAutoDetect || (providedIntent && typeof providedIntent === "string");
+      
+      if ((!sourceStr || sourceStr === "all") && shouldShowIntentTabs && intent !== "general") {
+        // Extract domains from the first 20 results to create dynamic tabs, filtered by intent
+        const dynamicDomains = extractDomainsFromResults(
+          flatResults.slice(0, 20).map(r => ({
+            link: r.link,
+            title: r.title,
+            snippet: r.snippet
+          })),
+          intent // Pass intent to filter domains by type
+        );
         intentSpecificSources = dynamicDomains;
         
-        // Cache the dynamic domains for this query
-        const domainsCacheKey = `domains:${query}:${locationKey}`;
+        // Cache the dynamic domains for this query and intent
+        const domainsCacheKey = `domains:${query}:${intent}:${locationKey}`;
         cache.set(domainsCacheKey, dynamicDomains, 10 * 60 * 1000); // Cache for 10 minutes
         
-        console.log(`📋 Extracted ${dynamicDomains.length} dynamic domain tabs:`, dynamicDomains.map(d => d.name).join(', '));
-      } else {
+        console.log(`📋 Extracted ${dynamicDomains.length} ${intent} domain tabs:`, dynamicDomains.map(d => d.name).join(', '));
+      } else if (shouldShowIntentTabs && intent !== "general") {
         // For filtered searches, try to get cached dynamic domains
-        const domainsCacheKey = `domains:${query}:${locationKey}`;
+        const domainsCacheKey = `domains:${query}:${intent}:${locationKey}`;
         const cachedDomains = cache.get<typeof intentSpecificSources>(domainsCacheKey);
         
         if (cachedDomains) {
           intentSpecificSources = cachedDomains;
         }
+      } else {
+        // No intent tabs if autoDetect is off and no manual intent
+        intentSpecificSources = undefined;
       }
 
       // Calculate pagination metadata
@@ -486,6 +501,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         page = "2",
         countryCode,
         city,
+        intent = "general",
       } = req.query;
 
       if (!query || typeof query !== "string") {
@@ -495,10 +511,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const pageNum = parseInt(page as string, 10);
       const locationCountryCode = countryCode && typeof countryCode === "string" ? countryCode : undefined;
       const locationCity = city && typeof city === "string" ? city : undefined;
+      const intentType = intent && typeof intent === "string" ? intent : "general";
       const locationKey = `${locationCountryCode || ''}:${locationCity || ''}`;
       
       // Check if we have cached domains for this page
-      const domainsCacheKey = `domains:${query}:${locationKey}:page${pageNum}`;
+      const domainsCacheKey = `domains:${query}:${intentType}:${locationKey}:page${pageNum}`;
       const cachedDomains = cache.get<Array<{id: string, name: string, site: string, icon: string}>>(domainsCacheKey);
       
       if (cachedDomains) {
@@ -517,13 +534,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           locationCity
         );
         
-        // Extract domains from these results
-        const dynamicDomains = extractDomainsFromResults(searchData.results);
+        // Extract domains from these results, filtered by intent
+        const dynamicDomains = extractDomainsFromResults(
+          searchData.results.map(r => ({
+            link: r.link,
+            title: r.title,
+            snippet: r.snippet
+          })),
+          intentType
+        );
         
         // Cache the domains for 10 minutes
         cache.set(domainsCacheKey, dynamicDomains, 10 * 60 * 1000);
         
-        console.log(`📋 Extracted ${dynamicDomains.length} more domain tabs from page ${pageNum}:`, dynamicDomains.map(d => d.name).join(', '));
+        console.log(`📋 Extracted ${dynamicDomains.length} more ${intentType} domain tabs from page ${pageNum}:`, dynamicDomains.map(d => d.name).join(', '));
         
         res.json({ domains: dynamicDomains });
       } catch (error) {
