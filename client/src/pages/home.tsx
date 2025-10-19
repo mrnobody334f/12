@@ -95,6 +95,7 @@ export default function Home() {
     setActiveSource("all");
     setCurrentPage(1);
     setAccumulatedResults([]);
+    setTabsPage(2); // Reset tabs page for new search
   };
 
   const handleSourceChange = (sourceId: string) => {
@@ -178,6 +179,27 @@ export default function Home() {
     setFileTypeFilter("any");
     setCurrentPage(1);
     setAccumulatedResults([]);
+  };
+  
+  const [tabsPage, setTabsPage] = useState(2);
+  
+  const handleLoadMoreTabs = async () => {
+    try {
+      const response = await fetch(
+        `/api/more-tabs?query=${encodeURIComponent(searchQuery)}&page=${tabsPage}${locationParams}`
+      );
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch more tabs");
+      }
+      
+      const result = await response.json();
+      setTabsPage(prev => prev + 1);
+      return result.domains || [];
+    } catch (error) {
+      console.error("Error loading more tabs:", error);
+      return [];
+    }
   };
 
   // Load cached results from localStorage on mount
@@ -348,6 +370,8 @@ export default function Home() {
           searchQuery={searchQuery}
           detectedIntent={detectedIntent}
           showPlatformTabs={true}
+          onLoadMoreTabs={handleLoadMoreTabs}
+          location={{ countryCode: effectiveCountryCode, city: effectiveCity }}
         />
       )}
 

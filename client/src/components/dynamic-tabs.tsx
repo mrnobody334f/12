@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
-import { Globe, LucideIcon, Search, Twitter, Facebook, Instagram, Music, MessageSquare, Youtube, ExternalLink } from "lucide-react";
+import { Globe, LucideIcon, Search, Twitter, Facebook, Instagram, Music, MessageSquare, Youtube, ExternalLink, Plus, ChevronLeft } from "lucide-react";
 import * as Icons from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 interface TabSource {
   id: string;
@@ -19,6 +20,8 @@ interface DynamicTabsProps {
   showPlatformTabs?: boolean;
   searchQuery?: string;
   detectedIntent?: string;
+  onLoadMoreTabs?: () => Promise<TabSource[]>;
+  location?: { countryCode?: string; city?: string };
 }
 
 // Function to generate platform-specific search URLs
@@ -79,18 +82,51 @@ const platformTabs = [
   { id: "youtube", name: "YouTube", icon: Youtube },
 ];
 
-export function DynamicTabs({ sources, intentSources, activeSource, onSourceChange, showPlatformTabs = false, searchQuery, detectedIntent }: DynamicTabsProps) {
+export function DynamicTabs({ sources, intentSources, activeSource, onSourceChange, showPlatformTabs = false, searchQuery, detectedIntent, onLoadMoreTabs, location }: DynamicTabsProps) {
+  const [additionalTabs, setAdditionalTabs] = useState<TabSource[]>([]);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [showingMore, setShowingMore] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  
   const getIcon = (iconName: string): LucideIcon => {
     return (Icons as any)[iconName] || Globe;
   };
 
+  const handleLoadMoreTabs = async () => {
+    if (isLoadingMore || !onLoadMoreTabs) return;
+    
+    setIsLoadingMore(true);
+    try {
+      const newTabs = await onLoadMoreTabs();
+      setAdditionalTabs(prev => [...prev, ...newTabs]);
+      setShowingMore(true);
+      setCurrentPage(prev => prev + 1);
+    } catch (error) {
+      console.error("Failed to load more tabs:", error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+  
+  const handleBackToInitialTabs = () => {
+    setShowingMore(false);
+  };
+
   // Convert intent-based sources to tabs format (keep site info)
-  const intentTabs = intentSources?.map(source => ({
+  const baseIntentTabs = intentSources?.map(source => ({
     id: source.id,
     name: source.name,
     icon: getIcon(source.icon),
     site: source.site,
   })) || [];
+  
+  // Combine base and additional tabs
+  const intentTabs = [...baseIntentTabs, ...additionalTabs.map(source => ({
+    id: source.id,
+    name: source.name,
+    icon: getIcon(source.icon),
+    site: source.site,
+  }))];
   
   const tabsToShow = platformTabs;
   const allTabs = [...platformTabs, ...intentTabs];
@@ -156,13 +192,13 @@ export function DynamicTabs({ sources, intentSources, activeSource, onSourceChan
         </div>
 
         {/* Intent-Based Tabs */}
-        {intentTabs.length > 0 && intentModeLabel && (
+        {intentTabs.length > 0 && (
           <div className="pb-3">
             <div className="flex items-center gap-3 mb-2">
-              <span className="text-xs font-semibold text-ai-accent uppercase tracking-wider">
-                {intentModeLabel}
+              <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">
+                {intentModeLabel || "Suggested Sites"}
               </span>
-              <div className="flex-1 h-px bg-ai-accent/20"></div>
+              <div className="flex-1 h-px bg-border"></div>
             </div>
             <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
               {intentTabs.map((tab) => {
@@ -176,8 +212,8 @@ export function DynamicTabs({ sources, intentSources, activeSource, onSourceChan
                     className={cn(
                       "relative flex items-center gap-2 px-4 py-2 rounded-full font-medium text-sm whitespace-nowrap transition-all duration-200 hover-elevate active-elevate-2",
                       isActive
-                        ? "bg-ai-accent text-background"
-                        : "bg-ai-accent/10 text-ai-accent border border-ai-accent/30"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-foreground border border-border"
                     )}
                     data-testid={`tab-intent-${tab.id}`}
                   >
@@ -186,13 +222,33 @@ export function DynamicTabs({ sources, intentSources, activeSource, onSourceChan
                     {isActive && (
                       <motion.div
                         layoutId="activeIntentTab"
-                        className="absolute inset-0 bg-ai-accent rounded-full -z-10"
+                        className="absolute inset-0 bg-primary rounded-full -z-10"
                         transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                       />
                     )}
                   </button>
                 );
               })}
+              
+              {/* More Tabs Button */}
+              {onLoadMoreTabs && !isLoadingMore && (
+                <button
+                  onClick={handleLoadMoreTabs}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full font-medium text-sm whitespace-nowrap transition-all duration-200 hover-elevate active-elevate-2 bg-muted/50 text-foreground border border-dashed border-border"
+                  data-testid="button-more-tabs"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>More Sites</span>
+                </button>
+              )}
+              
+              {/* Loading Indicator */}
+              {isLoadingMore && (
+                <div className="flex items-center gap-2 px-4 py-2 rounded-full text-sm text-muted-foreground">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  <span>Loading...</span>
+                </div>
+              )}
             </div>
           </div>
         )}
