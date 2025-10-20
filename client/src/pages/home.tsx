@@ -501,13 +501,13 @@ export default function Home() {
   }, [hasSearched, filteredResults, setSearchQuery, setCurrentPage, setAccumulatedResults]);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-background">
+    <div className="min-h-screen bg-background">
       {/* Onboarding Welcome Toast */}
       <OnboardingWelcome />
       
       {/* Compact Smart Header */}
       {hasSearched && (
-        <header className="border-b border-border/40 bg-white dark:bg-background shadow-sm">
+        <header className="border-b border-border/40 bg-background shadow-sm">
           {/* Main Header Row - Compact */}
           <div className="max-w-[1400px] mx-auto px-4 py-2 flex items-center gap-3">
             {/* Logo */}

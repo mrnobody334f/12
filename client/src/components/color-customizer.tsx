@@ -228,8 +228,13 @@ export function ColorCustomizer() {
         ${derivedDarkStyles}
       }
       
-      /* Apply main background color to body */
-      body {
+      /* Apply main background color to html and body */
+      html, body {
+        background-color: hsl(var(--background)) !important;
+      }
+      
+      /* Ensure main container also uses background */
+      .min-h-screen {
         background-color: hsl(var(--background)) !important;
       }
       
