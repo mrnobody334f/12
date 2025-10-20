@@ -102,17 +102,58 @@ function parseNumberString(value: number | string | undefined): number {
   return parseFloat(str) || 0;
 }
 
+// Helper function to parse date from various formats
+function parseDate(dateStr: string | undefined): number {
+  if (!dateStr) return 0;
+  
+  try {
+    // Handle relative dates like "2 hours ago", "3 days ago"
+    const relativeMatch = dateStr.match(/(\d+)\s*(second|minute|hour|day|week|month|year)s?\s*ago/i);
+    if (relativeMatch) {
+      const value = parseInt(relativeMatch[1]);
+      const unit = relativeMatch[2].toLowerCase();
+      const now = Date.now();
+      
+      const multipliers: Record<string, number> = {
+        'second': 1000,
+        'minute': 60 * 1000,
+        'hour': 60 * 60 * 1000,
+        'day': 24 * 60 * 60 * 1000,
+        'week': 7 * 24 * 60 * 60 * 1000,
+        'month': 30 * 24 * 60 * 60 * 1000,
+        'year': 365 * 24 * 60 * 60 * 1000,
+      };
+      
+      return now - (value * (multipliers[unit] || 0));
+    }
+    
+    // Try to parse as ISO date or standard date string
+    const parsedDate = new Date(dateStr);
+    if (!isNaN(parsedDate.getTime())) {
+      return parsedDate.getTime();
+    }
+    
+    return 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
 // Helper function to sort results
 function sortResults(results: SearchResult[], sortBy: SortOption): SearchResult[] {
   switch (sortBy) {
     case "recent":
       return [...results].sort((a, b) => {
+        // Parse dates to timestamps
+        const timeA = parseDate(a.date);
+        const timeB = parseDate(b.date);
+        
         // Results with dates come first, sorted newest to oldest
         // Results without dates come last
-        if (!a.date && !b.date) return 0;
-        if (!a.date) return 1;  // a goes to bottom
-        if (!b.date) return -1; // b goes to bottom
-        return new Date(b.date).getTime() - new Date(a.date).getTime();
+        if (timeA === 0 && timeB === 0) return 0;
+        if (timeA === 0) return 1;  // a goes to bottom
+        if (timeB === 0) return -1; // b goes to bottom
+        return timeB - timeA; // Newest first (higher timestamp = more recent)
       });
     case "mostViewed":
       return [...results].sort((a, b) => parseNumberString(b.views) - parseNumberString(a.views));
