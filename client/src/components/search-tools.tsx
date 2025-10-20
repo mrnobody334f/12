@@ -15,7 +15,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Settings2, Clock, Globe, FileText, X, Languages } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Settings2, Clock, Globe, FileText, X, Languages, HelpCircle } from "lucide-react";
 
 export type TimeFilter = "any" | "day" | "week" | "month" | "year";
 export type LanguageFilter = "any" | "ar" | "en" | "fr" | "es" | "de";
@@ -82,74 +88,76 @@ export function SearchTools({
   ];
 
   return (
-    <div className="flex items-center gap-2 flex-wrap">
-      {/* Language Selector - Prominent */}
-      {languageFilter !== "any" && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-        >
-          <Popover>
+    <TooltipProvider>
+      <div className="flex items-center gap-2 flex-wrap">
+        {/* Language Selector - Prominent */}
+        {languageFilter !== "any" && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+          >
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="gap-2 bg-primary/90 hover:bg-primary"
+                  data-testid="button-active-language"
+                >
+                  <Languages className="h-4 w-4" />
+                  <span className="font-medium">{getLanguageDisplay(languageFilter)}</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-3" align="start">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-semibold">Language</Label>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onLanguageFilterChange("any")}
+                      className="h-auto p-1 text-xs"
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                  <Select value={languageFilter} onValueChange={(value) => onLanguageFilterChange(value as LanguageFilter)}>
+                    <SelectTrigger className="w-full" data-testid="select-language-filter-prominent">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {languageOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </motion.div>
+        )}
+        
+        {/* Tools Button with Tooltip */}
+        <div className="flex items-center gap-1">
+          <Popover open={isOpen} onOpenChange={setIsOpen}>
             <PopoverTrigger asChild>
               <Button
-                variant="default"
+                variant="outline"
                 size="sm"
-                className="gap-2 bg-primary/90 hover:bg-primary"
-                data-testid="button-active-language"
+                className="gap-2"
+                data-testid="button-search-tools"
               >
-                <Languages className="h-4 w-4" />
-                <span className="font-medium">{getLanguageDisplay(languageFilter)}</span>
+                <Settings2 className="h-4 w-4" />
+                <span>Tools</span>
+                {hasActiveFilters && (
+                  <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center rounded-full text-xs">
+                    {[timeFilter !== "any", languageFilter !== "any", fileTypeFilter !== "any"].filter(Boolean).length}
+                  </Badge>
+                )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-64 p-3" align="start">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm font-semibold">Language</Label>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onLanguageFilterChange("any")}
-                    className="h-auto p-1 text-xs"
-                  >
-                    Clear
-                  </Button>
-                </div>
-                <Select value={languageFilter} onValueChange={(value) => onLanguageFilterChange(value as LanguageFilter)}>
-                  <SelectTrigger className="w-full" data-testid="select-language-filter-prominent">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {languageOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </PopoverContent>
-          </Popover>
-        </motion.div>
-      )}
-      
-      {/* Tools Button */}
-      <Popover open={isOpen} onOpenChange={setIsOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2"
-            data-testid="button-search-tools"
-          >
-            <Settings2 className="h-4 w-4" />
-            <span>Tools</span>
-            {hasActiveFilters && (
-              <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center rounded-full text-xs">
-                {[timeFilter !== "any", languageFilter !== "any", fileTypeFilter !== "any"].filter(Boolean).length}
-              </Badge>
-            )}
-          </Button>
-        </PopoverTrigger>
         <PopoverContent className="w-80" align="start" data-testid="popover-search-tools">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -234,6 +242,25 @@ export function SearchTools({
           </div>
         </PopoverContent>
       </Popover>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            className="text-muted-foreground hover:text-foreground transition-colors"
+            data-testid="info-search-tools"
+          >
+            <HelpCircle className="h-3.5 w-3.5" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs">
+          <p className="text-sm">
+            <strong>Advanced Search Filters</strong>
+            <br />
+            Refine your results by time range (past day, week, month), language preference, or specific file types (PDF, DOC, etc.). Perfect for finding exactly what you need.
+          </p>
+        </TooltipContent>
+      </Tooltip>
+    </div>
 
       {/* Active Filter Badges */}
       <AnimatePresence>
@@ -277,6 +304,7 @@ export function SearchTools({
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }

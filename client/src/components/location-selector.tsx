@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MapPin, Globe2, Check, ChevronsUpDown, Locate, X, Map } from "lucide-react";
+import { MapPin, Globe2, Check, ChevronsUpDown, Locate, X, Map, HelpCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { countriesData, type Country } from "@/data/google-locations";
 
@@ -135,39 +141,40 @@ export function LocationSelector({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="inline-flex items-center gap-2"
-    >
-      <Popover open={countryOpen} onOpenChange={setCountryOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant={displayCode !== "global" ? "default" : "outline"}
-            size="sm"
-            className={cn(
-              "gap-2 font-medium",
-              displayCode !== "global" && "bg-location-accent hover:bg-location-accent/90"
-            )}
-            data-testid="button-location-selector"
-          >
-            {displayCode === "global" ? (
-              <Globe2 className="h-4 w-4" />
-            ) : (
-              <Map className="h-4 w-4" />
-            )}
-            <span className="max-w-[150px] truncate">{getLocationDisplay()}</span>
-            {displayCode !== "global" && (
-              <X
-                className="h-3 w-3 ml-1 opacity-70 hover:opacity-100"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleClearLocation();
-                }}
-              />
-            )}
-          </Button>
-        </PopoverTrigger>
+    <TooltipProvider>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="inline-flex items-center gap-1"
+      >
+        <Popover open={countryOpen} onOpenChange={setCountryOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant={displayCode !== "global" ? "default" : "outline"}
+              size="sm"
+              className={cn(
+                "gap-2 font-medium",
+                displayCode !== "global" && "bg-location-accent hover:bg-location-accent/90"
+              )}
+              data-testid="button-location-selector"
+            >
+              {displayCode === "global" ? (
+                <Globe2 className="h-4 w-4" />
+              ) : (
+                <Map className="h-4 w-4" />
+              )}
+              <span className="max-w-[150px] truncate">{getLocationDisplay()}</span>
+              {displayCode !== "global" && (
+                <X
+                  className="h-3 w-3 ml-1 opacity-70 hover:opacity-100"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleClearLocation();
+                  }}
+                />
+              )}
+            </Button>
+          </PopoverTrigger>
         <PopoverContent className="w-[400px] p-4" align="start">
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-2">
@@ -306,6 +313,25 @@ export function LocationSelector({
           </div>
         </PopoverContent>
       </Popover>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            className="text-muted-foreground hover:text-foreground transition-colors"
+            data-testid="info-location"
+          >
+            <HelpCircle className="h-3.5 w-3.5" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs">
+          <p className="text-sm">
+            <strong>Location-Based Search</strong>
+            <br />
+            Get localized results tailored to your region. Use auto-detect for precision or manually select a country and city. Results will be optimized for your location's language, currency, and availability.
+          </p>
+        </TooltipContent>
+      </Tooltip>
     </motion.div>
+    </TooltipProvider>
   );
 }

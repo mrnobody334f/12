@@ -1,10 +1,16 @@
-import { Search, X, Clock, TrendingUp, Mic, MicOff, Keyboard } from "lucide-react";
+import { Search, X, Clock, TrendingUp, Mic, MicOff, Keyboard, HelpCircle } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import type { Suggestion } from "@shared/schema";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -151,76 +157,96 @@ export function SearchBar({ onSearch, initialQuery = "", isSearching = false }: 
   };
 
   return (
-    <motion.div
-      ref={searchBarRef}
-      className="w-full max-w-3xl mx-auto relative"
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-    >
-      <form onSubmit={handleSubmit} className="relative">
-        <div className="relative group">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-ai-accent/20 to-primary/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          
-          <div className="relative flex items-center bg-card border border-card-border rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
-            <div className="flex items-center justify-center w-14 h-14 text-muted-foreground">
-              <Search className="h-5 w-5" />
-            </div>
+    <TooltipProvider>
+      <motion.div
+        ref={searchBarRef}
+        className="w-full max-w-3xl mx-auto relative"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        <form onSubmit={handleSubmit} className="relative">
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-ai-accent/20 to-primary/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             
-            <input
-              type="text"
-              value={query}
-              onChange={handleInputChange}
-              onFocus={handleInputFocus}
-              placeholder="Search anything across the web..."
-              className="flex-1 h-14 bg-transparent text-lg font-medium placeholder:text-muted-foreground focus:outline-none pr-4"
-              data-testid="input-search"
-              disabled={isSearching}
-              autoComplete="off"
-            />
-            
-            <div className="flex items-center gap-1 mr-2">
-              {query && (
-                <button
-                  type="button"
-                  onClick={handleClear}
-                  className="p-2 rounded-full hover-elevate active-elevate-2 text-muted-foreground hover:text-foreground transition-colors"
-                  data-testid="button-clear-search"
-                  title="Clear search"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
+            <div className="relative flex items-center bg-card border border-card-border rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+              <div className="flex items-center justify-center w-14 h-14 text-muted-foreground">
+                <Search className="h-5 w-5" />
+              </div>
               
-              {isVoiceSupported && (
-                <button
-                  type="button"
-                  onClick={handleVoiceSearch}
-                  className={cn(
-                    "p-2 rounded-full hover-elevate active-elevate-2 transition-colors",
-                    isListening 
-                      ? "text-primary bg-primary/10 animate-pulse" 
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                  data-testid="button-voice-search"
-                  title="Voice search"
-                >
-                  {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                </button>
-              )}
+              <input
+                type="text"
+                value={query}
+                onChange={handleInputChange}
+                onFocus={handleInputFocus}
+                placeholder="Search anything across the web..."
+                className="flex-1 h-14 bg-transparent text-lg font-medium placeholder:text-muted-foreground focus:outline-none pr-4"
+                data-testid="input-search"
+                disabled={isSearching}
+                autoComplete="off"
+              />
+              
+              <div className="flex items-center gap-1 mr-2">
+                {query && (
+                  <button
+                    type="button"
+                    onClick={handleClear}
+                    className="p-2 rounded-full hover-elevate active-elevate-2 text-muted-foreground hover:text-foreground transition-colors"
+                    data-testid="button-clear-search"
+                    title="Clear search"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+                
+                {isVoiceSupported && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleVoiceSearch}
+                      className={cn(
+                        "p-2 rounded-full hover-elevate active-elevate-2 transition-colors",
+                        isListening 
+                          ? "text-primary bg-primary/10 animate-pulse" 
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                      data-testid="button-voice-search"
+                    >
+                      {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                    </button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          className="text-muted-foreground hover:text-foreground transition-colors -ml-1"
+                          data-testid="info-voice-search"
+                        >
+                          <HelpCircle className="h-3.5 w-3.5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p className="text-sm">
+                          <strong>Voice Search</strong>
+                          <br />
+                          Click the microphone and speak your search query. Works in English and Arabic.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </>
+                )}
 
-              <button
-                type="submit"
-                disabled={!query.trim() || isSearching}
-                className="px-6 h-10 bg-primary text-primary-foreground rounded-xl font-medium hover-elevate active-elevate-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                data-testid="button-search"
-              >
-                {isSearching ? "Searching..." : "Search"}
-              </button>
+                <button
+                  type="submit"
+                  disabled={!query.trim() || isSearching}
+                  className="px-6 h-10 bg-primary text-primary-foreground rounded-xl font-medium hover-elevate active-elevate-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  data-testid="button-search"
+                >
+                  {isSearching ? "Searching..." : "Search"}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      </form>
+        </form>
 
       {/* Suggestions Dropdown */}
       <AnimatePresence>
@@ -260,5 +286,6 @@ export function SearchBar({ onSearch, initialQuery = "", isSearching = false }: 
         )}
       </AnimatePresence>
     </motion.div>
+    </TooltipProvider>
   );
 }
