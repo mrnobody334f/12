@@ -28,6 +28,8 @@ export const platformSources = {
   tiktok: { id: "tiktok", name: "TikTok", site: "tiktok.com", icon: "Music" },
   reddit: { id: "reddit", name: "Reddit", site: "reddit.com", icon: "MessageSquare" },
   youtube: { id: "youtube", name: "YouTube", site: "youtube.com", icon: "Youtube" },
+  pinterest: { id: "pinterest", name: "Pinterest", site: "pinterest.com", icon: "Image" },
+  linkedin: { id: "linkedin", name: "LinkedIn", site: "linkedin.com", icon: "Briefcase" },
 } as const;
 
 // Search source configurations based on intent

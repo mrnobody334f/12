@@ -94,8 +94,22 @@ export default function Home() {
     enabled: !!searchQuery && !isMediaTab,
   });
 
+  const getPlatformSite = (platformId: string): string => {
+    const platformMap: Record<string, string> = {
+      twitter: 'twitter.com',
+      facebook: 'facebook.com',
+      instagram: 'instagram.com',
+      tiktok: 'tiktok.com',
+      reddit: 'reddit.com',
+      youtube: 'youtube.com',
+      pinterest: 'pinterest.com',
+      linkedin: 'linkedin.com',
+    };
+    return platformMap[platformId] || platformId;
+  };
+
   const siteParam = activePlatformSource !== 'all' && activePlatformSource !== 'google' 
-    ? `&site=${activePlatformSource}` 
+    ? `&site=${getPlatformSite(activePlatformSource)}` 
     : '';
 
   const { data: imagesData, isLoading: imagesLoading } = useQuery<{images: ImageResult[], totalPages?: number, currentPage?: number}>({
