@@ -43,11 +43,7 @@ export function SortOptions({ selectedSort, onSortChange, resultCount }: SortOpt
   const Icon = currentOption.icon;
 
   return (
-    <div className="flex items-center justify-between">
-      <p className="text-sm text-muted-foreground">
-        {resultCount.toLocaleString()} result{resultCount !== 1 ? 's' : ''}
-      </p>
-
+    <div className="flex items-center justify-end">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button 

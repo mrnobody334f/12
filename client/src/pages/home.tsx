@@ -64,15 +64,15 @@ export default function Home() {
 
   useEffect(() => {
     if (detectedLocation && !country && !countryCode && !isManualLocation) {
-      setCountry(detectedLocation.country);
-      setCountryCode(detectedLocation.countryCode);
-      setCity("");
+      // Don't set country/countryCode in state to keep location selector clean
+      // We'll use detectedLocation directly for search
     }
   }, [detectedLocation, country, countryCode, isManualLocation]);
 
-  const effectiveCountry = country;
-  const effectiveCountryCode = countryCode;
-  const effectiveCity = city;
+  // Use manual location if set, otherwise use detected location for search
+  const effectiveCountry = isManualLocation ? country : (detectedLocation?.country || country);
+  const effectiveCountryCode = isManualLocation ? countryCode : (detectedLocation?.countryCode || countryCode);
+  const effectiveCity = isManualLocation ? city : "";
 
   const locationParams = (effectiveCountryCode && effectiveCountryCode !== "global" && effectiveCountryCode !== '') || effectiveCity 
     ? `&countryCode=${encodeURIComponent(effectiveCountryCode)}&country=${encodeURIComponent(effectiveCountry)}&city=${encodeURIComponent(effectiveCity)}`
@@ -87,10 +87,14 @@ export default function Home() {
   const filterParams = `&timeFilter=${timeFilter}&languageFilter=${languageFilter}&fileTypeFilter=${fileTypeFilter}`;
 
   const isMediaTab = ['images', 'videos', 'places', 'news'].includes(activeSource);
+  const isAllMediaTab = activeSource === 'all-media';
+  
+  // Use activePlatformSource when on all-media tab
+  const effectiveSearchSource = isAllMediaTab ? (activePlatformSource || 'all') : activeSource;
   
   const { data, isLoading, error, refetch } = useQuery<SearchResponse>({
     queryKey: [
-      `/api/search?query=${encodeURIComponent(searchQuery)}&source=${activeSource}&page=${currentPage}&limit=20&sort=${sortBy}&autoDetect=${autoDetectIntent}${
+      `/api/search?query=${encodeURIComponent(searchQuery)}&source=${effectiveSearchSource}&page=${currentPage}&limit=20&sort=${sortBy}&autoDetect=${autoDetectIntent}${
         !autoDetectIntent && manualIntent ? `&intent=${manualIntent}` : ""
       }${locationParams}${filterParams}`,
     ],
@@ -169,10 +173,12 @@ export default function Home() {
   };
 
   const handleSourceChange = (sourceId: string) => {
+    const isMediaType = ['images', 'videos', 'places', 'news'].includes(sourceId);
+    
     setActiveSource(sourceId);
     
-    const isMediaType = ['images', 'videos', 'places', 'news'].includes(sourceId);
-    if (!isMediaType) {
+    // Update platform source only for non-media tabs (excluding all-media)
+    if (!isMediaType && sourceId !== 'all-media') {
       setActivePlatformSource(sourceId);
     }
     
@@ -873,7 +879,7 @@ export default function Home() {
           />
         )}
 
-        {hasSearched && !isLoading && !error && data && !isMediaTab && (
+        {hasSearched && !isLoading && !error && data && (!isMediaTab || isAllMediaTab) && (
           <div className="space-y-6">
             {/* Corrected Query */}
             {data.correctedQuery && data.correctedQuery !== searchQuery && (
@@ -887,10 +893,16 @@ export default function Home() {
             {/* Result Label and Sort Options */}
             {filteredResults.length > 0 && (
               <div className="flex items-center justify-between gap-4 flex-wrap">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                   <Badge variant="outline" className="text-xs font-medium px-3 py-1">
                     {getResultsLabel(activeSource)}
                   </Badge>
+                  {isManualLocation && (country || city) && (
+                    <Badge variant="secondary" className="text-xs px-3 py-1">
+                      <MapPin className="h-3 w-3 mr-1" />
+                      {city ? `${city}, ${country}` : country}
+                    </Badge>
+                  )}
                 </div>
                 <SortOptions
                   selectedSort={sortBy}
@@ -925,7 +937,7 @@ export default function Home() {
                       hasPrevious={currentPage > 1}
                     />
                     <p className="text-xs text-muted-foreground">
-                      Page {currentPage} of {Math.ceil(pagination.totalResults / 20)} • {pagination.totalResults.toLocaleString()} results
+                      Page {currentPage} of {Math.ceil(pagination.totalResults / 20)}
                     </p>
                   </div>
                 )}

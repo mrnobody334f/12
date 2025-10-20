@@ -78,16 +78,44 @@ import {
   type SortOption,
 } from "@shared/schema";
 
+// Helper function to convert string numbers like "1.2M" or "5K" to actual numbers
+function parseNumberString(value: number | string | undefined): number {
+  if (typeof value === 'number') return value;
+  if (!value) return 0;
+  
+  const str = value.toString().toLowerCase().trim();
+  if (str === '') return 0;
+  
+  const multipliers: Record<string, number> = {
+    'k': 1000,
+    'm': 1000000,
+    'b': 1000000000,
+  };
+  
+  const match = str.match(/^([\d.]+)([kmb]?)$/);
+  if (match) {
+    const num = parseFloat(match[1]);
+    const multiplier = multipliers[match[2]] || 1;
+    return num * multiplier;
+  }
+  
+  return parseFloat(str) || 0;
+}
+
 // Helper function to sort results
 function sortResults(results: SearchResult[], sortBy: SortOption): SearchResult[] {
   switch (sortBy) {
     case "recent":
       return [...results].sort((a, b) => {
-        if (!a.date || !b.date) return 0;
+        // Results with dates come first, sorted newest to oldest
+        // Results without dates come last
+        if (!a.date && !b.date) return 0;
+        if (!a.date) return 1;  // a goes to bottom
+        if (!b.date) return -1; // b goes to bottom
         return new Date(b.date).getTime() - new Date(a.date).getTime();
       });
     case "mostViewed":
-      return [...results].sort((a, b) => (b.views || 0) - (a.views || 0));
+      return [...results].sort((a, b) => parseNumberString(b.views) - parseNumberString(a.views));
     case "mostEngaged":
       return [...results].sort((a, b) => (b.engagement || 0) - (a.engagement || 0));
     case "relevance":
@@ -482,13 +510,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 }
               }
               
+              // Calculate engagement from available metrics (likes + comments + shares)
+              const likes = parseNumberString(result.likes);
+              const comments = parseNumberString(result.comments);
+              const shares = parseNumberString(result.shares);
+              const calculatedEngagement = likes + comments + shares;
+              
               return {
                 ...result,
                 source: src.id,
                 sourceName: displayName,
                 favicon: `https://www.google.com/s2/favicons?domain=${domain}&sz=32`,
-                views: Math.floor(Math.random() * 100000),
-                engagement: Math.floor(Math.random() * 10000),
+                engagement: calculatedEngagement, // Always set to 0 or calculated value
                 // Pass through rich snippet data from Serper
                 rating: result.rating,
                 ratingCount: result.ratingCount,

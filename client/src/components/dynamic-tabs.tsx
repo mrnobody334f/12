@@ -67,6 +67,7 @@ function getPlatformSearchUrl(platformId: string, query: string, site?: string):
 }
 
 const mediaTabs = [
+  { id: "all-media", name: "All", icon: Globe2, color: "text-gray-600 dark:text-gray-400" },
   { id: "images", name: "Images", icon: Image, color: "text-purple-600 dark:text-purple-400" },
   { id: "videos", name: "Videos", icon: Video, color: "text-red-600 dark:text-red-400" },
   { id: "places", name: "Places", icon: MapPin, color: "text-green-600 dark:text-green-400" },
@@ -126,10 +127,11 @@ export function DynamicTabs({ sources, intentSources, activeSource, activePlatfo
 
   const allTabs = [...platformTabs, ...intentTabs];
   const isMediaTab = ['images', 'videos', 'places', 'news'].includes(activeSource);
-  const effectiveActiveSource = isMediaTab && activePlatformSource ? activePlatformSource : activeSource;
+  const isAllMediaTab = activeSource === 'all-media';
+  const effectiveActiveSource = (isMediaTab || isAllMediaTab) && activePlatformSource ? activePlatformSource : activeSource;
   const activeTab = allTabs.find(tab => tab.id === effectiveActiveSource);
   const activeSite = intentSources?.find(s => s.id === effectiveActiveSource)?.site;
-  const showOpenButton = searchQuery && effectiveActiveSource !== "all" && !isMediaTab && activeTab;
+  const showOpenButton = searchQuery && effectiveActiveSource !== "all" && !isMediaTab && !isAllMediaTab && activeTab;
 
   const handleOpenInNewTab = () => {
     if (searchQuery && effectiveActiveSource) {
@@ -182,7 +184,8 @@ export function DynamicTabs({ sources, intentSources, activeSource, activePlatfo
         {platformTabs.map((tab) => {
           const IconComponent = tab.iconComponent;
           const Icon = tab.icon;
-          const isActive = isMediaTab ? (activePlatformSource === tab.id) : (activeSource === tab.id);
+          // Platform tab is active if it's selected, or if we're on a media tab (including all-media) and it's the cached platform
+          const isActive = (isMediaTab || isAllMediaTab) ? (activePlatformSource === tab.id) : (activeSource === tab.id);
 
           return (
             <button
@@ -212,6 +215,8 @@ export function DynamicTabs({ sources, intentSources, activeSource, activePlatfo
         <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
           {mediaTabs.map((tab) => {
             const Icon = tab.icon;
+            // For 'all-media' tab, check if activeSource is 'all-media'
+            // For other media tabs, check activeSource directly
             const isActive = activeSource === tab.id;
 
             return (
