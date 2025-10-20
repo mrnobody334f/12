@@ -327,16 +327,8 @@ export async function searchWithSerper(
     throw new Error("SERPER_API_KEY is not configured");
   }
 
-  // Build the search query with location and filters
+  // Build the search query with filters (no city concatenation)
   let enhancedQuery = query;
-  
-  // Add city to query for better local results
-  if (city && city.trim()) {
-    const detectedLanguage = detectLanguage(query);
-    const locationKeyword = detectedLanguage === 'ar' ? 'في' : 'in';
-    enhancedQuery = `${query} ${locationKeyword} ${city}`;
-    console.log(`Enhanced query with city: "${query}" → "${enhancedQuery}"`);
-  }
   
   // Add file type filter to query if specified
   if (fileTypeFilter && fileTypeFilter !== 'any') {
@@ -359,9 +351,15 @@ export async function searchWithSerper(
       hl: languageFilter && languageFilter !== 'any' ? languageFilter : detectedLanguage,
     };
 
-    // Add country code only if provided (no default fallback, no city)
+    // Add country code only if provided (no default fallback)
     if (countryCode && countryCode.toLowerCase() !== 'global' && /^[a-z]{2}$/i.test(countryCode)) {
       requestBody.gl = countryCode.toLowerCase();
+    }
+    
+    // Add location (city) as separate parameter for Google to handle location-based results
+    if (city && city.trim()) {
+      requestBody.location = city.trim();
+      console.log(`Location parameter set: ${city}`);
     }
     
     // Add time filter if specified
@@ -396,8 +394,11 @@ export async function searchWithSerper(
     console.log('🔍 SERPER RAW RESPONSE:', JSON.stringify(data, null, 2));
     
     // Log search info for debugging
-    const locationInfo = requestBody.gl ? ` [country=${requestBody.gl}, language=${requestBody.hl}]` : ` [language=${requestBody.hl}, global]`;
-    console.log(`Serper search: "${searchQuery}"${locationInfo} - Found ${data.organic?.length || 0} results`);
+    let locationInfo = `[language=${requestBody.hl}`;
+    if (requestBody.gl) locationInfo += `, country=${requestBody.gl}`;
+    if (requestBody.location) locationInfo += `, location=${requestBody.location}`;
+    locationInfo += requestBody.gl || requestBody.location ? ']' : ', global]';
+    console.log(`Serper search: "${searchQuery}" ${locationInfo} - Found ${data.organic?.length || 0} results`);
     if (data.organic && data.organic.length > 0) {
       console.log(`First result: ${data.organic[0].title} - ${data.organic[0].link}`);
     }

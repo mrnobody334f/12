@@ -164,11 +164,27 @@ export function ColorCustomizer() {
   const applySettings = () => {
     const root = document.documentElement;
     
+    // Apply base light colors
     Object.entries(lightColors).forEach(([key, value]) => {
       const cssVar = key.replace(/([A-Z])/g, '-$1').toLowerCase();
       root.style.setProperty(`--${cssVar}`, value);
     });
     
+    // Auto-calculate and apply derived light colors
+    root.style.setProperty('--card-foreground', lightColors.foreground);
+    root.style.setProperty('--card-border', lightColors.border);
+    root.style.setProperty('--muted-foreground', '0 0% 45%');
+    root.style.setProperty('--accent-foreground', lightColors.foreground);
+    root.style.setProperty('--secondary-foreground', lightColors.foreground);
+    root.style.setProperty('--popover', lightColors.card);
+    root.style.setProperty('--popover-foreground', lightColors.foreground);
+    root.style.setProperty('--popover-border', lightColors.border);
+    root.style.setProperty('--input', lightColors.border);
+    root.style.setProperty('--primary-foreground', '0 0% 100%');
+    root.style.setProperty('--destructive', '0 84% 60%');
+    root.style.setProperty('--destructive-foreground', '210 40% 98%');
+    
+    // Apply font settings
     root.style.setProperty('--font-family', font.family);
     root.style.setProperty('--font-size-base', `${font.baseSize}px`);
     root.style.setProperty('--font-size-heading', `${font.headingSize}px`);
@@ -185,6 +201,7 @@ export function ColorCustomizer() {
       document.head.appendChild(styleEl);
     }
     
+    // Apply base dark colors
     const darkStyles = Object.entries(darkColors)
       .map(([key, value]) => {
         const cssVar = key.replace(/([A-Z])/g, '-$1').toLowerCase();
@@ -192,9 +209,26 @@ export function ColorCustomizer() {
       })
       .join('\n    ');
     
+    // Add derived dark colors
+    const derivedDarkStyles = `
+    --card-foreground: ${darkColors.foreground};
+    --card-border: ${darkColors.border};
+    --muted-foreground: 0 0% 65%;
+    --accent-foreground: ${darkColors.foreground};
+    --secondary-foreground: ${darkColors.foreground};
+    --popover: ${darkColors.card};
+    --popover-foreground: ${darkColors.foreground};
+    --popover-border: ${darkColors.border};
+    --input: 0 0% 20%;
+    --primary-foreground: 0 0% 100%;
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 0 0% 100%;
+    `;
+    
     styleEl.textContent = `
       .dark {
         ${darkStyles}
+        ${derivedDarkStyles}
       }
     `;
   };
