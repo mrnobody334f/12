@@ -277,17 +277,95 @@ export default function Home() {
   const hasSearched = searchQuery.length > 0;
   const pagination = data?.pagination;
 
+  // Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore shortcuts if user is typing in input/textarea
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        // Allow Escape to blur
+        if (e.key === 'Escape') {
+          target.blur();
+        }
+        return;
+      }
+
+      // "/" - Focus search (works always, not just on homepage)
+      if (e.key === '/') {
+        e.preventDefault();
+        const searchInput = document.querySelector('[data-testid="input-search"]') as HTMLInputElement;
+        if (searchInput) {
+          searchInput.focus();
+          searchInput.select();
+        }
+      }
+
+      // Ctrl+K or Cmd+K - Quick search (focus search bar)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        const searchInput = document.querySelector('[data-testid="input-search"]') as HTMLInputElement;
+        if (searchInput) {
+          searchInput.focus();
+          searchInput.select();
+        }
+      }
+
+      // Escape - Clear search and go home
+      if (e.key === 'Escape' && hasSearched) {
+        setSearchQuery("");
+        setCurrentPage(1);
+        setAccumulatedResults([]);
+      }
+
+      // Arrow navigation for results (when results are visible)
+      if (hasSearched && filteredResults.length > 0) {
+        const results = document.querySelectorAll('[data-testid^="card-result-"]');
+        const focused = document.activeElement;
+        const currentIndex = Array.from(results).findIndex(el => el.contains(focused));
+
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          if (currentIndex < results.length - 1) {
+            const nextResult = results[currentIndex + 1] as HTMLElement;
+            const link = nextResult.querySelector('a');
+            if (link) link.focus();
+          } else if (currentIndex === -1 && results.length > 0) {
+            const firstLink = results[0].querySelector('a') as HTMLElement;
+            if (firstLink) firstLink.focus();
+          }
+        }
+
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          if (currentIndex > 0) {
+            const prevResult = results[currentIndex - 1] as HTMLElement;
+            const link = prevResult.querySelector('a');
+            if (link) link.focus();
+          }
+        }
+
+        // Enter - Open focused result
+        if (e.key === 'Enter' && focused && focused.tagName === 'A') {
+          (focused as HTMLAnchorElement).click();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [hasSearched, filteredResults, setSearchQuery, setCurrentPage, setAccumulatedResults]);
+
   return (
     <div className="min-h-screen bg-white dark:bg-background">
-      {/* Enhanced Header */}
+      {/* Compact Smart Header */}
       {hasSearched && (
-        <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-white/95 dark:bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:supports-[backdrop-filter]:bg-background/80">
-          {/* Main Header Row */}
+        <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-white/95 dark:bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:supports-[backdrop-filter]:bg-background/80 shadow-sm">
+          {/* Main Header Row - Compressed */}
           <div className="border-b border-border/20">
-            <div className="max-w-[1400px] mx-auto px-6 py-3 flex items-center gap-4">
-              {/* Logo */}
+            <div className="max-w-[1400px] mx-auto px-4 py-2 flex items-center gap-3">
+              {/* Logo - Smaller */}
               <div 
-                className="flex items-center gap-2 cursor-pointer flex-shrink-0" 
+                className="flex items-center gap-1.5 cursor-pointer flex-shrink-0 hover-elevate active-elevate-2 rounded-lg px-2 py-1 transition-all" 
                 onClick={() => {
                   setSearchQuery("");
                   setCurrentPage(1);
@@ -295,10 +373,10 @@ export default function Home() {
                 }}
                 data-testid="link-home"
               >
-                <div className="w-8 h-8 bg-gradient-to-br from-[#4285f4] to-[#34a853] rounded-lg flex items-center justify-center shadow-sm">
-                  <span className="text-white font-bold text-lg">N</span>
+                <div className="w-7 h-7 bg-gradient-to-br from-[#4285f4] to-[#34a853] rounded-lg flex items-center justify-center shadow-sm">
+                  <span className="text-white font-bold text-base">N</span>
                 </div>
-                <h1 className="text-lg font-semibold text-foreground hidden md:block">
+                <h1 className="text-base font-semibold text-foreground hidden lg:block">
                   NovaSearch
                 </h1>
               </div>
@@ -312,8 +390,33 @@ export default function Home() {
                 />
               </div>
 
-              {/* Right Actions */}
-              <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Compact Intent Selector as Popover */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    className="gap-1.5 hidden sm:flex"
+                    data-testid="button-intent-selector"
+                  >
+                    <Settings2 className="h-4 w-4" />
+                    <span className="text-xs hidden md:inline">
+                      {autoDetectIntent ? "Auto" : manualIntent || "Intent"}
+                    </span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-80">
+                  <IntentSelector
+                    selectedIntent={manualIntent}
+                    onIntentChange={handleIntentChange}
+                    autoDetect={autoDetectIntent}
+                    onAutoDetectChange={handleAutoDetectChange}
+                  />
+                </PopoverContent>
+              </Popover>
+
+              {/* Right Actions - Compact */}
+              <div className="flex items-center gap-1 flex-shrink-0">
                 <LocationSelector
                   country={country}
                   countryCode={countryCode}
@@ -329,8 +432,9 @@ export default function Home() {
                     onClick={handleBookmarkClick}
                     disabled={bookmarkMutation.isPending}
                     data-testid="button-bookmark"
+                    className="h-8 w-8"
                   >
-                    <Bookmark className="h-5 w-5" />
+                    <Bookmark className="h-4 w-4" />
                   </Button>
                 )}
                 <ThemeToggle />
@@ -338,92 +442,162 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Intent Selection Row */}
-          <div className="border-b border-border/20">
-            <div className="max-w-[1400px] mx-auto px-6">
-              <IntentSelector
-                selectedIntent={manualIntent}
-                onIntentChange={handleIntentChange}
-                autoDetect={autoDetectIntent}
-                onAutoDetectChange={handleAutoDetectChange}
-              />
-            </div>
-          </div>
-
-          {/* Dynamic Tabs Row */}
-          <div className="border-b border-border/20">
-            <div className="max-w-[1400px] mx-auto px-6 py-3">
-              <DynamicTabs
-                sources={currentSources}
-                intentSources={intentSources}
-                activeSource={activeSource}
-                onSourceChange={handleSourceChange}
-                showPlatformTabs={true}
-                searchQuery={searchQuery}
-                detectedIntent={detectedIntent}
-                onLoadMoreTabs={handleLoadMoreTabs}
-                location={{ countryCode, city }}
-              />
-            </div>
-          </div>
-
-          {/* Tools & Filters Row */}
-          <div className="bg-background/50">
-            <div className="max-w-[1400px] mx-auto px-6 py-2 flex items-center gap-2">
-              <SearchTools
-                timeFilter={timeFilter}
-                languageFilter={languageFilter}
-                fileTypeFilter={fileTypeFilter}
-                onTimeFilterChange={handleTimeFilterChange}
-                onLanguageFilterChange={handleLanguageFilterChange}
-                onFileTypeFilterChange={handleFileTypeFilterChange}
-                onClearFilters={handleClearFilters}
-              />
+          {/* Combined Tabs & Filters Row */}
+          <div className="bg-background/30">
+            <div className="max-w-[1400px] mx-auto px-4 py-2 flex items-center gap-3 overflow-x-auto">
+              {/* Dynamic Tabs - Inline */}
+              <div className="flex-1 min-w-0">
+                <DynamicTabs
+                  sources={currentSources}
+                  intentSources={intentSources}
+                  activeSource={activeSource}
+                  onSourceChange={handleSourceChange}
+                  showPlatformTabs={true}
+                  searchQuery={searchQuery}
+                  detectedIntent={detectedIntent}
+                  onLoadMoreTabs={handleLoadMoreTabs}
+                  location={{ countryCode, city }}
+                />
+              </div>
+              
+              {/* Filters - Inline */}
+              <div className="flex-shrink-0">
+                <SearchTools
+                  timeFilter={timeFilter}
+                  languageFilter={languageFilter}
+                  fileTypeFilter={fileTypeFilter}
+                  onTimeFilterChange={handleTimeFilterChange}
+                  onLanguageFilterChange={handleLanguageFilterChange}
+                  onFileTypeFilterChange={handleFileTypeFilterChange}
+                  onClearFilters={handleClearFilters}
+                />
+              </div>
             </div>
           </div>
         </header>
       )}
 
-      {/* Google-style Homepage - Only show when no search */}
+      {/* Enhanced Landing Page */}
       {!hasSearched && (
-        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] px-4">
-          {/* Logo */}
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] px-4 py-12">
+          {/* Logo & Tagline */}
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="mb-8"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="mb-10 text-center"
           >
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-20 h-20 bg-gradient-to-br from-[#4285f4] via-[#34a853] to-[#fbbc04] rounded-2xl flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-4xl">N</span>
+            <div className="flex flex-col items-center gap-5">
+              <motion.div 
+                className="w-24 h-24 bg-gradient-to-br from-[#4285f4] via-[#34a853] to-[#fbbc04] rounded-3xl flex items-center justify-center shadow-2xl"
+                animate={{ 
+                  boxShadow: [
+                    "0 20px 60px -15px rgba(66, 133, 244, 0.3)",
+                    "0 25px 70px -15px rgba(52, 168, 83, 0.4)",
+                    "0 20px 60px -15px rgba(66, 133, 244, 0.3)"
+                  ]
+                }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <span className="text-white font-bold text-5xl">N</span>
+              </motion.div>
+              <div>
+                <h1 className="text-6xl font-normal text-foreground tracking-tight mb-2">
+                  NovaSearch
+                </h1>
+                <p className="text-lg text-muted-foreground">
+                  AI-powered search with smart insights
+                </p>
               </div>
-              <h1 className="text-5xl font-normal text-foreground tracking-tight">
-                NovaSearch
-              </h1>
             </div>
           </motion.div>
 
           {/* Search Bar */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="w-full max-w-2xl"
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="w-full max-w-3xl mb-8"
           >
             <SearchBar
               onSearch={handleSearch}
               initialQuery={searchQuery}
               isSearching={isLoading}
             />
+            <p className="text-xs text-muted-foreground text-center mt-3">
+              Press <kbd className="px-1.5 py-0.5 text-[10px] bg-muted rounded border">Ctrl+K</kbd> or <kbd className="px-1.5 py-0.5 text-[10px] bg-muted rounded border">/</kbd> to search
+            </p>
           </motion.div>
 
-          {/* Auto Intent Detection */}
+          {/* Sample Queries */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="w-full max-w-3xl mb-10"
+          >
+            <p className="text-sm text-muted-foreground mb-3 text-center">Try searching for:</p>
+            <div className="flex flex-wrap gap-2 justify-center">
+              {[
+                { query: "أفضل هواتف 2025", icon: "🛒" },
+                { query: "How to learn React", icon: "📚" },
+                { query: "Latest AI news", icon: "📰" },
+                { query: "Healthy recipes", icon: "🍳" },
+                { query: "أفضل مطاعم القاهرة", icon: "🍽️" },
+                { query: "Best laptops 2025", icon: "💻" }
+              ].map((sample, i) => (
+                <motion.button
+                  key={i}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.4 + i * 0.05 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => handleSearch(sample.query)}
+                  className="px-4 py-2 text-sm bg-card border border-card-border rounded-full hover-elevate active-elevate-2 transition-all flex items-center gap-2"
+                  data-testid={`button-sample-${i}`}
+                >
+                  <span>{sample.icon}</span>
+                  <span>{sample.query}</span>
+                </motion.button>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Features Grid */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className="w-full max-w-4xl mb-10"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[
+                { icon: "🤖", title: "AI Summaries", desc: "Get intelligent summaries powered by AI" },
+                { icon: "🌐", title: "Multi-Source", desc: "Search across multiple platforms" },
+                { icon: "⚡", title: "Lightning Fast", desc: "Instant results with smart caching" }
+              ].map((feature, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 + i * 0.1 }}
+                  className="p-6 rounded-xl bg-card border border-card-border hover-elevate transition-all text-center"
+                >
+                  <div className="text-4xl mb-3">{feature.icon}</div>
+                  <h3 className="font-semibold text-base mb-2">{feature.title}</h3>
+                  <p className="text-sm text-muted-foreground">{feature.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Settings Row */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="mt-8 w-full max-w-2xl"
+            transition={{ delay: 0.8 }}
+            className="flex items-center gap-4 flex-wrap justify-center"
           >
             <IntentSelector
               selectedIntent={manualIntent}
@@ -431,15 +605,6 @@ export default function Home() {
               autoDetect={autoDetectIntent}
               onAutoDetectChange={handleAutoDetectChange}
             />
-          </motion.div>
-
-          {/* Search Location */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="mt-4 w-full max-w-2xl"
-          >
             <LocationSelector
               country={country}
               countryCode={countryCode}
@@ -447,15 +612,6 @@ export default function Home() {
               onLocationChange={handleLocationChange}
               detectedLocation={detectedLocation}
             />
-          </motion.div>
-
-          {/* Theme Toggle at bottom */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="mt-12"
-          >
             <ThemeToggle />
           </motion.div>
         </div>

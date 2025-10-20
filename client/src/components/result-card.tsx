@@ -1,7 +1,10 @@
 import { motion } from "framer-motion";
-import { Star, ChevronRight } from "lucide-react";
+import { Star, ChevronRight, Share2, Copy, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import type { SearchResult } from "@shared/schema";
+import { useState } from "react";
 
 interface ResultCardProps {
   result: SearchResult;
@@ -9,6 +12,41 @@ interface ResultCardProps {
 }
 
 export function ResultCard({ result, index }: ResultCardProps) {
+  const [showActions, setShowActions] = useState(false);
+  const { toast } = useToast();
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(result.link);
+      toast({
+        title: "Link copied!",
+        description: "The link has been copied to your clipboard",
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to copy",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: result.title,
+          text: result.snippet,
+          url: result.link,
+        });
+      } catch (error) {
+        // User cancelled or error occurred
+      }
+    } else {
+      handleCopyLink();
+    }
+  };
+
   const getFaviconUrl = (link: string) => {
     try {
       const url = new URL(link);
@@ -64,9 +102,61 @@ export function ResultCard({ result, index }: ResultCardProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.03, duration: 0.2 }}
-      className="group p-4 rounded-xl hover-elevate transition-all duration-200"
+      className="group relative p-4 rounded-xl hover-elevate transition-all duration-200"
       data-testid={`card-result-${index}`}
+      onMouseEnter={() => setShowActions(true)}
+      onMouseLeave={() => setShowActions(false)}
+      onFocus={() => setShowActions(true)}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) {
+          setShowActions(false);
+        }
+      }}
+      tabIndex={0}
     >
+      {/* Quick Actions - Show on Hover and Focus */}
+      <motion.div
+        initial={{ opacity: 0, x: 10 }}
+        animate={{ opacity: showActions ? 1 : 0, x: showActions ? 0 : 10 }}
+        transition={{ duration: 0.2 }}
+        className="absolute top-3 right-3 flex items-center gap-1 bg-background/95 backdrop-blur rounded-lg shadow-lg border border-border p-1"
+        style={{ pointerEvents: showActions ? 'auto' : 'none' }}
+      >
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleShare}
+          className="h-7 w-7"
+          data-testid={`button-share-${index}`}
+        >
+          <Share2 className="h-3.5 w-3.5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleCopyLink}
+          className="h-7 w-7"
+          data-testid={`button-copy-${index}`}
+        >
+          <Copy className="h-3.5 w-3.5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          asChild
+          className="h-7 w-7"
+        >
+          <a 
+            href={result.link} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            data-testid={`button-external-${index}`}
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+          </a>
+        </Button>
+      </motion.div>
+
       <div className="flex gap-4">
         {/* Main Content */}
         <div className="flex-1 min-w-0">
