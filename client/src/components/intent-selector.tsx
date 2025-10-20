@@ -1,5 +1,4 @@
 import { ShoppingBag, Newspaper, BookOpen, Music, Globe, Zap } from "lucide-react";
-import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { IntentType } from "@shared/schema";
 import { Switch } from "@/components/ui/switch";
@@ -12,36 +11,31 @@ interface IntentSelectorProps {
   onAutoDetectChange: (enabled: boolean) => void;
 }
 
-const intentOptions: { value: IntentType; label: string; icon: typeof Globe; description: string }[] = [
+const intentOptions: { value: IntentType; label: string; icon: typeof Globe }[] = [
   {
     value: "general",
-    label: "General",
+    label: "All",
     icon: Globe,
-    description: "All-purpose search",
   },
   {
     value: "shopping",
     label: "Shopping",
     icon: ShoppingBag,
-    description: "Products & deals",
   },
   {
     value: "news",
     label: "News",
     icon: Newspaper,
-    description: "Latest updates",
   },
   {
     value: "learning",
     label: "Learning",
     icon: BookOpen,
-    description: "Educational content",
   },
   {
     value: "entertainment",
-    label: "Entertainment",
+    label: "Videos",
     icon: Music,
-    description: "Videos & trends",
   },
 ];
 
@@ -52,71 +46,47 @@ export function IntentSelector({
   onAutoDetectChange,
 }: IntentSelectorProps) {
   return (
-    <div className="space-y-4">
-      {/* Auto-detect toggle */}
-      <div className="flex items-center justify-between p-4 bg-card border border-card-border rounded-xl">
-        <div className="flex items-center gap-3">
-          <Zap className="h-5 w-5 text-primary" />
-          <div>
-            <Label htmlFor="auto-detect" className="text-sm font-medium cursor-pointer">
-              Auto Intent Detection
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              AI analyzes your query to determine intent
-            </p>
-          </div>
-        </div>
+    <div className="flex items-center gap-4 overflow-x-auto pb-2">
+      {/* Auto-detect toggle - compact */}
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-border/60 bg-background flex-shrink-0">
+        <Zap className="h-3.5 w-3.5 text-primary" />
+        <Label htmlFor="auto-detect" className="text-xs font-medium cursor-pointer whitespace-nowrap">
+          Auto
+        </Label>
         <Switch
           id="auto-detect"
           checked={autoDetect}
           onCheckedChange={onAutoDetectChange}
           data-testid="toggle-auto-detect"
+          className="scale-75"
         />
       </div>
 
-      {/* Manual intent selection */}
+      {/* Intent tabs - Google style */}
       {!autoDetect && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          exit={{ opacity: 0, height: 0 }}
-          className="space-y-2"
-        >
-          <Label className="text-sm font-medium text-muted-foreground">
-            Select Search Intent
-          </Label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-            {intentOptions.map((option) => {
-              const Icon = option.icon;
-              const isSelected = selectedIntent === option.value;
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {intentOptions.map((option) => {
+            const Icon = option.icon;
+            const isSelected = selectedIntent === option.value;
 
-              return (
-                <button
-                  key={option.value}
-                  onClick={() => onIntentChange(option.value)}
-                  className={cn(
-                    "flex flex-col items-center gap-2 p-3 rounded-xl border transition-all hover-elevate active-elevate-2",
-                    isSelected
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-card border-card-border"
-                  )}
-                  data-testid={`intent-${option.value}`}
-                >
-                  <Icon className="h-5 w-5" />
-                  <div className="text-center">
-                    <p className="text-sm font-medium">{option.label}</p>
-                    <p className={cn(
-                      "text-xs",
-                      isSelected ? "text-primary-foreground/80" : "text-muted-foreground"
-                    )}>
-                      {option.description}
-                    </p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </motion.div>
+            return (
+              <button
+                key={option.value}
+                onClick={() => onIntentChange(option.value)}
+                className={cn(
+                  "flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap",
+                  isSelected
+                    ? "bg-primary/10 text-primary border border-primary/20"
+                    : "text-muted-foreground hover:bg-muted/50"
+                )}
+                data-testid={`intent-${option.value}`}
+              >
+                <Icon className="h-4 w-4" />
+                <span>{option.label}</span>
+              </button>
+            );
+          })}
+        </div>
       )}
     </div>
   );

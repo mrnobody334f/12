@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Bookmark, MapPin, Globe2 } from "lucide-react";
+import { Bookmark, MapPin, Globe2, Settings2 } from "lucide-react";
 import { SearchBar } from "@/components/search-bar";
 import { IntentSelector } from "@/components/intent-selector";
 import { LocationSelector } from "@/components/location-selector";
@@ -19,9 +19,15 @@ import { RelatedSearches } from "@/components/related-searches";
 import { SearchTools, type TimeFilter, type LanguageFilter, type FileTypeFilter } from "@/components/search-tools";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { SearchResponse, IntentType, SortOption } from "@shared/schema";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -48,13 +54,10 @@ export default function Home() {
     staleTime: Infinity,
   });
 
-  // Auto-set country from GeoIP on first load (country only, no city)
   useEffect(() => {
     if (detectedLocation && !country && !countryCode && !isManualLocation) {
-      // Use only country from GeoIP, not city
       setCountry(detectedLocation.country);
       setCountryCode(detectedLocation.countryCode);
-      // Don't set city - leave it empty
       setCity("");
     }
   }, [detectedLocation, country, countryCode, isManualLocation]);
@@ -106,7 +109,7 @@ export default function Home() {
     setActiveSource("all");
     setCurrentPage(1);
     setAccumulatedResults([]);
-    setTabsPage(2); // Reset tabs page for new search
+    setTabsPage(2);
   };
 
   const handleSourceChange = (sourceId: string) => {
@@ -133,7 +136,7 @@ export default function Home() {
 
   const handleIntentChange = (intent: IntentType | undefined) => {
     setManualIntent(intent);
-    setTabsPage(2); // Reset tabs page when intent changes
+    setTabsPage(2);
     if (searchQuery) {
       setCurrentPage(1);
       refetch();
@@ -152,7 +155,6 @@ export default function Home() {
     setCountry(newCountry);
     setCountryCode(newCountryCode);
     setCity(newCity);
-    // Mark as manual location whenever user makes any selection (including global)
     setIsManualLocation(true);
     if (searchQuery) {
       setCurrentPage(1);
@@ -198,7 +200,6 @@ export default function Home() {
   
   const handleLoadMoreTabs = async () => {
     try {
-      // Only fetch more tabs if we have an active intent
       const currentIntent = autoDetectIntent ? detectedIntent : manualIntent;
       if (!currentIntent || currentIntent === 'general') {
         console.log('No intent active, skipping more tabs');
@@ -222,7 +223,6 @@ export default function Home() {
     }
   };
 
-  // Load cached results from localStorage on mount
   useEffect(() => {
     if (searchQuery) {
       const cacheKey = `search_cache_${searchQuery}_${activeSource}_${sortBy}`;
@@ -231,39 +231,32 @@ export default function Home() {
         try {
           const parsedCache = JSON.parse(cached);
           if (parsedCache.timestamp && Date.now() - parsedCache.timestamp < 5 * 60 * 1000) {
-            // Cache valid for 5 minutes
             setAccumulatedResults(parsedCache.results);
           }
         } catch (e) {
-          // Invalid cache, ignore
+          // Invalid cache
         }
       }
     }
   }, [searchQuery, activeSource, sortBy]);
 
-  // Accumulate results when new data arrives
   useEffect(() => {
     if (data?.results) {
       if (currentPage === 1) {
-        // First page - replace all results
         setAccumulatedResults(data.results);
         setIsLoadingMore(false);
         
-        // Cache first page results
         const cacheKey = `search_cache_${searchQuery}_${activeSource}_${sortBy}`;
         localStorage.setItem(cacheKey, JSON.stringify({
           results: data.results,
           timestamp: Date.now()
         }));
       } else {
-        // Subsequent pages - append new results
         setAccumulatedResults(prev => {
-          // Avoid duplicates by checking link
           const existingLinks = new Set(prev.map(r => r.link));
           const newResults = data.results.filter(r => !existingLinks.has(r.link));
           const allResults = [...prev, ...newResults];
           
-          // Update cache with accumulated results
           const cacheKey = `search_cache_${searchQuery}_${activeSource}_${sortBy}`;
           localStorage.setItem(cacheKey, JSON.stringify({
             results: allResults,
@@ -285,120 +278,192 @@ export default function Home() {
   const pagination = data?.pagination;
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-primary to-ai-accent rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">N</span>
-            </div>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-              NovaSearch
-            </h1>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <BookmarkHistory onSearchClick={handleSearch} />
-            {hasSearched && data && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2"
-                onClick={handleBookmarkClick}
-                disabled={bookmarkMutation.isPending}
-                data-testid="button-bookmark"
-              >
-                <Bookmark className="h-4 w-4" />
-                <span className="hidden sm:inline">Bookmark</span>
-              </Button>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {/* Search Hero Section */}
-      <div className={`transition-all duration-500 ${hasSearched ? 'pt-8 pb-4' : 'pt-20 pb-12'}`}>
-        <div className="max-w-7xl mx-auto px-4">
-          <SearchBar
-            onSearch={handleSearch}
-            initialQuery={searchQuery}
-            isSearching={isLoading}
-          />
-
-          {/* Intent Selector */}
-          {!hasSearched && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="mt-8 max-w-3xl mx-auto"
+    <div className="min-h-screen bg-white dark:bg-background">
+      {/* Google-style Header - Only show when search has been made */}
+      {hasSearched && (
+        <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-white/95 dark:bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:supports-[backdrop-filter]:bg-background/80">
+          <div className="max-w-[1400px] mx-auto px-6 py-3 flex items-center gap-6">
+            {/* Logo */}
+            <div 
+              className="flex items-center gap-2 cursor-pointer" 
+              onClick={() => {
+                setSearchQuery("");
+                setCurrentPage(1);
+                setAccumulatedResults([]);
+              }}
+              data-testid="link-home"
             >
+              <div className="w-8 h-8 bg-gradient-to-br from-[#4285f4] to-[#34a853] rounded flex items-center justify-center">
+                <span className="text-white font-bold text-lg">N</span>
+              </div>
+              <h1 className="text-lg font-normal text-foreground hidden sm:block">
+                NovaSearch
+              </h1>
+            </div>
+
+            {/* Search Bar */}
+            <div className="flex-1 max-w-2xl">
+              <SearchBar
+                onSearch={handleSearch}
+                initialQuery={searchQuery}
+                isSearching={isLoading}
+              />
+            </div>
+
+            {/* Right Actions */}
+            <div className="flex items-center gap-2">
+              <BookmarkHistory onSearchClick={handleSearch} />
+              {data && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="gap-2"
+                  onClick={handleBookmarkClick}
+                  disabled={bookmarkMutation.isPending}
+                  data-testid="button-bookmark"
+                >
+                  <Bookmark className="h-5 w-5" />
+                </Button>
+              )}
+              <ThemeToggle />
+            </div>
+          </div>
+
+          {/* Intent Tabs - Google style */}
+          <div className="border-b border-border/40">
+            <div className="max-w-[1400px] mx-auto px-6">
               <IntentSelector
                 selectedIntent={manualIntent}
                 onIntentChange={handleIntentChange}
                 autoDetect={autoDetectIntent}
                 onAutoDetectChange={handleAutoDetectChange}
               />
-            </motion.div>
-          )}
-
-          {hasSearched && (
-            <div className="mt-4 max-w-3xl mx-auto space-y-4">
-              <IntentSelector
-                selectedIntent={manualIntent}
-                onIntentChange={handleIntentChange}
-                autoDetect={autoDetectIntent}
-                onAutoDetectChange={handleAutoDetectChange}
-              />
-              <LocationSelector
-                country={country}
-                countryCode={countryCode}
-                city={city}
-                onLocationChange={handleLocationChange}
-                detectedLocation={detectedLocation}
-              />
             </div>
-          )}
+          </div>
 
-          {!hasSearched && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="mt-4 max-w-3xl mx-auto"
-            >
-              <LocationSelector
-                country={country}
-                countryCode={countryCode}
-                city={city}
-                onLocationChange={handleLocationChange}
-                detectedLocation={detectedLocation}
-              />
-            </motion.div>
-          )}
+          {/* Tools Row */}
+          <div className="border-b border-border/20">
+            <div className="max-w-[1400px] mx-auto px-6 py-2 flex items-center justify-between gap-4">
+              {/* Location */}
+              <div className="flex items-center gap-3">
+                <LocationSelector
+                  country={country}
+                  countryCode={countryCode}
+                  city={city}
+                  onLocationChange={handleLocationChange}
+                  detectedLocation={detectedLocation}
+                />
+              </div>
+
+              {/* Tools Dropdown */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-2 text-muted-foreground"
+                    data-testid="button-tools"
+                  >
+                    <Settings2 className="h-4 w-4" />
+                    <span>Tools</span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80" align="end">
+                  <SearchTools
+                    timeFilter={timeFilter}
+                    languageFilter={languageFilter}
+                    fileTypeFilter={fileTypeFilter}
+                    onTimeFilterChange={handleTimeFilterChange}
+                    onLanguageFilterChange={handleLanguageFilterChange}
+                    onFileTypeFilterChange={handleFileTypeFilterChange}
+                    onClearFilters={handleClearFilters}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+        </header>
+      )}
+
+      {/* Google-style Homepage - Only show when no search */}
+      {!hasSearched && (
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] px-4">
+          {/* Logo */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mb-8"
+          >
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-20 h-20 bg-gradient-to-br from-[#4285f4] via-[#34a853] to-[#fbbc04] rounded-2xl flex items-center justify-center shadow-lg">
+                <span className="text-white font-bold text-4xl">N</span>
+              </div>
+              <h1 className="text-5xl font-normal text-foreground tracking-tight">
+                NovaSearch
+              </h1>
+            </div>
+          </motion.div>
+
+          {/* Search Bar */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="w-full max-w-2xl"
+          >
+            <SearchBar
+              onSearch={handleSearch}
+              initialQuery={searchQuery}
+              isSearching={isLoading}
+            />
+          </motion.div>
+
+          {/* Auto Intent Detection */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="mt-8 w-full max-w-2xl"
+          >
+            <IntentSelector
+              selectedIntent={manualIntent}
+              onIntentChange={handleIntentChange}
+              autoDetect={autoDetectIntent}
+              onAutoDetectChange={handleAutoDetectChange}
+            />
+          </motion.div>
+
+          {/* Search Location */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="mt-4 w-full max-w-2xl"
+          >
+            <LocationSelector
+              country={country}
+              countryCode={countryCode}
+              city={city}
+              onLocationChange={handleLocationChange}
+              detectedLocation={detectedLocation}
+            />
+          </motion.div>
+
+          {/* Theme Toggle at bottom */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="mt-12"
+          >
+            <ThemeToggle />
+          </motion.div>
         </div>
-      </div>
-
-      {/* Dynamic Tabs */}
-      {hasSearched && !isLoading && (
-        <DynamicTabs
-          sources={currentSources}
-          intentSources={intentSources}
-          activeSource={activeSource}
-          onSourceChange={handleSourceChange}
-          searchQuery={searchQuery}
-          detectedIntent={detectedIntent}
-          showPlatformTabs={true}
-          onLoadMoreTabs={handleLoadMoreTabs}
-          location={{ countryCode: effectiveCountryCode, city: effectiveCity }}
-        />
       )}
 
       {/* Content Area */}
-      <main className="max-w-7xl mx-auto px-4 py-6">
-        {!hasSearched && <EmptyState onSuggestedSearch={handleSearch} />}
-
+      <main className={hasSearched ? "max-w-[800px] mx-auto px-6 py-6" : ""}>
         {hasSearched && isLoading && currentPage === 1 && <SearchingSkeleton />}
 
         {hasSearched && error && (
@@ -410,7 +475,7 @@ export default function Home() {
 
         {hasSearched && !isLoading && !error && data && (
           <div className="space-y-6">
-            {/* Corrected Query - "Did you mean..." */}
+            {/* Corrected Query */}
             {data.correctedQuery && data.correctedQuery !== searchQuery && (
               <CorrectedQuery
                 originalQuery={searchQuery}
@@ -419,71 +484,28 @@ export default function Home() {
               />
             )}
 
-            {/* Location Display */}
-            {data.location && (data.location.city || data.location.country) ? (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-2 text-sm text-muted-foreground"
-              >
-                <MapPin className="h-4 w-4" />
-                <span>Showing results for</span>
-                <Badge variant="secondary" className="gap-1" data-testid="badge-location">
-                  {data.location.city && <span>{data.location.city}</span>}
-                  {data.location.city && data.location.country && <span>,</span>}
-                  {data.location.country && <span>{data.location.country}</span>}
-                </Badge>
-              </motion.div>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-2 text-sm text-muted-foreground"
-              >
-                <Globe2 className="h-4 w-4" />
-                <span>Showing global search results</span>
-                <Badge variant="outline" className="gap-1" data-testid="badge-global-search">
-                  <Globe2 className="h-3 w-3" />
-                  Global
-                </Badge>
-              </motion.div>
+            {/* Result Count */}
+            {filteredResults.length > 0 && (
+              <div className="text-sm text-muted-foreground">
+                About {pagination?.totalResults?.toLocaleString() || filteredResults.length} results
+              </div>
             )}
 
-            {/* AI Summary */}
+            {/* AI Summary as Featured Snippet */}
             {data.summary && activeSource === "all" && currentPage === 1 && (
               <AISummaryCard summary={data.summary} query={searchQuery} />
             )}
 
-            {/* Search Tools and Sort Options */}
-            {filteredResults.length > 0 && (
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <SearchTools
-                  timeFilter={timeFilter}
-                  languageFilter={languageFilter}
-                  fileTypeFilter={fileTypeFilter}
-                  onTimeFilterChange={handleTimeFilterChange}
-                  onLanguageFilterChange={handleLanguageFilterChange}
-                  onFileTypeFilterChange={handleFileTypeFilterChange}
-                  onClearFilters={handleClearFilters}
-                />
-                <SortOptions
-                  selectedSort={sortBy}
-                  onSortChange={handleSortChange}
-                  resultCount={pagination?.totalResults || filteredResults.length}
-                />
-              </div>
-            )}
-
             {/* Results */}
             {filteredResults.length > 0 ? (
-              <div className="space-y-4">
-                <div className="grid gap-4" data-testid="results-container">
+              <div className="space-y-8">
+                <div className="space-y-8" data-testid="results-container">
                   {filteredResults.map((result, index) => (
                     <ResultCard key={`${result.link}-${index}`} result={result} index={index} />
                   ))}
                 </div>
 
-                {/* Load More Button */}
+                {/* Load More */}
                 {pagination && pagination.hasNext && (
                   <div className="flex flex-col items-center gap-3 pt-4">
                     <Button
@@ -497,25 +519,11 @@ export default function Home() {
                     </Button>
                     <p className="text-sm text-muted-foreground">
                       Showing {filteredResults.length} of {pagination.totalResults} results
-                      {pagination.hasNext && ` • Page ${currentPage} of ${pagination.totalPages}`}
                     </p>
                   </div>
                 )}
 
-                {/* Traditional Pagination (optional - keep for page jumping) */}
-                {pagination && pagination.totalPages > 1 && (
-                  <div className="pt-4">
-                    <Pagination
-                      currentPage={pagination.currentPage}
-                      totalPages={pagination.totalPages}
-                      onPageChange={handlePageChange}
-                      hasNext={pagination.hasNext}
-                      hasPrevious={pagination.hasPrevious}
-                    />
-                  </div>
-                )}
-
-                {/* Related Searches - "People also searched for" */}
+                {/* Related Searches */}
                 {data.relatedSearches && data.relatedSearches.length > 0 && (
                   <RelatedSearches
                     searches={data.relatedSearches}
@@ -535,43 +543,19 @@ export default function Home() {
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-border bg-card/50 mt-20">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-            <div className="space-y-3">
-              <h3 className="font-semibold text-foreground">About NovaSearch</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Next-generation AI-powered search engine with advanced features like pagination, bookmarks, history tracking, and intelligent result sorting.
-              </p>
-            </div>
-            
-            <div className="space-y-3">
-              <h3 className="font-semibold text-foreground">Features</h3>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>AI Intent Detection</li>
-                <li>Multi-Source Search</li>
-                <li>Smart Sorting & Filtering</li>
-                <li>Bookmarks & History</li>
-                <li>Auto-complete Suggestions</li>
-              </ul>
-            </div>
-            
-            <div className="space-y-3">
-              <h3 className="font-semibold text-foreground">Legal</h3>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>Privacy Policy</li>
-                <li>Terms of Service</li>
-                <li>About Us</li>
-              </ul>
+      {/* Footer - Simple Google style */}
+      {!hasSearched && (
+        <footer className="fixed bottom-0 w-full border-t border-border/40 bg-white/80 dark:bg-background/80 backdrop-blur">
+          <div className="max-w-7xl mx-auto px-6 py-4">
+            <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
+              <span>About</span>
+              <span>Privacy</span>
+              <span>Terms</span>
+              <span className="text-foreground/50">&copy; 2025 NovaSearch</span>
             </div>
           </div>
-          
-          <div className="pt-6 border-t border-border text-center text-sm text-muted-foreground">
-            <p>&copy; 2025 NovaSearch. Powered by AI.</p>
-          </div>
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   );
 }

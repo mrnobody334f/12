@@ -1,7 +1,4 @@
 import { motion } from "framer-motion";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { TrendingUp } from "lucide-react";
 
 interface RelatedSearchesProps {
   searches: string[];
@@ -15,33 +12,30 @@ export function RelatedSearches({ searches, onSearch }: RelatedSearchesProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="w-full mt-8"
+      transition={{ duration: 0.3 }}
+      className="w-full mt-12 border-t border-border/40 pt-6"
     >
-      <Card className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <TrendingUp className="h-5 w-5 text-primary" />
-          <h3 className="text-lg font-semibold text-foreground">تم البحث أيضًا عن</h3>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {searches.slice(0, 9).map((search, index) => (
-            <motion.button
-              key={index}
-              onClick={() => onSearch(search)}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.05, duration: 0.2 }}
-              className="text-left p-3 rounded-lg hover-elevate active-elevate-2 border border-border bg-card transition-all"
-              data-testid={`button-related-search-${index}`}
-            >
-              <p className="text-sm text-foreground line-clamp-2">{search}</p>
-            </motion.button>
-          ))}
-        </div>
-      </Card>
+      <h3 className="text-lg font-normal text-foreground mb-4">Related searches</h3>
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {searches.slice(0, 8).map((search, index) => (
+          <motion.button
+            key={index}
+            onClick={() => onSearch(search)}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: index * 0.03, duration: 0.2 }}
+            className="text-left px-4 py-3 rounded-lg border border-border/60 bg-background hover:bg-muted/30 transition-colors"
+            data-testid={`button-related-search-${index}`}
+          >
+            <p className="text-sm font-medium" style={{ color: 'hsl(var(--primary))' }}>
+              {search}
+            </p>
+          </motion.button>
+        ))}
+      </div>
     </motion.div>
   );
 }
