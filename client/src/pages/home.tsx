@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Bookmark, MapPin, Globe2, Settings2 } from "lucide-react";
+import { Bookmark, MapPin, Globe2, Settings2, Mic, Sparkles, Filter, CheckCircle2 } from "lucide-react";
 import { SearchBar } from "@/components/search-bar";
 import { IntentSelector } from "@/components/intent-selector";
 import { LocationSelector } from "@/components/location-selector";
@@ -586,31 +586,165 @@ export default function Home() {
             </div>
           </motion.div>
 
-          {/* Features Grid */}
+          {/* Interactive Features Grid */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.5 }}
             className="w-full max-w-4xl mb-10"
           >
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[
-                { icon: "🤖", title: "AI Summaries", desc: "Get intelligent summaries powered by AI" },
-                { icon: "🌐", title: "Multi-Source", desc: "Search across multiple platforms" },
-                { icon: "⚡", title: "Lightning Fast", desc: "Instant results with smart caching" }
-              ].map((feature, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 + i * 0.1 }}
-                  className="p-6 rounded-xl bg-card border border-card-border hover-elevate transition-all text-center"
-                >
-                  <div className="text-4xl mb-3">{feature.icon}</div>
-                  <h3 className="font-semibold text-base mb-2">{feature.title}</h3>
-                  <p className="text-sm text-muted-foreground">{feature.desc}</p>
-                </motion.div>
-              ))}
+            <h2 className="text-lg font-semibold text-center mb-6">
+              Powerful Features to Enhance Your Search
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Voice Search */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                className="p-5 rounded-xl bg-card border border-card-border hover-elevate transition-all"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-lg bg-primary/10">
+                    <Mic className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-base mb-1">Voice Search</h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Speak your query in English or Arabic for hands-free searching
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const voiceButton = document.querySelector('[data-testid="button-voice-search"]') as HTMLButtonElement;
+                        if (voiceButton) voiceButton.click();
+                      }}
+                      data-testid="button-try-voice"
+                    >
+                      Try it now
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Location-based Results */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7 }}
+                className="p-5 rounded-xl bg-card border border-card-border hover-elevate transition-all"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-lg bg-primary/10">
+                    <MapPin className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-base mb-1">Location-based Results</h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Get relevant results for your location or search anywhere globally
+                    </p>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          data-testid="button-try-location"
+                        >
+                          Try it now
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80">
+                        <LocationSelector
+                          country={country}
+                          countryCode={countryCode}
+                          city={city}
+                          onLocationChange={handleLocationChange}
+                          detectedLocation={detectedLocation}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Auto-Intent Detection */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8 }}
+                className="p-5 rounded-xl bg-card border border-card-border hover-elevate transition-all"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-lg bg-primary/10">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-base mb-1">
+                      Smart Intent Detection
+                      {autoDetectIntent && (
+                        <CheckCircle2 className="inline-block h-4 w-4 text-green-500 ml-2" />
+                      )}
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      AI automatically understands if you want products, news, or information
+                    </p>
+                    <Button
+                      size="sm"
+                      variant={autoDetectIntent ? "secondary" : "outline"}
+                      onClick={() => handleAutoDetectChange(!autoDetectIntent)}
+                      data-testid="button-try-intent"
+                    >
+                      {autoDetectIntent ? "Enabled" : "Enable now"}
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Advanced Filters */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.9 }}
+                className="p-5 rounded-xl bg-card border border-card-border hover-elevate transition-all"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-lg bg-primary/10">
+                    <Filter className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-base mb-1">Advanced Filters</h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Refine by time, language, and file type to find exactly what you need
+                    </p>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          data-testid="button-try-filters"
+                        >
+                          Try it now
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80">
+                        <div className="space-y-3">
+                          <h4 className="font-semibold text-sm">Search Filters</h4>
+                          <SearchTools
+                            timeFilter={timeFilter}
+                            languageFilter={languageFilter}
+                            fileTypeFilter={fileTypeFilter}
+                            onTimeFilterChange={handleTimeFilterChange}
+                            onLanguageFilterChange={handleLanguageFilterChange}
+                            onFileTypeFilterChange={handleFileTypeFilterChange}
+                            onClearFilters={handleClearFilters}
+                          />
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+              </motion.div>
             </div>
           </motion.div>
 
