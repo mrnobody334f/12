@@ -7,6 +7,7 @@ import { IntentSelector } from "@/components/intent-selector";
 import { LocationSelector } from "@/components/location-selector";
 import { SearchControlCenter } from "@/components/search-control-center";
 import { StatusBar } from "@/components/status-bar";
+import { OnboardingWelcome } from "@/components/onboarding-welcome";
 import { DynamicTabs } from "@/components/dynamic-tabs";
 import { SortOptions } from "@/components/sort-options";
 import { Pagination } from "@/components/pagination";
@@ -359,6 +360,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-background">
+      {/* Onboarding Welcome Toast */}
+      <OnboardingWelcome />
       {/* Compact Smart Header */}
       {hasSearched && (
         <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-white/95 dark:bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:supports-[backdrop-filter]:bg-background/80 shadow-sm">
