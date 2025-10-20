@@ -52,6 +52,7 @@ export default function Home() {
   const [languageFilter, setLanguageFilter] = useState<LanguageFilter>("any");
   const [fileTypeFilter, setFileTypeFilter] = useState<FileTypeFilter>("any");
   const [isScrolled, setIsScrolled] = useState(false);
+  const [maxReachedPage, setMaxReachedPage] = useState(10);
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { toast} = useToast();
 
@@ -162,6 +163,7 @@ export default function Home() {
     setActiveSource("all");
     setActivePlatformSource("all");
     setCurrentPage(1);
+    setMaxReachedPage(10);
     setAccumulatedResults([]);
     setTabsPage(2);
   };
@@ -175,22 +177,33 @@ export default function Home() {
     }
     
     setCurrentPage(1);
+    setMaxReachedPage(10);
     setAccumulatedResults([]);
   };
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+    if (page >= maxReachedPage) {
+      setMaxReachedPage(page + 1);
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleLoadMore = async () => {
     setIsLoadingMore(true);
-    setCurrentPage(prev => prev + 1);
+    setCurrentPage(prev => {
+      const nextPage = prev + 1;
+      if (nextPage >= maxReachedPage) {
+        setMaxReachedPage(nextPage + 1);
+      }
+      return nextPage;
+    });
   };
 
   const handleSortChange = (sort: SortOption) => {
     setSortBy(sort);
     setCurrentPage(1);
+    setMaxReachedPage(10);
     setAccumulatedResults([]);
   };
 
@@ -199,6 +212,7 @@ export default function Home() {
     setTabsPage(2);
     if (searchQuery) {
       setCurrentPage(1);
+      setMaxReachedPage(10);
       refetch();
     }
   };
@@ -207,6 +221,7 @@ export default function Home() {
     setAutoDetectIntent(enabled);
     if (searchQuery) {
       setCurrentPage(1);
+      setMaxReachedPage(10);
       refetch();
     }
   };
@@ -218,6 +233,7 @@ export default function Home() {
     setIsManualLocation(true);
     if (searchQuery) {
       setCurrentPage(1);
+      setMaxReachedPage(10);
       refetch();
     }
   };
@@ -233,18 +249,21 @@ export default function Home() {
   const handleTimeFilterChange = (filter: TimeFilter) => {
     setTimeFilter(filter);
     setCurrentPage(1);
+    setMaxReachedPage(10);
     setAccumulatedResults([]);
   };
 
   const handleLanguageFilterChange = (filter: LanguageFilter) => {
     setLanguageFilter(filter);
     setCurrentPage(1);
+    setMaxReachedPage(10);
     setAccumulatedResults([]);
   };
 
   const handleFileTypeFilterChange = (filter: FileTypeFilter) => {
     setFileTypeFilter(filter);
     setCurrentPage(1);
+    setMaxReachedPage(10);
     setAccumulatedResults([]);
   };
 
@@ -253,6 +272,7 @@ export default function Home() {
     setLanguageFilter("any");
     setFileTypeFilter("any");
     setCurrentPage(1);
+    setMaxReachedPage(10);
     setAccumulatedResults([]);
   };
   
@@ -899,13 +919,13 @@ export default function Home() {
                   <div className="flex flex-col items-center gap-4 pt-8 pb-4">
                     <Pagination
                       currentPage={currentPage}
-                      totalPages={Math.min(Math.ceil(pagination.totalResults / 20), 10)}
+                      totalPages={Math.min(Math.ceil(pagination.totalResults / 20), maxReachedPage)}
                       onPageChange={handlePageChange}
-                      hasNext={pagination.hasNext && currentPage < 10}
+                      hasNext={pagination.hasNext && currentPage < Math.ceil(pagination.totalResults / 20)}
                       hasPrevious={currentPage > 1}
                     />
                     <p className="text-xs text-muted-foreground">
-                      Page {currentPage} of {Math.min(Math.ceil(pagination.totalResults / 20), 10)} • {pagination.totalResults.toLocaleString()} results
+                      Page {currentPage} of {Math.ceil(pagination.totalResults / 20)} • {pagination.totalResults.toLocaleString()} results
                     </p>
                   </div>
                 )}
