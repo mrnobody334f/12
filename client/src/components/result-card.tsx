@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Star, ChevronRight, Share2, Copy, ExternalLink } from "lucide-react";
+import { Star, ChevronRight, Share2, Copy, ExternalLink, BadgeCheck, Users, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -65,9 +65,38 @@ export function ResultCard({ result, index }: ResultCardProps) {
     }
   };
 
+  const getVerifiedSourceInfo = (link: string) => {
+    try {
+      const url = new URL(link);
+      const hostname = url.hostname.toLowerCase();
+      
+      const verifiedSources: Record<string, { name: string; verified: boolean; stats?: string }> = {
+        'youtube.com': { name: 'YouTube', verified: true, stats: 'subscribers' },
+        'facebook.com': { name: 'Facebook', verified: true, stats: 'followers' },
+        'instagram.com': { name: 'Instagram', verified: true, stats: 'followers' },
+        'twitter.com': { name: 'Twitter/X', verified: true, stats: 'followers' },
+        'x.com': { name: 'X', verified: true, stats: 'followers' },
+        'linkedin.com': { name: 'LinkedIn', verified: true, stats: 'connections' },
+        'tiktok.com': { name: 'TikTok', verified: true, stats: 'followers' },
+        'reddit.com': { name: 'Reddit', verified: true, stats: 'members' },
+      };
+
+      for (const [domain, info] of Object.entries(verifiedSources)) {
+        if (hostname.includes(domain)) {
+          return info;
+        }
+      }
+      
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
   const faviconUrl = result.favicon || getFaviconUrl(result.link);
   const displayImage = result.image || result.thumbnail;
   const displayUrl = getDisplayUrl(result.link);
+  const verifiedSource = getVerifiedSourceInfo(result.link);
   const hasRichSnippet = result.rating || result.price || (result.sitelinks && result.sitelinks.length > 0);
 
   const renderStars = (rating: number) => {
@@ -159,8 +188,8 @@ export function ResultCard({ result, index }: ResultCardProps) {
       <div className="flex gap-4">
         {/* Main Content */}
         <div className="flex-1 min-w-0">
-          {/* URL breadcrumb with favicon - Google style */}
-          <div className="flex items-center gap-2 mb-2">
+          {/* URL breadcrumb with favicon and verified badge - Google style */}
+          <div className="flex items-center gap-2 mb-2.5">
             {faviconUrl && (
               <img
                 src={faviconUrl}
@@ -171,14 +200,17 @@ export function ResultCard({ result, index }: ResultCardProps) {
                 }}
               />
             )}
-            <div className="flex items-center gap-1 min-w-0">
+            <div className="flex items-center gap-1.5 min-w-0">
               <span className="text-sm font-medium truncate text-[#006621] dark:text-[#99c794]">
                 {displayUrl}
               </span>
+              {verifiedSource && verifiedSource.verified && (
+                <BadgeCheck className="h-4 w-4 text-blue-500 dark:text-blue-400 flex-shrink-0" />
+              )}
             </div>
           </div>
 
-          {/* Title - Google blue */}
+          {/* Title - Larger and more prominent */}
           <a
             href={result.link}
             target="_blank"
@@ -186,7 +218,7 @@ export function ResultCard({ result, index }: ResultCardProps) {
             className="block group/title"
           >
             <h3 
-              className="text-xl leading-7 font-medium hover:underline line-clamp-2 cursor-pointer mb-2 text-primary group-hover/title:underline"
+              className="text-[21px] leading-[1.4] font-medium hover:underline line-clamp-2 cursor-pointer mb-2.5 text-primary group-hover/title:underline"
               data-testid={`link-result-${index}`}
             >
               {result.title}
@@ -226,13 +258,31 @@ export function ResultCard({ result, index }: ResultCardProps) {
             </p>
           )}
 
-          {/* Description/Snippet - Google gray */}
+          {/* Description/Snippet - Longer and more descriptive */}
           <p 
-            className="text-sm leading-6 line-clamp-2"
+            className="text-[15px] leading-[1.6] line-clamp-4 mb-1"
             style={{ color: 'hsl(var(--google-gray))' }}
           >
             {result.snippet}
           </p>
+
+          {/* Verified Source Stats - for popular/verified platforms */}
+          {verifiedSource && (result.views || result.ratingCount) && (
+            <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+              {result.views && (
+                <div className="flex items-center gap-1">
+                  <Eye className="h-3.5 w-3.5" />
+                  <span>{typeof result.views === 'number' ? result.views.toLocaleString() : result.views} views</span>
+                </div>
+              )}
+              {result.ratingCount && verifiedSource.stats && (
+                <div className="flex items-center gap-1">
+                  <Users className="h-3.5 w-3.5" />
+                  <span>{result.ratingCount.toLocaleString()} {verifiedSource.stats}</span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Sitelinks - Google style */}
           {result.sitelinks && result.sitelinks.length > 0 && (

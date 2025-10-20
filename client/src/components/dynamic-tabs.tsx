@@ -74,7 +74,7 @@ const mediaTabs = [
 ];
 
 const platformTabs = [
-  { id: "all", name: "All", icon: Globe, color: "text-blue-600 dark:text-blue-400" },
+  { id: "all", name: "Nova", icon: Globe, color: "text-blue-600 dark:text-blue-400" },
   { id: "google", name: "Google", icon: Search, color: "text-blue-600 dark:text-blue-400" },
   { id: "reddit", name: "Reddit", iconComponent: SiReddit, color: "text-orange-600 dark:text-orange-400" },
   { id: "twitter", name: "Twitter", icon: Twitter, color: "text-blue-500 dark:text-blue-400" },

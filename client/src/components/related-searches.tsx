@@ -15,24 +15,23 @@ export function RelatedSearches({ searches, onSearch }: RelatedSearchesProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="w-full mt-12 border-t border-border/40 pt-6"
+      className="w-full mt-12 border-t border-border/40 pt-8 pb-4"
     >
-      <h3 className="text-lg font-normal text-foreground mb-4">Related searches</h3>
+      <h3 className="text-base font-medium text-foreground mb-5">People also search for</h3>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {searches.slice(0, 8).map((search, index) => (
+      <div className="flex flex-wrap gap-2.5">
+        {searches.slice(0, 12).map((search, index) => (
           <motion.button
             key={index}
             onClick={() => onSearch(search)}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: index * 0.03, duration: 0.2 }}
-            className="text-left px-4 py-3 rounded-lg border border-border/60 bg-background hover:bg-muted/30 transition-colors"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: index * 0.02, duration: 0.2 }}
+            className="px-5 py-2.5 rounded-full border border-border/70 bg-background hover-elevate active-elevate-2 transition-all text-sm font-medium shadow-sm"
+            style={{ color: 'hsl(var(--foreground))' }}
             data-testid={`button-related-search-${index}`}
           >
-            <p className="text-sm font-medium" style={{ color: 'hsl(var(--primary))' }}>
-              {search}
-            </p>
+            {search}
           </motion.button>
         ))}
       </div>

@@ -841,10 +841,19 @@ export default function Home() {
               />
             )}
 
-            {/* Result Count */}
+            {/* Result Label and Sort Options */}
             {filteredResults.length > 0 && (
-              <div className="text-sm text-muted-foreground">
-                About {pagination?.totalResults?.toLocaleString() || filteredResults.length} results
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-3">
+                  <Badge variant="outline" className="text-xs font-medium px-3 py-1">
+                    Web results
+                  </Badge>
+                </div>
+                <SortOptions
+                  selectedSort={sortBy}
+                  onSortChange={handleSortChange}
+                  resultCount={pagination?.totalResults || filteredResults.length}
+                />
               </div>
             )}
 
@@ -862,20 +871,18 @@ export default function Home() {
                   ))}
                 </div>
 
-                {/* Load More */}
-                {pagination && pagination.hasNext && (
-                  <div className="flex flex-col items-center gap-3 pt-4">
-                    <Button
-                      onClick={handleLoadMore}
-                      disabled={isLoadingMore}
-                      size="lg"
-                      className="min-w-[200px]"
-                      data-testid="button-load-more"
-                    >
-                      {isLoadingMore ? "Loading..." : "Load More Results"}
-                    </Button>
-                    <p className="text-sm text-muted-foreground">
-                      Showing {filteredResults.length} of {pagination.totalResults} results
+                {/* Numbered Pagination */}
+                {pagination && pagination.totalResults > 0 && (
+                  <div className="flex flex-col items-center gap-4 pt-8 pb-4">
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={Math.min(Math.ceil(pagination.totalResults / 20), 10)}
+                      onPageChange={handlePageChange}
+                      hasNext={pagination.hasNext && currentPage < 10}
+                      hasPrevious={currentPage > 1}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Page {currentPage} of {Math.min(Math.ceil(pagination.totalResults / 20), 10)} • {pagination.totalResults.toLocaleString()} results
                     </p>
                   </div>
                 )}
