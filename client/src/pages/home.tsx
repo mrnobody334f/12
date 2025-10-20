@@ -35,8 +35,8 @@ import {
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeSource, setActiveSource] = useState("all");
-  const [activePlatformSource, setActivePlatformSource] = useState("all");
+  const [activeSource, setActiveSource] = useState("web");
+  const [activePlatformSource, setActivePlatformSource] = useState("web");
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState<SortOption>("relevance");
   const [autoDetectIntent, setAutoDetectIntent] = useState(true);
@@ -90,7 +90,7 @@ export default function Home() {
   const isAllMediaTab = activeSource === 'all-media';
   
   // Use activePlatformSource when on all-media tab
-  const effectiveSearchSource = isAllMediaTab ? (activePlatformSource || 'all') : activeSource;
+  const effectiveSearchSource = isAllMediaTab ? (activePlatformSource || 'web') : activeSource;
   
   const { data, isLoading, error, refetch } = useQuery<SearchResponse>({
     queryKey: [
@@ -111,11 +111,13 @@ export default function Home() {
       youtube: 'youtube.com',
       pinterest: 'pinterest.com',
       linkedin: 'linkedin.com',
+      quora: 'quora.com',
+      wikipedia: 'wikipedia.org',
     };
     return platformMap[platformId] || platformId;
   };
 
-  const siteParam = activePlatformSource !== 'all' && activePlatformSource !== 'google' 
+  const siteParam = activePlatformSource !== 'web' 
     ? `&site=${getPlatformSite(activePlatformSource)}` 
     : '';
 
@@ -164,8 +166,8 @@ export default function Home() {
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
-    setActiveSource("all");
-    setActivePlatformSource("all");
+    setActiveSource("web");
+    setActivePlatformSource("web");
     setCurrentPage(1);
     setMaxReachedPage(10);
     setAccumulatedResults([]);
@@ -364,8 +366,7 @@ export default function Home() {
   const pagination = data?.pagination;
 
   const getResultsLabel = (source: string): string => {
-    if (source === "all") return "Web results";
-    if (source === "google") return "Google";
+    if (source === "web") return "Web results";
     
     const platformNames: Record<string, string> = {
       twitter: "Twitter",
@@ -376,6 +377,8 @@ export default function Home() {
       youtube: "YouTube",
       pinterest: "Pinterest",
       linkedin: "LinkedIn",
+      quora: "Quora",
+      wikipedia: "Wikipedia",
     };
     
     const platformName = platformNames[source.toLowerCase()];

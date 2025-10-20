@@ -362,9 +362,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const sourceStr = source && typeof source === "string" ? source : undefined;
       
-      if (sourceStr && sourceStr !== "all") {
+      if (sourceStr && sourceStr !== "web") {
         console.log(`🔍 Filtering by source: "${sourceStr}"`);
-        // First, check if it's a platform source (Google, Twitter, etc.)
+        // First, check if it's a platform source (Reddit, Twitter, etc.)
         const platformSource = Object.values(platformSources).find(p => p.id === sourceStr);
         if (platformSource) {
           console.log(`✅ Found platform source: ${platformSource.name}`);
@@ -401,7 +401,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         console.log(`📊 Using ${sources.length} source(s):`, sources.map(s => s.name).join(', '));
       } else {
-        // For "All" tab, just use Google (no site filters)
+        // For "Web" tab, just use Google (no site filters) - gets real Google results with AI Summary
         sources = [platformSources.google];
       }
 
@@ -425,9 +425,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Fetch results from sources for this specific page
         const searchPromises = sources.map(async (src) => {
           try {
-            // For Google search, don't filter by site - get real Google results
+            // For Web/Google search, don't filter by site - get real Google results
             // For other platforms (Twitter, Facebook, etc), use site: filter
-            const siteFilter = (src.id === "google") ? undefined : src.site;
+            const siteFilter = (src.id === "google" || src.id === "web") ? undefined : src.site;
             
             // First attempt: Fetch results with site filter
             let searchData = await searchWithSerper(
@@ -544,7 +544,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // If we did a global fallback, those results are also from a valid global version of the site
         
         // Just log the result count for debugging
-        if (sourceStr && sourceStr !== "all" && sources.length === 1) {
+        if (sourceStr && sourceStr !== "web" && sources.length === 1) {
           console.log(`✅ Got ${flatResults.length} results from ${sources[0].name}`);
         }
 
@@ -561,13 +561,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Extract dynamic domain tabs from results (for "All" tab only)
+      // Extract dynamic domain tabs from results (for "Web" tab only)
       // Only show intent-specific tabs if:
       // 1. autoDetect is enabled, OR
       // 2. manual intent is selected
       const shouldShowIntentTabs = shouldAutoDetect || (providedIntent && typeof providedIntent === "string");
       
-      if ((!sourceStr || sourceStr === "all") && shouldShowIntentTabs && intent !== "general") {
+      if ((!sourceStr || sourceStr === "web") && shouldShowIntentTabs && intent !== "general") {
         // Extract domains from the first 20 results to create dynamic tabs, filtered by intent
         const dynamicDomains = extractDomainsFromResults(
           flatResults.slice(0, 20).map(r => ({
@@ -616,9 +616,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const totalPages = Math.ceil(totalResults / limitNum);
       const paginatedResults = flatResults;
 
-      // Generate AI summary for first page only
+      // Generate AI summary for first page only (for "Web" tab)
       let summary;
-      if (pageNum === 1 && paginatedResults.length > 0) {
+      if (pageNum === 1 && paginatedResults.length > 0 && (!sourceStr || sourceStr === "web")) {
         try {
           summary = await generateSummary(query, paginatedResults, intent);
         } catch (error) {

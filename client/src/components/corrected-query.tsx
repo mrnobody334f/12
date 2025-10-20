@@ -25,7 +25,7 @@ export function CorrectedQuery({ originalQuery, correctedQuery, onSearch }: Corr
           <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
             <p className="text-sm text-foreground">
-              <span className="text-muted-foreground">هل تقصد: </span>
+              <span className="text-muted-foreground">Did you mean: </span>
               <button
                 onClick={handleClick}
                 className="font-semibold text-primary hover:underline focus:outline-none focus:underline"

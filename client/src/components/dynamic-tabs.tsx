@@ -31,7 +31,7 @@ function getPlatformSearchUrl(platformId: string, query: string, site?: string):
   const encodedQuery = encodeURIComponent(query);
   
   const urlMap: Record<string, string> = {
-    google: `https://www.google.com/search?q=${encodedQuery}`,
+    web: `https://www.google.com/search?q=${encodedQuery}`,
     twitter: `https://twitter.com/search?q=${encodedQuery}`,
     facebook: `https://www.facebook.com/search/posts/?q=${encodedQuery}`,
     instagram: `https://www.instagram.com/explore/tags/${query.replace(/\s+/g, '')}`,
@@ -40,6 +40,8 @@ function getPlatformSearchUrl(platformId: string, query: string, site?: string):
     youtube: `https://www.youtube.com/results?search_query=${encodedQuery}`,
     pinterest: `https://www.pinterest.com/search/pins/?q=${encodedQuery}`,
     linkedin: `https://www.linkedin.com/search/results/all/?keywords=${encodedQuery}`,
+    quora: `https://www.quora.com/search?q=${encodedQuery}`,
+    wikipedia: `https://en.wikipedia.org/wiki/Special:Search?search=${encodedQuery}`,
     amazon: `https://www.amazon.com/s?k=${encodedQuery}`,
     ebay: `https://www.ebay.com/sch/i.html?_nkw=${encodedQuery}`,
     walmart: `https://www.walmart.com/search?q=${encodedQuery}`,
@@ -50,7 +52,6 @@ function getPlatformSearchUrl(platformId: string, query: string, site?: string):
     reuters: `https://www.reuters.com/search/news?blob=${encodedQuery}`,
     nytimes: `https://www.nytimes.com/search?query=${encodedQuery}`,
     techcrunch: `https://search.techcrunch.com/search?p=${encodedQuery}`,
-    wikipedia: `https://en.wikipedia.org/wiki/Special:Search?search=${encodedQuery}`,
     medium: `https://medium.com/search?q=${encodedQuery}`,
     stackoverflow: `https://stackoverflow.com/search?q=${encodedQuery}`,
   };
@@ -75,8 +76,7 @@ const mediaTabs = [
 ];
 
 const platformTabs = [
-  { id: "all", name: "Nova", icon: Globe, color: "text-blue-600 dark:text-blue-400" },
-  { id: "google", name: "Google", icon: Search, color: "text-blue-600 dark:text-blue-400" },
+  { id: "web", name: "Web", icon: Globe, color: "text-blue-600 dark:text-blue-400" },
   { id: "reddit", name: "Reddit", iconComponent: SiReddit, color: "text-orange-600 dark:text-orange-400" },
   { id: "twitter", name: "Twitter", icon: Twitter, color: "text-blue-500 dark:text-blue-400" },
   { id: "facebook", name: "Facebook", icon: Facebook, color: "text-blue-600 dark:text-blue-500" },
@@ -85,6 +85,8 @@ const platformTabs = [
   { id: "instagram", name: "Instagram", icon: Instagram, color: "text-pink-600 dark:text-pink-400" },
   { id: "pinterest", name: "Pinterest", iconComponent: SiPinterest, color: "text-red-700 dark:text-red-500" },
   { id: "linkedin", name: "LinkedIn", iconComponent: SiLinkedin, color: "text-blue-700 dark:text-blue-500" },
+  { id: "quora", name: "Quora", icon: MessageSquare, color: "text-red-600 dark:text-red-400" },
+  { id: "wikipedia", name: "Wikipedia", icon: BookOpen, color: "text-gray-700 dark:text-gray-300" },
 ];
 
 export function DynamicTabs({ sources, intentSources, activeSource, activePlatformSource, onSourceChange, showPlatformTabs = false, searchQuery, detectedIntent, onLoadMoreTabs, location }: DynamicTabsProps) {
@@ -131,7 +133,7 @@ export function DynamicTabs({ sources, intentSources, activeSource, activePlatfo
   const effectiveActiveSource = (isMediaTab || isAllMediaTab) && activePlatformSource ? activePlatformSource : activeSource;
   const activeTab = allTabs.find(tab => tab.id === effectiveActiveSource);
   const activeSite = intentSources?.find(s => s.id === effectiveActiveSource)?.site;
-  const showOpenButton = searchQuery && effectiveActiveSource !== "all" && !isMediaTab && !isAllMediaTab && activeTab;
+  const showOpenButton = searchQuery && effectiveActiveSource !== "web" && !isMediaTab && !isAllMediaTab && activeTab;
 
   const handleOpenInNewTab = () => {
     if (searchQuery && effectiveActiveSource) {
