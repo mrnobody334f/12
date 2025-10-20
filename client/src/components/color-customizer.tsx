@@ -413,14 +413,14 @@ export function ColorCustomizer() {
   };
 
   const colorLabels = {
-    background: "Background",
-    foreground: "Text",
-    primary: "Primary",
-    card: "Cards",
-    accent: "Accent",
-    muted: "Muted",
-    border: "Borders",
-    secondary: "Secondary",
+    background: "Page Background (Main)",
+    foreground: "Text Color (Main)",
+    primary: "Primary Accent (Buttons, Links)",
+    card: "Cards & Panels Background",
+    accent: "Highlighted Areas",
+    muted: "Subtle Background",
+    border: "Borders & Dividers",
+    secondary: "Secondary Elements",
   } as const;
 
   return (
