@@ -16,6 +16,19 @@ To provide users with a next-generation search experience that:
 **Last Updated**: January 2025
 
 ## Recent Changes
+- **January 2025**: UI Enhancements - Did You Mean Fix & Font Customization
+  - **Fixed "Did You Mean"**: Now correctly extracts spelling corrections from `searchInformation.showingResultsFor`
+    - Also maintains fallback to `searchParameters.correctedQuery` for compatibility
+    - Shows actual corrected queries from Serper API (e.g., "google" when you type "ggle")
+  - **Enhanced Color Customizer**: Added comprehensive font customization options
+    - New "Font" tab with 11 font families (including Arabic fonts: Cairo, Amiri, Tajawal)
+    - Font size slider (12-24px) with live preview
+    - Improved dark mode color application via dynamic style element
+    - Separate localStorage persistence for font and color settings
+  - **Verified GeoIP Integration**: Confirmed location parameters flow correctly to Serper
+    - `effectiveCountryCode` properly sent as `gl` parameter in search requests
+    - Observable in logs: `"gl": "eg"` for Egyptian users
+
 - **January 2025**: GeoIP Auto-Detection & Popular Sites System
   - **Auto Country Detection**: Automatically detects user's country on page load using GeoIP (country only, no city)
     - Works seamlessly on initial visit without requiring permissions
