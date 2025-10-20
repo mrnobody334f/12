@@ -341,6 +341,23 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Dynamic Tabs Row */}
+          <div className="border-b border-border/20">
+            <div className="max-w-[1400px] mx-auto px-6 py-2">
+              <DynamicTabs
+                sources={currentSources}
+                intentSources={intentSources}
+                activeSource={activeSource}
+                onSourceChange={handleSourceChange}
+                showPlatformTabs={true}
+                searchQuery={searchQuery}
+                detectedIntent={detectedIntent}
+                onLoadMoreTabs={handleLoadMoreTabs}
+                location={{ countryCode, city }}
+              />
+            </div>
+          </div>
+
           {/* Tools Row */}
           <div className="border-b border-border/20">
             <div className="max-w-[1400px] mx-auto px-6 py-2 flex items-center justify-between gap-4">
