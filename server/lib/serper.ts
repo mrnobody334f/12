@@ -381,6 +381,9 @@ export async function searchWithSerper(
 
     const data: SerperResponse = await response.json();
     
+    // Log RAW response to see all available fields
+    console.log('🔍 SERPER RAW RESPONSE:', JSON.stringify(data, null, 2));
+    
     // Log search info for debugging
     const locationInfo = requestBody.gl ? ` [country=${requestBody.gl}, language=${requestBody.hl}]` : ` [language=${requestBody.hl}, global]`;
     console.log(`Serper search: "${searchQuery}"${locationInfo} - Found ${data.organic?.length || 0} results`);
@@ -546,6 +549,10 @@ export async function searchVideosWithSerper(
     }
 
     const data: any = await response.json();
+    
+    // Log RAW response to see all available fields
+    console.log('🎥 SERPER VIDEOS RAW RESPONSE:', JSON.stringify(data, null, 2));
+    
     console.log(`Serper videos: "${query}" - Found ${data.videos?.length || 0} results`);
     
     return (data.videos || []).map((video: any) => ({
