@@ -65,15 +65,19 @@ function getPlatformSearchUrl(platformId: string, query: string, site?: string):
   return `https://www.google.com/search?q=${encodedQuery}`;
 }
 
-const platformTabs = [
-  { id: "all", name: "All", icon: Globe, color: "text-blue-600 dark:text-blue-400" },
+const mediaTabs = [
   { id: "images", name: "Images", icon: Image, color: "text-purple-600 dark:text-purple-400" },
   { id: "videos", name: "Videos", icon: Video, color: "text-red-600 dark:text-red-400" },
   { id: "places", name: "Places", icon: MapPin, color: "text-green-600 dark:text-green-400" },
   { id: "news", name: "News", icon: Newspaper, color: "text-blue-700 dark:text-blue-500" },
+];
+
+const platformTabs = [
+  { id: "all", name: "All", icon: Globe, color: "text-blue-600 dark:text-blue-400" },
   { id: "google", name: "Google", icon: Search, color: "text-blue-600 dark:text-blue-400" },
   { id: "reddit", name: "Reddit", iconComponent: SiReddit, color: "text-orange-600 dark:text-orange-400" },
   { id: "twitter", name: "Twitter", icon: Twitter, color: "text-blue-500 dark:text-blue-400" },
+  { id: "facebook", name: "Facebook", icon: Facebook, color: "text-blue-600 dark:text-blue-500" },
   { id: "youtube", name: "YouTube", icon: Youtube, color: "text-red-600 dark:text-red-400" },
   { id: "tiktok", name: "TikTok", iconComponent: SiTiktok, color: "text-black dark:text-white" },
   { id: "instagram", name: "Instagram", icon: Instagram, color: "text-pink-600 dark:text-pink-400" },
@@ -171,6 +175,34 @@ export function DynamicTabs({ sources, intentSources, activeSource, onSourceChan
 
   return (
     <div className="space-y-3">
+      {/* Media Tabs - Smaller, separated */}
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+          {mediaTabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeSource === tab.id;
+
+            return (
+              <button
+                key={tab.id}
+                onClick={() => onSourceChange(tab.id)}
+                className={cn(
+                  "relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-xs whitespace-nowrap transition-all duration-200",
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted/50 hover-elevate active-elevate-2 text-muted-foreground border border-border/50"
+                )}
+                data-testid={`tab-media-${tab.id}`}
+              >
+                <Icon className={cn("h-3.5 w-3.5", !isActive && tab.color)} />
+                <span>{tab.name}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Platform Tabs - Main tabs */}
       <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
         {platformTabs.map((tab) => {
           const IconComponent = tab.iconComponent;
