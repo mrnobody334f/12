@@ -26,7 +26,9 @@ interface ColorConfig {
 
 interface FontConfig {
   family: string;
-  size: number;
+  baseSize: number;
+  headingSize: number;
+  subheadingSize: number;
 }
 
 const defaultLightColors: ColorConfig = {
@@ -45,11 +47,13 @@ const defaultDarkColors: ColorConfig = {
 
 const defaultFont: FontConfig = {
   family: "Inter",
-  size: 16,
+  baseSize: 16,
+  headingSize: 26,
+  subheadingSize: 18,
 };
 
 const fontFamilies = [
-  { value: "Inter", label: "Inter (الافتراضي)" },
+  { value: "Inter", label: "Inter (Default)" },
   { value: "Arial", label: "Arial" },
   { value: "Helvetica", label: "Helvetica" },
   { value: "Georgia", label: "Georgia" },
@@ -57,9 +61,9 @@ const fontFamilies = [
   { value: "Verdana", label: "Verdana" },
   { value: "Tahoma", label: "Tahoma" },
   { value: "Trebuchet MS", label: "Trebuchet MS" },
-  { value: "Cairo", label: "Cairo (عربي)" },
-  { value: "Amiri", label: "Amiri (عربي)" },
-  { value: "Tajawal", label: "Tajawal (عربي)" },
+  { value: "Cairo", label: "Cairo" },
+  { value: "Amiri", label: "Amiri" },
+  { value: "Tajawal", label: "Tajawal" },
 ];
 
 export function ColorCustomizer() {
@@ -78,7 +82,6 @@ export function ColorCustomizer() {
   }, [lightColors, darkColors, font]);
 
   const loadSettings = () => {
-    // Load colors
     const savedColors = localStorage.getItem("novasearch-colors");
     if (savedColors) {
       try {
@@ -90,12 +93,24 @@ export function ColorCustomizer() {
       }
     }
 
-    // Load font settings
     const savedFont = localStorage.getItem("novasearch-font");
     if (savedFont) {
       try {
         const parsed = JSON.parse(savedFont);
-        setFont(parsed || defaultFont);
+        const baseSize = Math.max(12, Math.min(24, parsed.baseSize || parsed.size || defaultFont.baseSize));
+        let headingSize = Math.max(20, Math.min(40, parsed.headingSize || defaultFont.headingSize));
+        let subheadingSize = Math.max(14, Math.min(32, parsed.subheadingSize || defaultFont.subheadingSize));
+        
+        if (subheadingSize >= headingSize - 1) {
+          subheadingSize = Math.max(14, headingSize - 2);
+        }
+        
+        setFont({
+          family: parsed.family || defaultFont.family,
+          baseSize,
+          headingSize,
+          subheadingSize,
+        });
       } catch (e) {
         console.error("Failed to load font:", e);
       }
@@ -103,39 +118,35 @@ export function ColorCustomizer() {
   };
 
   const saveSettings = () => {
-    // Save colors
     const colorConfig = {
       light: lightColors,
       dark: darkColors,
     };
     localStorage.setItem("novasearch-colors", JSON.stringify(colorConfig));
-    
-    // Save font
     localStorage.setItem("novasearch-font", JSON.stringify(font));
     
     applySettings();
     toast({
-      title: "تم حفظ الإعدادات",
-      description: "تم حفظ جميع التخصيصات بنجاح",
+      title: "Settings saved",
+      description: "All customizations have been saved successfully",
     });
   };
 
   const applySettings = () => {
     const root = document.documentElement;
     
-    // Apply light mode colors to :root
     Object.entries(lightColors).forEach(([key, value]) => {
       const cssVar = key.replace(/([A-Z])/g, '-$1').toLowerCase();
       root.style.setProperty(`--${cssVar}`, value);
     });
     
-    // Apply font settings
     root.style.setProperty('--font-family', font.family);
-    root.style.setProperty('--font-size', `${font.size}px`);
+    root.style.setProperty('--font-size-base', `${font.baseSize}px`);
+    root.style.setProperty('--font-size-heading', `${font.headingSize}px`);
+    root.style.setProperty('--font-size-subheading', `${font.subheadingSize}px`);
     document.body.style.fontFamily = font.family;
-    document.body.style.fontSize = `${font.size}px`;
+    document.body.style.fontSize = `${font.baseSize}px`;
     
-    // Update dark mode styles via CSS
     const styleId = 'dynamic-dark-colors';
     let styleEl = document.getElementById(styleId) as HTMLStyleElement;
     
@@ -166,8 +177,8 @@ export function ColorCustomizer() {
     localStorage.removeItem("novasearch-colors");
     localStorage.removeItem("novasearch-font");
     toast({
-      title: "تم إعادة التعيين",
-      description: "تم إعادة تعيين جميع الإعدادات إلى الافتراضية",
+      title: "Reset complete",
+      description: "All settings have been reset to defaults",
     });
   };
 
@@ -247,10 +258,10 @@ export function ColorCustomizer() {
   };
 
   const colorLabels = {
-    background: { ar: "لون الخلفية", en: "Background" },
-    foreground: { ar: "لون النص", en: "Text" },
-    primary: { ar: "اللون الأساسي", en: "Primary" },
-    card: { ar: "لون البطاقات", en: "Cards" },
+    background: "Background",
+    foreground: "Text",
+    primary: "Primary",
+    card: "Cards",
   } as const;
 
   return (
@@ -269,10 +280,10 @@ export function ColorCustomizer() {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Palette className="h-5 w-5" />
-            تخصيص المظهر
+            Customize Appearance
           </DialogTitle>
           <DialogDescription>
-            قم بتخصيص الألوان والخطوط حسب ذوقك
+            Customize colors and fonts to match your preferences
           </DialogDescription>
         </DialogHeader>
 
@@ -280,30 +291,30 @@ export function ColorCustomizer() {
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="light" className="flex items-center gap-2">
               <Sun className="h-4 w-4" />
-              فاتح
+              Light
             </TabsTrigger>
             <TabsTrigger value="dark" className="flex items-center gap-2">
               <Moon className="h-4 w-4" />
-              غامق
+              Dark
             </TabsTrigger>
             <TabsTrigger value="font" className="flex items-center gap-2">
               <Type className="h-4 w-4" />
-              الخط
+              Font
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="light" className="space-y-4 mt-4">
             <Card>
               <CardHeader>
-                <CardTitle>ألوان الوضع الفاتح</CardTitle>
-                <CardDescription>اختر الألوان للوضع النهاري</CardDescription>
+                <CardTitle>Light Mode Colors</CardTitle>
+                <CardDescription>Choose colors for light theme</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {(Object.keys(lightColors) as Array<keyof ColorConfig>).map((key) => (
                   <div key={key} className="flex items-center gap-4">
                     <div className="flex-1">
                       <Label htmlFor={`light-${key}`} className="text-sm font-medium">
-                        {colorLabels[key].ar}
+                        {colorLabels[key]}
                       </Label>
                     </div>
                     <Input
@@ -323,15 +334,15 @@ export function ColorCustomizer() {
           <TabsContent value="dark" className="space-y-4 mt-4">
             <Card>
               <CardHeader>
-                <CardTitle>ألوان الوضع الغامق</CardTitle>
-                <CardDescription>اختر الألوان للوضع الليلي</CardDescription>
+                <CardTitle>Dark Mode Colors</CardTitle>
+                <CardDescription>Choose colors for dark theme</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {(Object.keys(darkColors) as Array<keyof ColorConfig>).map((key) => (
                   <div key={key} className="flex items-center gap-4">
                     <div className="flex-1">
                       <Label htmlFor={`dark-${key}`} className="text-sm font-medium">
-                        {colorLabels[key].ar}
+                        {colorLabels[key]}
                       </Label>
                     </div>
                     <Input
@@ -351,18 +362,18 @@ export function ColorCustomizer() {
           <TabsContent value="font" className="space-y-4 mt-4">
             <Card>
               <CardHeader>
-                <CardTitle>إعدادات الخط</CardTitle>
-                <CardDescription>اختر نوع الخط وحجمه</CardDescription>
+                <CardTitle>Font Settings</CardTitle>
+                <CardDescription>Customize font family and sizes</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="font-family">نوع الخط</Label>
+                  <Label htmlFor="font-family">Font Family</Label>
                   <Select
                     value={font.family}
                     onValueChange={(value) => setFont(prev => ({ ...prev, family: value }))}
                   >
                     <SelectTrigger id="font-family" data-testid="select-font-family">
-                      <SelectValue placeholder="اختر نوع الخط" />
+                      <SelectValue placeholder="Select font family" />
                     </SelectTrigger>
                     <SelectContent>
                       {fontFamilies.map((fontFamily) => (
@@ -378,28 +389,91 @@ export function ColorCustomizer() {
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="font-size">حجم الخط</Label>
-                    <span className="text-sm text-muted-foreground">{font.size}px</span>
+                    <Label htmlFor="base-font-size">Base Font Size</Label>
+                    <span className="text-sm text-muted-foreground">{font.baseSize}px</span>
                   </div>
                   <Slider
-                    id="font-size"
+                    id="base-font-size"
                     min={12}
                     max={24}
                     step={1}
-                    value={[font.size]}
-                    onValueChange={(values) => setFont(prev => ({ ...prev, size: values[0] }))}
+                    value={[font.baseSize]}
+                    onValueChange={(values) => setFont(prev => ({ ...prev, baseSize: values[0] }))}
                     className="w-full"
-                    data-testid="slider-font-size"
+                    data-testid="slider-base-font-size"
                   />
                   <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>صغير (12px)</span>
-                    <span>كبير (24px)</span>
+                    <span>Small (12px)</span>
+                    <span>Large (24px)</span>
                   </div>
                 </div>
 
-                <div className="p-4 rounded-md border bg-muted/50">
-                  <p className="text-center" style={{ fontFamily: font.family, fontSize: `${font.size}px` }}>
-                    مثال على النص: NovaSearch محرك بحث ذكي
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="heading-font-size">Main Headings Size</Label>
+                    <span className="text-sm text-muted-foreground">{font.headingSize}px</span>
+                  </div>
+                  <Slider
+                    id="heading-font-size"
+                    min={20}
+                    max={40}
+                    step={1}
+                    value={[font.headingSize]}
+                    onValueChange={(values) => {
+                      const newHeadingSize = values[0];
+                      const maxSubheadingSize = newHeadingSize - 2;
+                      setFont(prev => ({
+                        ...prev,
+                        headingSize: newHeadingSize,
+                        subheadingSize: Math.max(14, Math.min(prev.subheadingSize, maxSubheadingSize))
+                      }));
+                    }}
+                    className="w-full"
+                    data-testid="slider-heading-font-size"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Small (20px)</span>
+                    <span>Large (40px)</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="subheading-font-size">Subheadings Size</Label>
+                    <span className="text-sm text-muted-foreground">{font.subheadingSize}px</span>
+                  </div>
+                  <Slider
+                    id="subheading-font-size"
+                    min={14}
+                    max={Math.max(14, Math.min(font.headingSize - 2, 32))}
+                    step={1}
+                    value={[Math.max(14, Math.min(font.subheadingSize, font.headingSize - 2))]}
+                    onValueChange={(values) => {
+                      const requestedSize = values[0];
+                      setFont(prev => ({
+                        ...prev,
+                        subheadingSize: Math.max(14, Math.min(requestedSize, prev.headingSize - 2))
+                      }));
+                    }}
+                    className="w-full"
+                    data-testid="slider-subheading-font-size"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Small (14px)</span>
+                    <span>Large ({Math.max(14, Math.min(font.headingSize - 2, 32))}px)</span>
+                  </div>
+                </div>
+
+                <div className="space-y-3 p-4 rounded-md border bg-muted/50">
+                  <p className="text-xs text-muted-foreground mb-2">Preview:</p>
+                  <h1 style={{ fontFamily: font.family, fontSize: `${font.headingSize}px`, fontWeight: 600 }}>
+                    Main Heading (h1, h2)
+                  </h1>
+                  <h3 style={{ fontFamily: font.family, fontSize: `${font.subheadingSize}px`, fontWeight: 600 }}>
+                    Subheading (h3, h4, titles)
+                  </h3>
+                  <p style={{ fontFamily: font.family, fontSize: `${font.baseSize}px` }}>
+                    Regular text and search results will use this size.
                   </p>
                 </div>
               </CardContent>
@@ -414,13 +488,13 @@ export function ColorCustomizer() {
             data-testid="button-reset-settings"
           >
             <RotateCcw className="h-4 w-4 mr-2" />
-            إعادة التعيين
+            Reset
           </Button>
           <Button
             onClick={saveSettings}
             data-testid="button-save-settings"
           >
-            حفظ التغييرات
+            Save Changes
           </Button>
         </div>
       </DialogContent>

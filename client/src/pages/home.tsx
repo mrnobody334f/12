@@ -937,7 +937,7 @@ export default function Home() {
 
                 {/* Numbered Pagination */}
                 {pagination && pagination.totalResults > 0 && (
-                  <div className="flex flex-col items-center gap-4 pt-8 pb-4">
+                  <div className="flex items-center justify-center pt-8 pb-4">
                     <Pagination
                       currentPage={currentPage}
                       totalPages={Math.min(Math.ceil(pagination.totalResults / 20), maxReachedPage)}
@@ -945,9 +945,6 @@ export default function Home() {
                       hasNext={pagination.hasNext && currentPage < Math.ceil(pagination.totalResults / 20)}
                       hasPrevious={currentPage > 1}
                     />
-                    <p className="text-xs text-muted-foreground">
-                      Page {currentPage} of {Math.ceil(pagination.totalResults / 20)}
-                    </p>
                   </div>
                 )}
 

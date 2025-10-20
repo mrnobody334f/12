@@ -47,7 +47,11 @@ export function LocationSelector({
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const { toast } = useToast();
 
-  const displayCode = countryCode || "global";
+  const effectiveCountry = country || detectedLocation?.country || "";
+  const effectiveCountryCode = countryCode || detectedLocation?.countryCode || "";
+  const effectiveCity = city || detectedLocation?.city || "";
+
+  const displayCode = effectiveCountryCode || "global";
   const selectedCountry = countriesData.find((c) => c.code === displayCode);
   const availableCities = selectedCountry?.cities || [];
 
@@ -241,7 +245,7 @@ export function LocationSelector({
                       <div className="flex items-center gap-2 truncate">
                         <MapPin className="h-4 w-4 text-muted-foreground" />
                         <span className="truncate">
-                          {city || (availableCities.length > 0 ? "Select city" : "Select country first")}
+                          {effectiveCity || (availableCities.length > 0 ? "Select city" : "Select country first")}
                         </span>
                       </div>
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -263,7 +267,7 @@ export function LocationSelector({
                               <Check
                                 className={cn(
                                   "mr-2 h-4 w-4",
-                                  city === c ? "opacity-100" : "opacity-0"
+                                  effectiveCity === c ? "opacity-100" : "opacity-0"
                                 )}
                               />
                               {c}
@@ -277,7 +281,7 @@ export function LocationSelector({
               </div>
             </div>
 
-            {(country || city) && (
+            {(effectiveCountry || effectiveCity) && (
               <motion.div
                 initial={{ opacity: 0, y: -5 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -287,9 +291,14 @@ export function LocationSelector({
                   <span className="font-medium">Search results will be localized for:</span>
                   <br />
                   <span className="text-primary font-semibold">
-                    {city && <>{city}, </>}
-                    {country}
+                    {effectiveCity && <>{effectiveCity}, </>}
+                    {effectiveCountry}
                   </span>
+                  {detectedLocation && !country && !countryCode && (
+                    <span className="text-xs text-muted-foreground block mt-1">
+                      (Auto-detected from IP)
+                    </span>
+                  )}
                 </p>
               </motion.div>
             )}

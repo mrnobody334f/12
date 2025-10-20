@@ -17,8 +17,22 @@ async function callOpenRouter(messages: OpenRouterMessage[]): Promise<string> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   
   if (!apiKey) {
+    console.error("❌ OPENROUTER_API_KEY is not configured in environment variables");
     throw new Error("OPENROUTER_API_KEY is not configured");
   }
+
+  const requestBody = {
+    model: "anthropic/claude-3.5-sonnet",
+    messages,
+    temperature: 0.7,
+    max_tokens: 2000,
+  };
+
+  console.log("🤖 Calling OpenRouter API...", {
+    model: requestBody.model,
+    messageCount: messages.length,
+    firstMessageRole: messages[0]?.role,
+  });
 
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -29,23 +43,30 @@ async function callOpenRouter(messages: OpenRouterMessage[]): Promise<string> {
         "HTTP-Referer": "https://novasearch.app",
         "X-Title": "NovaSearch",
       },
-      body: JSON.stringify({
-        model: "anthropic/claude-3.5-sonnet",
-        messages,
-        temperature: 0.7,
-        max_tokens: 2000,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
+      console.error("❌ OpenRouter API failed:", {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText
+      });
       throw new Error(`OpenRouter API error: ${response.status} - ${errorText}`);
     }
 
     const data: OpenRouterResponse = await response.json();
-    return data.choices[0]?.message?.content || "";
+    const content = data.choices[0]?.message?.content || "";
+    
+    console.log("✅ OpenRouter API success:", {
+      responseLength: content.length,
+      preview: content.substring(0, 100)
+    });
+    
+    return content;
   } catch (error) {
-    console.error("OpenRouter API error:", error);
+    console.error("❌ OpenRouter API error:", error);
     throw error;
   }
 }
