@@ -6,6 +6,7 @@ import { SearchBar } from "@/components/search-bar";
 import { IntentSelector } from "@/components/intent-selector";
 import { LocationSelector } from "@/components/location-selector";
 import { SearchControlCenter } from "@/components/search-control-center";
+import { StatusBar } from "@/components/status-bar";
 import { DynamicTabs } from "@/components/dynamic-tabs";
 import { SortOptions } from "@/components/sort-options";
 import { Pagination } from "@/components/pagination";
@@ -442,6 +443,26 @@ export default function Home() {
               </div>
             </div>
           </div>
+
+          {/* Status Bar */}
+          <StatusBar
+            autoDetectIntent={autoDetectIntent}
+            manualIntent={manualIntent}
+            country={country}
+            countryCode={countryCode}
+            city={city}
+            timeFilter={timeFilter}
+            languageFilter={languageFilter}
+            fileTypeFilter={fileTypeFilter}
+            onIntentChange={handleIntentChange}
+            onAutoDetectChange={handleAutoDetectChange}
+            onLocationChange={handleLocationChange}
+            onTimeFilterChange={handleTimeFilterChange}
+            onLanguageFilterChange={handleLanguageFilterChange}
+            onFileTypeFilterChange={handleFileTypeFilterChange}
+            onClearFilters={handleClearFilters}
+            detectedLocation={detectedLocation}
+          />
 
           {/* Combined Tabs & Filters Row */}
           <div className="bg-background/30">
