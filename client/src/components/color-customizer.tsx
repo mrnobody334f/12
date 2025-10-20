@@ -30,7 +30,6 @@ interface ColorConfig {
 
 interface FontConfig {
   family: string;
-  baseSize: number;
   headingSize: number;
   subheadingSize: number;
 }
@@ -59,9 +58,8 @@ const defaultDarkColors: ColorConfig = {
 
 const defaultFont: FontConfig = {
   family: "Inter",
-  baseSize: 16,
-  headingSize: 26,
-  subheadingSize: 18,
+  headingSize: 21,
+  subheadingSize: 15,
 };
 
 const fontFamilies = [
@@ -126,17 +124,15 @@ export function ColorCustomizer() {
     if (savedFont) {
       try {
         const parsed = JSON.parse(decodeURIComponent(savedFont));
-        const baseSize = Math.max(12, Math.min(24, parsed.baseSize || parsed.size || defaultFont.baseSize));
-        let headingSize = Math.max(20, Math.min(40, parsed.headingSize || defaultFont.headingSize));
-        let subheadingSize = Math.max(14, Math.min(32, parsed.subheadingSize || defaultFont.subheadingSize));
+        let headingSize = Math.max(16, Math.min(32, parsed.headingSize || defaultFont.headingSize));
+        let subheadingSize = Math.max(12, Math.min(24, parsed.subheadingSize || defaultFont.subheadingSize));
         
         if (subheadingSize >= headingSize - 1) {
-          subheadingSize = Math.max(14, headingSize - 2);
+          subheadingSize = Math.max(12, headingSize - 2);
         }
         
         setFont({
           family: parsed.family || defaultFont.family,
-          baseSize,
           headingSize,
           subheadingSize,
         });
@@ -232,32 +228,24 @@ export function ColorCustomizer() {
         ${derivedDarkStyles}
       }
       
-      /* Font customizations - apply globally */
-      body, html {
-        font-family: ${font.family}, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
-        font-size: ${font.baseSize}px !important;
+      /* Apply main background color to body */
+      body {
+        background-color: hsl(var(--background)) !important;
       }
       
-      /* Override all Tailwind font families */
+      /* Font customizations for search results */
       * {
         font-family: ${font.family}, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
       }
       
-      /* Apply font sizes to headings */
-      h1, .text-3xl, .text-4xl {
+      /* Result Card Title - Main Heading */
+      [data-testid^="card-result"] h3 {
         font-size: ${font.headingSize}px !important;
       }
       
-      h2, .text-2xl {
-        font-size: ${Math.max(font.headingSize - 4, 20)}px !important;
-      }
-      
-      h3, h4, .text-xl, .text-lg {
+      /* Result Card Snippet/Description - Subheading */
+      [data-testid^="card-result"] p {
         font-size: ${font.subheadingSize}px !important;
-      }
-      
-      p, span, div, button, input, textarea, select {
-        font-size: ${font.baseSize}px !important;
       }
     `;
   };
@@ -548,34 +536,13 @@ export function ColorCustomizer() {
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="base-font-size">Base Font Size</Label>
-                    <span className="text-sm text-muted-foreground">{font.baseSize}px</span>
-                  </div>
-                  <Slider
-                    id="base-font-size"
-                    min={12}
-                    max={24}
-                    step={1}
-                    value={[font.baseSize]}
-                    onValueChange={(values) => setFont(prev => ({ ...prev, baseSize: values[0] }))}
-                    className="w-full"
-                    data-testid="slider-base-font-size"
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Small (12px)</span>
-                    <span>Large (24px)</span>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="heading-font-size">Main Headings Size</Label>
+                    <Label htmlFor="heading-font-size">Result Title Size</Label>
                     <span className="text-sm text-muted-foreground">{font.headingSize}px</span>
                   </div>
                   <Slider
                     id="heading-font-size"
-                    min={20}
-                    max={40}
+                    min={16}
+                    max={32}
                     step={1}
                     value={[font.headingSize]}
                     onValueChange={(values) => {
@@ -584,55 +551,52 @@ export function ColorCustomizer() {
                       setFont(prev => ({
                         ...prev,
                         headingSize: newHeadingSize,
-                        subheadingSize: Math.max(14, Math.min(prev.subheadingSize, maxSubheadingSize))
+                        subheadingSize: Math.max(12, Math.min(prev.subheadingSize, maxSubheadingSize))
                       }));
                     }}
                     className="w-full"
                     data-testid="slider-heading-font-size"
                   />
                   <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Small (20px)</span>
-                    <span>Large (40px)</span>
+                    <span>Small (16px)</span>
+                    <span>Large (32px)</span>
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="subheading-font-size">Subheadings Size</Label>
+                    <Label htmlFor="subheading-font-size">Result Description Size</Label>
                     <span className="text-sm text-muted-foreground">{font.subheadingSize}px</span>
                   </div>
                   <Slider
                     id="subheading-font-size"
-                    min={14}
-                    max={Math.max(14, Math.min(font.headingSize - 2, 32))}
+                    min={12}
+                    max={Math.max(12, Math.min(font.headingSize - 2, 24))}
                     step={1}
-                    value={[Math.max(14, Math.min(font.subheadingSize, font.headingSize - 2))]}
+                    value={[Math.max(12, Math.min(font.subheadingSize, font.headingSize - 2))]}
                     onValueChange={(values) => {
                       const requestedSize = values[0];
                       setFont(prev => ({
                         ...prev,
-                        subheadingSize: Math.max(14, Math.min(requestedSize, prev.headingSize - 2))
+                        subheadingSize: Math.max(12, Math.min(requestedSize, prev.headingSize - 2))
                       }));
                     }}
                     className="w-full"
                     data-testid="slider-subheading-font-size"
                   />
                   <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Small (14px)</span>
-                    <span>Large ({Math.max(14, Math.min(font.headingSize - 2, 32))}px)</span>
+                    <span>Small (12px)</span>
+                    <span>Large ({Math.max(12, Math.min(font.headingSize - 2, 24))}px)</span>
                   </div>
                 </div>
 
                 <div className="space-y-3 p-4 rounded-md border bg-muted/50">
-                  <p className="text-xs text-muted-foreground mb-2">Preview:</p>
-                  <h1 style={{ fontFamily: font.family, fontSize: `${font.headingSize}px`, fontWeight: 600 }}>
-                    Main Heading (h1, h2)
-                  </h1>
-                  <h3 style={{ fontFamily: font.family, fontSize: `${font.subheadingSize}px`, fontWeight: 600 }}>
-                    Subheading (h3, h4, titles)
+                  <p className="text-xs text-muted-foreground mb-2">Preview (Search Result):</p>
+                  <h3 style={{ fontFamily: font.family, fontSize: `${font.headingSize}px`, fontWeight: 500, color: 'hsl(var(--primary))' }}>
+                    New Car Prices 2024 - 2025
                   </h3>
-                  <p style={{ fontFamily: font.family, fontSize: `${font.baseSize}px` }}>
-                    Regular text and search results will use this size.
+                  <p style={{ fontFamily: font.family, fontSize: `${font.subheadingSize}px`, color: 'hsl(var(--google-gray))' }}>
+                    Latest official car prices in Egypt 2024 - 2025, All brands and models in Egypt, specifications, images and availability in showrooms quickly and easily.
                   </p>
                 </div>
               </CardContent>
