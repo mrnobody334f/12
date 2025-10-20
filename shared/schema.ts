@@ -85,11 +85,17 @@ export const searchResultSchema = z.object({
   image: z.string().optional(), // Main image for rich snippet
   position: z.number().optional(),
   date: z.string().optional(),
-  views: z.number().optional(),
+  views: z.union([z.number(), z.string()]).optional(), // Can be number or string like "1.2M"
   engagement: z.number().optional(),
   rating: z.number().optional(), // Rating value (e.g., 4.5)
   ratingCount: z.number().optional(), // Number of ratings
   price: z.string().optional(), // Price for shopping results
+  // Social media metrics
+  likes: z.union([z.number(), z.string()]).optional(), // Likes/reactions count
+  comments: z.union([z.number(), z.string()]).optional(), // Comments count
+  shares: z.union([z.number(), z.string()]).optional(), // Shares count
+  subscribers: z.union([z.number(), z.string()]).optional(), // YouTube subscribers
+  followers: z.union([z.number(), z.string()]).optional(), // Social media followers
   sitelinks: z.array(z.object({
     title: z.string(),
     link: z.string(),
@@ -122,6 +128,9 @@ export const videoResultSchema = z.object({
   channel: z.string().optional(),
   date: z.string().optional(),
   views: z.string().optional(),
+  likes: z.string().optional(),
+  comments: z.string().optional(),
+  subscribers: z.string().optional(), // Channel subscribers
 });
 
 export type VideoResult = z.infer<typeof videoResultSchema>;
