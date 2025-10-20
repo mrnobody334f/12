@@ -18,6 +18,7 @@ interface DynamicTabsProps {
   sources: TabSource[];
   intentSources?: TabSource[];
   activeSource: string;
+  activePlatformSource?: string;
   onSourceChange: (sourceId: string) => void;
   showPlatformTabs?: boolean;
   searchQuery?: string;
@@ -85,7 +86,7 @@ const platformTabs = [
   { id: "linkedin", name: "LinkedIn", iconComponent: SiLinkedin, color: "text-blue-700 dark:text-blue-500" },
 ];
 
-export function DynamicTabs({ sources, intentSources, activeSource, onSourceChange, showPlatformTabs = false, searchQuery, detectedIntent, onLoadMoreTabs, location }: DynamicTabsProps) {
+export function DynamicTabs({ sources, intentSources, activeSource, activePlatformSource, onSourceChange, showPlatformTabs = false, searchQuery, detectedIntent, onLoadMoreTabs, location }: DynamicTabsProps) {
   const [additionalTabs, setAdditionalTabs] = useState<TabSource[]>([]);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showingMore, setShowingMore] = useState(false);
@@ -124,14 +125,15 @@ export function DynamicTabs({ sources, intentSources, activeSource, onSourceChan
   }))];
 
   const allTabs = [...platformTabs, ...intentTabs];
-  const activeTab = allTabs.find(tab => tab.id === activeSource);
-  const activeSite = intentSources?.find(s => s.id === activeSource)?.site;
   const isMediaTab = ['images', 'videos', 'places', 'news'].includes(activeSource);
-  const showOpenButton = searchQuery && activeSource !== "all" && !isMediaTab && activeTab;
+  const effectiveActiveSource = isMediaTab && activePlatformSource ? activePlatformSource : activeSource;
+  const activeTab = allTabs.find(tab => tab.id === effectiveActiveSource);
+  const activeSite = intentSources?.find(s => s.id === effectiveActiveSource)?.site;
+  const showOpenButton = searchQuery && effectiveActiveSource !== "all" && !isMediaTab && activeTab;
 
   const handleOpenInNewTab = () => {
-    if (searchQuery && activeSource) {
-      const url = getPlatformSearchUrl(activeSource, searchQuery, activeSite);
+    if (searchQuery && effectiveActiveSource) {
+      const url = getPlatformSearchUrl(effectiveActiveSource, searchQuery, activeSite);
       window.open(url, '_blank', 'noopener,noreferrer');
     }
   };
@@ -180,7 +182,7 @@ export function DynamicTabs({ sources, intentSources, activeSource, onSourceChan
         {platformTabs.map((tab) => {
           const IconComponent = tab.iconComponent;
           const Icon = tab.icon;
-          const isActive = activeSource === tab.id;
+          const isActive = isMediaTab ? (activePlatformSource === tab.id) : (activeSource === tab.id);
 
           return (
             <button
@@ -274,7 +276,7 @@ export function DynamicTabs({ sources, intentSources, activeSource, onSourceChan
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
             {intentTabs.map((tab) => {
               const Icon = typeof tab.icon === 'string' ? getIcon(tab.icon) : tab.icon;
-              const isActive = activeSource === tab.id;
+              const isActive = isMediaTab ? (activePlatformSource === tab.id) : (activeSource === tab.id);
 
               return (
                 <button

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Bookmark, MapPin, Globe2, Settings2, Mic, Sparkles, Filter, CheckCircle2 } from "lucide-react";
+import { Bookmark, MapPin, Globe2, Settings2, Mic, Sparkles, Filter, CheckCircle2, Search } from "lucide-react";
 import { SearchBar } from "@/components/search-bar";
 import { IntentSelector } from "@/components/intent-selector";
 import { LocationSelector } from "@/components/location-selector";
@@ -26,6 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { cn } from "@/lib/utils";
 import type { SearchResponse, IntentType, SortOption, ImageResult, VideoResult, PlaceResult, NewsResult } from "@shared/schema";
 import {
   Popover,
@@ -51,6 +52,7 @@ export default function Home() {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("any");
   const [languageFilter, setLanguageFilter] = useState<LanguageFilter>("any");
   const [fileTypeFilter, setFileTypeFilter] = useState<FileTypeFilter>("any");
+  const [isScrolled, setIsScrolled] = useState(false);
   const { toast} = useToast();
 
   const { data: detectedLocation } = useQuery<{country: string; countryCode: string; city: string}>({
@@ -335,6 +337,22 @@ export default function Home() {
   const hasSearched = searchQuery.length > 0;
   const pagination = data?.pagination;
 
+  // Scroll Detection for Compact Header
+  useEffect(() => {
+    if (!hasSearched) {
+      setIsScrolled(false);
+      return;
+    }
+
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY;
+      setIsScrolled(scrollPosition > 200);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [hasSearched]);
+
   // Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -417,6 +435,124 @@ export default function Home() {
     <div className="min-h-screen bg-white dark:bg-background">
       {/* Onboarding Welcome Toast */}
       <OnboardingWelcome />
+      
+      {/* Compact Sticky Header - Shows on Scroll */}
+      {isScrolled && hasSearched && (
+        <motion.header
+          initial={{ y: -100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -100, opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className="fixed top-0 left-0 right-0 z-50 w-full border-b border-border/40 bg-white/95 dark:bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:supports-[backdrop-filter]:bg-background/80 shadow-lg"
+        >
+          <div className="max-w-[1400px] mx-auto px-4 py-2">
+            <div className="flex items-center gap-3">
+              {/* Logo - Extra Small */}
+              <div 
+                className="flex items-center gap-1.5 cursor-pointer flex-shrink-0 hover-elevate active-elevate-2 rounded-lg px-1.5 py-1 transition-all" 
+                onClick={() => {
+                  setSearchQuery("");
+                  setCurrentPage(1);
+                  setAccumulatedResults([]);
+                }}
+                data-testid="link-home-scrolled"
+              >
+                <div className="w-6 h-6 bg-gradient-to-br from-[#4285f4] to-[#34a853] rounded-lg flex items-center justify-center shadow-sm">
+                  <span className="text-white font-bold text-xs">N</span>
+                </div>
+              </div>
+
+              {/* Compact Search Bar */}
+              <div className="flex-1 max-w-xl">
+                <div className="relative flex items-center bg-card border border-card-border rounded-xl shadow-sm overflow-hidden">
+                  <div className="flex items-center justify-center w-10 h-9 text-muted-foreground">
+                    <Search className="h-4 w-4" />
+                  </div>
+                  
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && searchQuery.trim()) {
+                        handleSearch(searchQuery.trim());
+                      }
+                    }}
+                    placeholder="Search..."
+                    className="flex-1 h-9 bg-transparent text-sm font-medium placeholder:text-muted-foreground focus:outline-none pr-2"
+                    data-testid="input-search-scrolled"
+                  />
+                </div>
+              </div>
+
+              {/* Media Tabs - Compact */}
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => handleSourceChange('all')}
+                  className={cn(
+                    "px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-all",
+                    activeSource === 'all'
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted/50 hover-elevate active-elevate-2 text-muted-foreground"
+                  )}
+                  data-testid="tab-scrolled-all"
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => handleSourceChange('images')}
+                  className={cn(
+                    "px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-all",
+                    activeSource === 'images'
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted/50 hover-elevate active-elevate-2 text-muted-foreground"
+                  )}
+                  data-testid="tab-scrolled-images"
+                >
+                  Images
+                </button>
+                <button
+                  onClick={() => handleSourceChange('videos')}
+                  className={cn(
+                    "px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-all",
+                    activeSource === 'videos'
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted/50 hover-elevate active-elevate-2 text-muted-foreground"
+                  )}
+                  data-testid="tab-scrolled-videos"
+                >
+                  Videos
+                </button>
+                <button
+                  onClick={() => handleSourceChange('places')}
+                  className={cn(
+                    "px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-all",
+                    activeSource === 'places'
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted/50 hover-elevate active-elevate-2 text-muted-foreground"
+                  )}
+                  data-testid="tab-scrolled-places"
+                >
+                  Places
+                </button>
+                <button
+                  onClick={() => handleSourceChange('news')}
+                  className={cn(
+                    "px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-all",
+                    activeSource === 'news'
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted/50 hover-elevate active-elevate-2 text-muted-foreground"
+                  )}
+                  data-testid="tab-scrolled-news"
+                >
+                  News
+                </button>
+              </div>
+            </div>
+          </div>
+        </motion.header>
+      )}
+      
       {/* Compact Smart Header */}
       {hasSearched && (
         <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-white/95 dark:bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:supports-[backdrop-filter]:bg-background/80 shadow-sm">
@@ -531,6 +667,7 @@ export default function Home() {
                   sources={currentSources}
                   intentSources={intentSources}
                   activeSource={activeSource}
+                  activePlatformSource={activePlatformSource}
                   onSourceChange={handleSourceChange}
                   showPlatformTabs={true}
                   searchQuery={searchQuery}
