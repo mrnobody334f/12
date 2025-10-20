@@ -696,7 +696,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Places search endpoint
   app.get("/api/search/places", async (req, res) => {
     try {
-      const { query, countryCode, city, languageFilter = "any", limit = "20" } = req.query;
+      const { query, countryCode, city, languageFilter = "any", limit = "20", site } = req.query;
 
       if (!query || typeof query !== "string") {
         return res.status(400).json({ error: "Query parameter is required" });
@@ -706,15 +706,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const locationCity = city && typeof city === "string" ? city : undefined;
       const langFilter = languageFilter && typeof languageFilter === "string" ? languageFilter : "any";
       const limitNum = parseInt(limit as string, 10);
+      const siteFilter = site && typeof site === "string" ? site : undefined;
 
-      const cacheKey = `places:${query}:${locationCountryCode || 'global'}:${locationCity || 'none'}:${langFilter}:${limitNum}`;
+      const cacheKey = `places:${query}:${locationCountryCode || 'global'}:${locationCity || 'none'}:${langFilter}:${limitNum}:${siteFilter || 'all'}`;
       const cached = cache.get<any>(cacheKey);
       if (cached) {
-        console.log(`Using cached places for "${query}"`);
+        console.log(`Using cached places for "${query}" (site: ${siteFilter || 'all'})`);
         return res.json(cached);
       }
 
-      const places = await searchPlacesWithSerper(query, limitNum, locationCountryCode, locationCity, langFilter);
+      const searchQueryWithSite = siteFilter ? `site:${siteFilter} ${query}` : query;
+      const places = await searchPlacesWithSerper(searchQueryWithSite, limitNum, locationCountryCode, locationCity, langFilter);
       
       const response = { query, places };
       cache.set(cacheKey, response, 30 * 60 * 1000);
@@ -729,7 +731,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // News search endpoint
   app.get("/api/search/news", async (req, res) => {
     try {
-      const { query, countryCode, languageFilter = "any", timeFilter = "any", limit = "20" } = req.query;
+      const { query, countryCode, languageFilter = "any", timeFilter = "any", limit = "20", site } = req.query;
 
       if (!query || typeof query !== "string") {
         return res.status(400).json({ error: "Query parameter is required" });
@@ -739,15 +741,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const langFilter = languageFilter && typeof languageFilter === "string" ? languageFilter : "any";
       const timeFilterValue = timeFilter && typeof timeFilter === "string" ? timeFilter : "any";
       const limitNum = parseInt(limit as string, 10);
+      const siteFilter = site && typeof site === "string" ? site : undefined;
 
-      const cacheKey = `news:${query}:${locationCountryCode || 'global'}:${langFilter}:${timeFilterValue}:${limitNum}`;
+      const cacheKey = `news:${query}:${locationCountryCode || 'global'}:${langFilter}:${timeFilterValue}:${limitNum}:${siteFilter || 'all'}`;
       const cached = cache.get<any>(cacheKey);
       if (cached) {
-        console.log(`Using cached news for "${query}"`);
+        console.log(`Using cached news for "${query}" (site: ${siteFilter || 'all'})`);
         return res.json(cached);
       }
 
-      const news = await searchNewsWithSerper(query, limitNum, locationCountryCode, langFilter, timeFilterValue);
+      const searchQueryWithSite = siteFilter ? `site:${siteFilter} ${query}` : query;
+      const news = await searchNewsWithSerper(searchQueryWithSite, limitNum, locationCountryCode, langFilter, timeFilterValue);
       
       const response = { query, news };
       cache.set(cacheKey, response, 30 * 60 * 1000);

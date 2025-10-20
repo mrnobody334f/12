@@ -109,12 +109,12 @@ export default function Home() {
   });
 
   const { data: placesData, isLoading: placesLoading } = useQuery<{places: PlaceResult[]}>({
-    queryKey: [`/api/search/places?query=${encodeURIComponent(searchQuery)}${placesLocationParams}&languageFilter=${languageFilter}`],
+    queryKey: [`/api/search/places?query=${encodeURIComponent(searchQuery)}${placesLocationParams}&languageFilter=${languageFilter}${siteParam}`],
     enabled: !!searchQuery && activeSource === 'places',
   });
 
   const { data: newsData, isLoading: newsLoading } = useQuery<{news: NewsResult[]}>({
-    queryKey: [`/api/search/news?query=${encodeURIComponent(searchQuery)}${mediaLocationParams}&languageFilter=${languageFilter}&timeFilter=${timeFilter}`],
+    queryKey: [`/api/search/news?query=${encodeURIComponent(searchQuery)}${mediaLocationParams}&languageFilter=${languageFilter}&timeFilter=${timeFilter}${siteParam}`],
     enabled: !!searchQuery && activeSource === 'news',
   });
 
@@ -144,6 +144,7 @@ export default function Home() {
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
     setActiveSource("all");
+    setActivePlatformSource("all");
     setCurrentPage(1);
     setAccumulatedResults([]);
     setTabsPage(2);

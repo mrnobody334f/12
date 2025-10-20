@@ -175,33 +175,6 @@ export function DynamicTabs({ sources, intentSources, activeSource, onSourceChan
 
   return (
     <div className="space-y-3">
-      {/* Media Tabs - Smaller, separated */}
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
-          {mediaTabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeSource === tab.id;
-
-            return (
-              <button
-                key={tab.id}
-                onClick={() => onSourceChange(tab.id)}
-                className={cn(
-                  "relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-xs whitespace-nowrap transition-all duration-200",
-                  isActive
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-muted/50 hover-elevate active-elevate-2 text-muted-foreground border border-border/50"
-                )}
-                data-testid={`tab-media-${tab.id}`}
-              >
-                <Icon className={cn("h-3.5 w-3.5", !isActive && tab.color)} />
-                <span>{tab.name}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       {/* Platform Tabs - Main tabs */}
       <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
         {platformTabs.map((tab) => {
@@ -230,6 +203,33 @@ export function DynamicTabs({ sources, intentSources, activeSource, onSourceChan
             </button>
           );
         })}
+      </div>
+
+      {/* Media Tabs - Smaller, separated */}
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+          {mediaTabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeSource === tab.id;
+
+            return (
+              <button
+                key={tab.id}
+                onClick={() => onSourceChange(tab.id)}
+                className={cn(
+                  "relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-xs whitespace-nowrap transition-all duration-200",
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted/50 hover-elevate active-elevate-2 text-muted-foreground border border-border/50"
+                )}
+                data-testid={`tab-media-${tab.id}`}
+              >
+                <Icon className={cn("h-3.5 w-3.5", !isActive && tab.color)} />
+                <span>{tab.name}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {intentTabs.length > 0 && (
