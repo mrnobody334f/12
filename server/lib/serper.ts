@@ -23,6 +23,9 @@ interface SerperResponse {
     q: string;
     correctedQuery?: string;
   };
+  searchInformation?: {
+    showingResultsFor?: string;
+  };
   relatedSearches?: Array<{
     query: string;
   }>;
@@ -399,8 +402,8 @@ export async function searchWithSerper(
       console.log(`First result: ${data.organic[0].title} - ${data.organic[0].link}`);
     }
     
-    // Extract corrected query if available
-    const correctedQuery = data.searchParameters?.correctedQuery;
+    // Extract corrected query if available (from searchInformation.showingResultsFor or searchParameters.correctedQuery)
+    const correctedQuery = data.searchInformation?.showingResultsFor || data.searchParameters?.correctedQuery;
     if (correctedQuery && correctedQuery !== query) {
       console.log(`Serper suggested correction: "${query}" → "${correctedQuery}"`);
     }

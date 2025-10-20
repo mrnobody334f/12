@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
-import { Palette, RotateCcw, Sun, Moon } from "lucide-react";
+import { Palette, RotateCcw, Sun, Moon, Type } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import {
   Dialog,
   DialogContent,
@@ -15,68 +17,110 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-interface SimpleColorConfig {
+interface ColorConfig {
   background: string;
   foreground: string;
   primary: string;
   card: string;
 }
 
-const defaultLightColors: SimpleColorConfig = {
+interface FontConfig {
+  family: string;
+  size: number;
+}
+
+const defaultLightColors: ColorConfig = {
   background: "0 0% 100%",
   foreground: "222 47% 11%",
   primary: "221 83% 53%",
   card: "240 5% 96%",
 };
 
-const defaultDarkColors: SimpleColorConfig = {
+const defaultDarkColors: ColorConfig = {
   background: "0 0% 8%",
   foreground: "0 0% 95%",
   primary: "215 60% 55%",
   card: "0 0% 12%",
 };
 
+const defaultFont: FontConfig = {
+  family: "Inter",
+  size: 16,
+};
+
+const fontFamilies = [
+  { value: "Inter", label: "Inter (الافتراضي)" },
+  { value: "Arial", label: "Arial" },
+  { value: "Helvetica", label: "Helvetica" },
+  { value: "Georgia", label: "Georgia" },
+  { value: "Times New Roman", label: "Times New Roman" },
+  { value: "Verdana", label: "Verdana" },
+  { value: "Tahoma", label: "Tahoma" },
+  { value: "Trebuchet MS", label: "Trebuchet MS" },
+  { value: "Cairo", label: "Cairo (عربي)" },
+  { value: "Amiri", label: "Amiri (عربي)" },
+  { value: "Tajawal", label: "Tajawal (عربي)" },
+];
+
 export function ColorCustomizer() {
-  const [lightColors, setLightColors] = useState<SimpleColorConfig>(defaultLightColors);
-  const [darkColors, setDarkColors] = useState<SimpleColorConfig>(defaultDarkColors);
+  const [lightColors, setLightColors] = useState<ColorConfig>(defaultLightColors);
+  const [darkColors, setDarkColors] = useState<ColorConfig>(defaultDarkColors);
+  const [font, setFont] = useState<FontConfig>(defaultFont);
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    loadColors();
+    loadSettings();
   }, []);
 
   useEffect(() => {
-    applyColors();
-  }, [lightColors, darkColors]);
+    applySettings();
+  }, [lightColors, darkColors, font]);
 
-  const loadColors = () => {
-    const saved = localStorage.getItem("novasearch-colors");
-    if (saved) {
+  const loadSettings = () => {
+    // Load colors
+    const savedColors = localStorage.getItem("novasearch-colors");
+    if (savedColors) {
       try {
-        const parsed = JSON.parse(saved);
+        const parsed = JSON.parse(savedColors);
         setLightColors(parsed.light || defaultLightColors);
         setDarkColors(parsed.dark || defaultDarkColors);
       } catch (e) {
         console.error("Failed to load colors:", e);
       }
     }
+
+    // Load font settings
+    const savedFont = localStorage.getItem("novasearch-font");
+    if (savedFont) {
+      try {
+        const parsed = JSON.parse(savedFont);
+        setFont(parsed || defaultFont);
+      } catch (e) {
+        console.error("Failed to load font:", e);
+      }
+    }
   };
 
-  const saveColors = () => {
-    const config = {
+  const saveSettings = () => {
+    // Save colors
+    const colorConfig = {
       light: lightColors,
       dark: darkColors,
     };
-    localStorage.setItem("novasearch-colors", JSON.stringify(config));
-    applyColors();
+    localStorage.setItem("novasearch-colors", JSON.stringify(colorConfig));
+    
+    // Save font
+    localStorage.setItem("novasearch-font", JSON.stringify(font));
+    
+    applySettings();
     toast({
-      title: "تم حفظ الألوان",
-      description: "تم حفظ نظام الألوان بنجاح",
+      title: "تم حفظ الإعدادات",
+      description: "تم حفظ جميع التخصيصات بنجاح",
     });
   };
 
-  const applyColors = () => {
+  const applySettings = () => {
     const root = document.documentElement;
     
     // Apply light mode colors to :root
@@ -85,8 +129,13 @@ export function ColorCustomizer() {
       root.style.setProperty(`--${cssVar}`, value);
     });
     
-    // Update dark mode styles by modifying CSS variables when .dark class is present
-    // We need to update the style tag or use a different approach
+    // Apply font settings
+    root.style.setProperty('--font-family', font.family);
+    root.style.setProperty('--font-size', `${font.size}px`);
+    document.body.style.fontFamily = font.family;
+    document.body.style.fontSize = `${font.size}px`;
+    
+    // Update dark mode styles via CSS
     const styleId = 'dynamic-dark-colors';
     let styleEl = document.getElementById(styleId) as HTMLStyleElement;
     
@@ -110,13 +159,15 @@ export function ColorCustomizer() {
     `;
   };
 
-  const resetColors = () => {
+  const resetSettings = () => {
     setLightColors(defaultLightColors);
     setDarkColors(defaultDarkColors);
+    setFont(defaultFont);
     localStorage.removeItem("novasearch-colors");
+    localStorage.removeItem("novasearch-font");
     toast({
       title: "تم إعادة التعيين",
-      description: "تم إعادة تعيين الألوان إلى الافتراضية",
+      description: "تم إعادة تعيين جميع الإعدادات إلى الافتراضية",
     });
   };
 
@@ -181,14 +232,14 @@ export function ColorCustomizer() {
     return `${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
   };
 
-  const updateLightColor = (key: keyof SimpleColorConfig, hex: string) => {
+  const updateLightColor = (key: keyof ColorConfig, hex: string) => {
     setLightColors(prev => ({
       ...prev,
       [key]: hexToHsl(hex)
     }));
   };
 
-  const updateDarkColor = (key: keyof SimpleColorConfig, hex: string) => {
+  const updateDarkColor = (key: keyof ColorConfig, hex: string) => {
     setDarkColors(prev => ({
       ...prev,
       [key]: hexToHsl(hex)
@@ -218,33 +269,37 @@ export function ColorCustomizer() {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Palette className="h-5 w-5" />
-            تخصيص الألوان
+            تخصيص المظهر
           </DialogTitle>
           <DialogDescription>
-            قم بتخصيص ألوان الموقع حسب ذوقك
+            قم بتخصيص الألوان والخطوط حسب ذوقك
           </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="light" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="light" className="flex items-center gap-2">
               <Sun className="h-4 w-4" />
-              الوضع النهاري
+              فاتح
             </TabsTrigger>
             <TabsTrigger value="dark" className="flex items-center gap-2">
               <Moon className="h-4 w-4" />
-              الوضع الليلي
+              غامق
+            </TabsTrigger>
+            <TabsTrigger value="font" className="flex items-center gap-2">
+              <Type className="h-4 w-4" />
+              الخط
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="light" className="space-y-4 mt-4">
             <Card>
               <CardHeader>
-                <CardTitle>ألوان الوضع النهاري</CardTitle>
-                <CardDescription>اختر الألوان التي تناسبك في الوضع النهاري</CardDescription>
+                <CardTitle>ألوان الوضع الفاتح</CardTitle>
+                <CardDescription>اختر الألوان للوضع النهاري</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {(Object.keys(lightColors) as Array<keyof SimpleColorConfig>).map((key) => (
+                {(Object.keys(lightColors) as Array<keyof ColorConfig>).map((key) => (
                   <div key={key} className="flex items-center gap-4">
                     <div className="flex-1">
                       <Label htmlFor={`light-${key}`} className="text-sm font-medium">
@@ -256,7 +311,7 @@ export function ColorCustomizer() {
                       type="color"
                       value={hslToHex(lightColors[key])}
                       onChange={(e) => updateLightColor(key, e.target.value)}
-                      className="w-20 h-10 cursor-pointer"
+                      className="w-24 h-10 cursor-pointer"
                       data-testid={`input-light-${key}`}
                     />
                   </div>
@@ -268,11 +323,11 @@ export function ColorCustomizer() {
           <TabsContent value="dark" className="space-y-4 mt-4">
             <Card>
               <CardHeader>
-                <CardTitle>ألوان الوضع الليلي</CardTitle>
-                <CardDescription>اختر الألوان التي تناسبك في الوضع الليلي</CardDescription>
+                <CardTitle>ألوان الوضع الغامق</CardTitle>
+                <CardDescription>اختر الألوان للوضع الليلي</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {(Object.keys(darkColors) as Array<keyof SimpleColorConfig>).map((key) => (
+                {(Object.keys(darkColors) as Array<keyof ColorConfig>).map((key) => (
                   <div key={key} className="flex items-center gap-4">
                     <div className="flex-1">
                       <Label htmlFor={`dark-${key}`} className="text-sm font-medium">
@@ -284,11 +339,69 @@ export function ColorCustomizer() {
                       type="color"
                       value={hslToHex(darkColors[key])}
                       onChange={(e) => updateDarkColor(key, e.target.value)}
-                      className="w-20 h-10 cursor-pointer"
+                      className="w-24 h-10 cursor-pointer"
                       data-testid={`input-dark-${key}`}
                     />
                   </div>
                 ))}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="font" className="space-y-4 mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>إعدادات الخط</CardTitle>
+                <CardDescription>اختر نوع الخط وحجمه</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="font-family">نوع الخط</Label>
+                  <Select
+                    value={font.family}
+                    onValueChange={(value) => setFont(prev => ({ ...prev, family: value }))}
+                  >
+                    <SelectTrigger id="font-family" data-testid="select-font-family">
+                      <SelectValue placeholder="اختر نوع الخط" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {fontFamilies.map((fontFamily) => (
+                        <SelectItem key={fontFamily.value} value={fontFamily.value}>
+                          <span style={{ fontFamily: fontFamily.value }}>
+                            {fontFamily.label}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="font-size">حجم الخط</Label>
+                    <span className="text-sm text-muted-foreground">{font.size}px</span>
+                  </div>
+                  <Slider
+                    id="font-size"
+                    min={12}
+                    max={24}
+                    step={1}
+                    value={[font.size]}
+                    onValueChange={(values) => setFont(prev => ({ ...prev, size: values[0] }))}
+                    className="w-full"
+                    data-testid="slider-font-size"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>صغير (12px)</span>
+                    <span>كبير (24px)</span>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-md border bg-muted/50">
+                  <p className="text-center" style={{ fontFamily: font.family, fontSize: `${font.size}px` }}>
+                    مثال على النص: NovaSearch محرك بحث ذكي
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -297,15 +410,15 @@ export function ColorCustomizer() {
         <div className="flex gap-2 justify-end mt-4">
           <Button
             variant="outline"
-            onClick={resetColors}
-            data-testid="button-reset-colors"
+            onClick={resetSettings}
+            data-testid="button-reset-settings"
           >
             <RotateCcw className="h-4 w-4 mr-2" />
             إعادة التعيين
           </Button>
           <Button
-            onClick={saveColors}
-            data-testid="button-save-colors"
+            onClick={saveSettings}
+            data-testid="button-save-settings"
           >
             حفظ التغييرات
           </Button>
