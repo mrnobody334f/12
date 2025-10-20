@@ -162,37 +162,8 @@ export function ColorCustomizer() {
   };
 
   const applySettings = () => {
-    const root = document.documentElement;
-    
-    // Apply base light colors
-    Object.entries(lightColors).forEach(([key, value]) => {
-      const cssVar = key.replace(/([A-Z])/g, '-$1').toLowerCase();
-      root.style.setProperty(`--${cssVar}`, value);
-    });
-    
-    // Auto-calculate and apply derived light colors
-    root.style.setProperty('--card-foreground', lightColors.foreground);
-    root.style.setProperty('--card-border', lightColors.border);
-    root.style.setProperty('--muted-foreground', '0 0% 45%');
-    root.style.setProperty('--accent-foreground', lightColors.foreground);
-    root.style.setProperty('--secondary-foreground', lightColors.foreground);
-    root.style.setProperty('--popover', lightColors.card);
-    root.style.setProperty('--popover-foreground', lightColors.foreground);
-    root.style.setProperty('--popover-border', lightColors.border);
-    root.style.setProperty('--input', lightColors.border);
-    root.style.setProperty('--primary-foreground', '0 0% 100%');
-    root.style.setProperty('--destructive', '0 84% 60%');
-    root.style.setProperty('--destructive-foreground', '210 40% 98%');
-    
-    // Apply font settings
-    root.style.setProperty('--font-family', font.family);
-    root.style.setProperty('--font-size-base', `${font.baseSize}px`);
-    root.style.setProperty('--font-size-heading', `${font.headingSize}px`);
-    root.style.setProperty('--font-size-subheading', `${font.subheadingSize}px`);
-    document.body.style.fontFamily = font.family;
-    document.body.style.fontSize = `${font.baseSize}px`;
-    
-    const styleId = 'dynamic-dark-colors';
+    // Create or update a single style element for all customizations
+    const styleId = 'novasearch-customizations';
     let styleEl = document.getElementById(styleId) as HTMLStyleElement;
     
     if (!styleEl) {
@@ -201,15 +172,39 @@ export function ColorCustomizer() {
       document.head.appendChild(styleEl);
     }
     
-    // Apply base dark colors
-    const darkStyles = Object.entries(darkColors)
+    // Build light mode color styles
+    const lightColorStyles = Object.entries(lightColors)
       .map(([key, value]) => {
         const cssVar = key.replace(/([A-Z])/g, '-$1').toLowerCase();
         return `--${cssVar}: ${value};`;
       })
       .join('\n    ');
     
-    // Add derived dark colors
+    // Build derived light color styles
+    const derivedLightStyles = `
+    --card-foreground: ${lightColors.foreground};
+    --card-border: ${lightColors.border};
+    --muted-foreground: 0 0% 45%;
+    --accent-foreground: ${lightColors.foreground};
+    --secondary-foreground: ${lightColors.foreground};
+    --popover: ${lightColors.card};
+    --popover-foreground: ${lightColors.foreground};
+    --popover-border: ${lightColors.border};
+    --input: ${lightColors.border};
+    --primary-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    `;
+    
+    // Build dark mode color styles
+    const darkColorStyles = Object.entries(darkColors)
+      .map(([key, value]) => {
+        const cssVar = key.replace(/([A-Z])/g, '-$1').toLowerCase();
+        return `--${cssVar}: ${value};`;
+      })
+      .join('\n    ');
+    
+    // Build derived dark color styles
     const derivedDarkStyles = `
     --card-foreground: ${darkColors.foreground};
     --card-border: ${darkColors.border};
@@ -225,10 +220,44 @@ export function ColorCustomizer() {
     --destructive-foreground: 0 0% 100%;
     `;
     
+    // Apply all styles at once via CSS
     styleEl.textContent = `
+      :root {
+        ${lightColorStyles}
+        ${derivedLightStyles}
+      }
+      
       .dark {
-        ${darkStyles}
+        ${darkColorStyles}
         ${derivedDarkStyles}
+      }
+      
+      /* Font customizations - apply globally */
+      body, html {
+        font-family: ${font.family}, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        font-size: ${font.baseSize}px !important;
+      }
+      
+      /* Override all Tailwind font families */
+      * {
+        font-family: ${font.family}, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+      }
+      
+      /* Apply font sizes to headings */
+      h1, .text-3xl, .text-4xl {
+        font-size: ${font.headingSize}px !important;
+      }
+      
+      h2, .text-2xl {
+        font-size: ${Math.max(font.headingSize - 4, 20)}px !important;
+      }
+      
+      h3, h4, .text-xl, .text-lg {
+        font-size: ${font.subheadingSize}px !important;
+      }
+      
+      p, span, div, button, input, textarea, select {
+        font-size: ${font.baseSize}px !important;
       }
     `;
   };
