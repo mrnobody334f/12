@@ -64,26 +64,26 @@ export function ResultCard({ result, index }: ResultCardProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.03, duration: 0.2 }}
-      className="group"
+      className="group p-4 rounded-xl hover-elevate transition-all duration-200"
       data-testid={`card-result-${index}`}
     >
       <div className="flex gap-4">
         {/* Main Content */}
         <div className="flex-1 min-w-0">
           {/* URL breadcrumb with favicon - Google style */}
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-2">
             {faviconUrl && (
               <img
                 src={faviconUrl}
                 alt=""
-                className="w-[18px] h-[18px] rounded-full flex-shrink-0"
+                className="w-[20px] h-[20px] rounded-sm flex-shrink-0"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                 }}
               />
             )}
             <div className="flex items-center gap-1 min-w-0">
-              <span className="text-sm truncate" style={{ color: 'hsl(var(--link-green))' }}>
+              <span className="text-sm font-medium truncate text-[#006621] dark:text-[#99c794]">
                 {displayUrl}
               </span>
             </div>
@@ -97,8 +97,7 @@ export function ResultCard({ result, index }: ResultCardProps) {
             className="block group/title"
           >
             <h3 
-              className="text-xl leading-7 font-normal hover:underline line-clamp-1 cursor-pointer mb-1"
-              style={{ color: 'hsl(var(--primary))' }}
+              className="text-xl leading-7 font-medium hover:underline line-clamp-2 cursor-pointer mb-2 text-primary group-hover/title:underline"
               data-testid={`link-result-${index}`}
             >
               {result.title}

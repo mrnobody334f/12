@@ -279,58 +279,67 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-background">
-      {/* Google-style Header - Only show when search has been made */}
+      {/* Enhanced Header */}
       {hasSearched && (
         <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-white/95 dark:bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:supports-[backdrop-filter]:bg-background/80">
-          <div className="max-w-[1400px] mx-auto px-6 py-3 flex items-center gap-6">
-            {/* Logo */}
-            <div 
-              className="flex items-center gap-2 cursor-pointer" 
-              onClick={() => {
-                setSearchQuery("");
-                setCurrentPage(1);
-                setAccumulatedResults([]);
-              }}
-              data-testid="link-home"
-            >
-              <div className="w-8 h-8 bg-gradient-to-br from-[#4285f4] to-[#34a853] rounded flex items-center justify-center">
-                <span className="text-white font-bold text-lg">N</span>
+          {/* Main Header Row */}
+          <div className="border-b border-border/20">
+            <div className="max-w-[1400px] mx-auto px-6 py-3 flex items-center gap-4">
+              {/* Logo */}
+              <div 
+                className="flex items-center gap-2 cursor-pointer flex-shrink-0" 
+                onClick={() => {
+                  setSearchQuery("");
+                  setCurrentPage(1);
+                  setAccumulatedResults([]);
+                }}
+                data-testid="link-home"
+              >
+                <div className="w-8 h-8 bg-gradient-to-br from-[#4285f4] to-[#34a853] rounded-lg flex items-center justify-center shadow-sm">
+                  <span className="text-white font-bold text-lg">N</span>
+                </div>
+                <h1 className="text-lg font-semibold text-foreground hidden md:block">
+                  NovaSearch
+                </h1>
               </div>
-              <h1 className="text-lg font-normal text-foreground hidden sm:block">
-                NovaSearch
-              </h1>
-            </div>
 
-            {/* Search Bar */}
-            <div className="flex-1 max-w-2xl">
-              <SearchBar
-                onSearch={handleSearch}
-                initialQuery={searchQuery}
-                isSearching={isLoading}
-              />
-            </div>
+              {/* Search Bar */}
+              <div className="flex-1 max-w-2xl">
+                <SearchBar
+                  onSearch={handleSearch}
+                  initialQuery={searchQuery}
+                  isSearching={isLoading}
+                />
+              </div>
 
-            {/* Right Actions */}
-            <div className="flex items-center gap-2">
-              <BookmarkHistory onSearchClick={handleSearch} />
-              {data && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="gap-2"
-                  onClick={handleBookmarkClick}
-                  disabled={bookmarkMutation.isPending}
-                  data-testid="button-bookmark"
-                >
-                  <Bookmark className="h-5 w-5" />
-                </Button>
-              )}
-              <ThemeToggle />
+              {/* Right Actions */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <LocationSelector
+                  country={country}
+                  countryCode={countryCode}
+                  city={city}
+                  onLocationChange={handleLocationChange}
+                  detectedLocation={detectedLocation}
+                />
+                <BookmarkHistory onSearchClick={handleSearch} />
+                {data && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleBookmarkClick}
+                    disabled={bookmarkMutation.isPending}
+                    data-testid="button-bookmark"
+                  >
+                    <Bookmark className="h-5 w-5" />
+                  </Button>
+                )}
+                <ThemeToggle />
+              </div>
             </div>
           </div>
 
-          {/* Intent Tabs - Google style */}
-          <div className="border-b border-border/40">
+          {/* Intent Selection Row */}
+          <div className="border-b border-border/20">
             <div className="max-w-[1400px] mx-auto px-6">
               <IntentSelector
                 selectedIntent={manualIntent}
@@ -343,7 +352,7 @@ export default function Home() {
 
           {/* Dynamic Tabs Row */}
           <div className="border-b border-border/20">
-            <div className="max-w-[1400px] mx-auto px-6 py-2">
+            <div className="max-w-[1400px] mx-auto px-6 py-3">
               <DynamicTabs
                 sources={currentSources}
                 intentSources={intentSources}
@@ -358,45 +367,18 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Tools Row */}
-          <div className="border-b border-border/20">
-            <div className="max-w-[1400px] mx-auto px-6 py-2 flex items-center justify-between gap-4">
-              {/* Location */}
-              <div className="flex items-center gap-3">
-                <LocationSelector
-                  country={country}
-                  countryCode={countryCode}
-                  city={city}
-                  onLocationChange={handleLocationChange}
-                  detectedLocation={detectedLocation}
-                />
-              </div>
-
-              {/* Tools Dropdown */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="gap-2 text-muted-foreground"
-                    data-testid="button-tools"
-                  >
-                    <Settings2 className="h-4 w-4" />
-                    <span>Tools</span>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80" align="end">
-                  <SearchTools
-                    timeFilter={timeFilter}
-                    languageFilter={languageFilter}
-                    fileTypeFilter={fileTypeFilter}
-                    onTimeFilterChange={handleTimeFilterChange}
-                    onLanguageFilterChange={handleLanguageFilterChange}
-                    onFileTypeFilterChange={handleFileTypeFilterChange}
-                    onClearFilters={handleClearFilters}
-                  />
-                </PopoverContent>
-              </Popover>
+          {/* Tools & Filters Row */}
+          <div className="bg-background/50">
+            <div className="max-w-[1400px] mx-auto px-6 py-2 flex items-center gap-2">
+              <SearchTools
+                timeFilter={timeFilter}
+                languageFilter={languageFilter}
+                fileTypeFilter={fileTypeFilter}
+                onTimeFilterChange={handleTimeFilterChange}
+                onLanguageFilterChange={handleLanguageFilterChange}
+                onFileTypeFilterChange={handleFileTypeFilterChange}
+                onClearFilters={handleClearFilters}
+              />
             </div>
           </div>
         </header>
