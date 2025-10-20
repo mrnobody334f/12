@@ -30,6 +30,8 @@ export const platformSources = {
   youtube: { id: "youtube", name: "YouTube", site: "youtube.com", icon: "Youtube" },
   pinterest: { id: "pinterest", name: "Pinterest", site: "pinterest.com", icon: "Image" },
   linkedin: { id: "linkedin", name: "LinkedIn", site: "linkedin.com", icon: "Briefcase" },
+  quora: { id: "quora", name: "Quora", site: "quora.com", icon: "HelpCircle" },
+  wikipedia: { id: "wikipedia", name: "Wikipedia", site: "wikipedia.org", icon: "BookOpen" },
 } as const;
 
 // Search source configurations based on intent

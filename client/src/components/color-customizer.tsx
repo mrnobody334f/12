@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Palette, Download, Upload, RotateCcw, Sun, Moon, Sparkles } from "lucide-react";
+import { Palette, RotateCcw, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -14,66 +14,31 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 
-interface ColorConfig {
+interface SimpleColorConfig {
   background: string;
   foreground: string;
   primary: string;
-  primaryForeground: string;
-  secondary: string;
-  secondaryForeground: string;
-  muted: string;
-  mutedForeground: string;
-  accent: string;
-  accentForeground: string;
-  destructive: string;
-  destructiveForeground: string;
-  border: string;
   card: string;
-  cardForeground: string;
 }
 
-const defaultLightColors: ColorConfig = {
+const defaultLightColors: SimpleColorConfig = {
   background: "0 0% 100%",
   foreground: "222 47% 11%",
   primary: "221 83% 53%",
-  primaryForeground: "0 0% 100%",
-  secondary: "240 5% 88%",
-  secondaryForeground: "222 47% 11%",
-  muted: "240 4% 90%",
-  mutedForeground: "0 0% 45%",
-  accent: "240 5% 89%",
-  accentForeground: "222 47% 11%",
-  destructive: "0 84% 60%",
-  destructiveForeground: "210 40% 98%",
-  border: "214 32% 91%",
   card: "240 5% 96%",
-  cardForeground: "222 47% 11%",
 };
 
-const defaultDarkColors: ColorConfig = {
+const defaultDarkColors: SimpleColorConfig = {
   background: "0 0% 8%",
   foreground: "0 0% 95%",
   primary: "215 60% 55%",
-  primaryForeground: "0 0% 100%",
-  secondary: "0 0% 18%",
-  secondaryForeground: "0 0% 95%",
-  muted: "0 0% 16%",
-  mutedForeground: "0 0% 65%",
-  accent: "0 0% 15%",
-  accentForeground: "0 0% 95%",
-  destructive: "0 70% 55%",
-  destructiveForeground: "0 0% 100%",
-  border: "0 0% 18%",
   card: "0 0% 12%",
-  cardForeground: "0 0% 95%",
 };
 
 export function ColorCustomizer() {
-  const [lightColors, setLightColors] = useState<ColorConfig>(defaultLightColors);
-  const [darkColors, setDarkColors] = useState<ColorConfig>(defaultDarkColors);
+  const [lightColors, setLightColors] = useState<SimpleColorConfig>(defaultLightColors);
+  const [darkColors, setDarkColors] = useState<SimpleColorConfig>(defaultDarkColors);
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
@@ -82,10 +47,8 @@ export function ColorCustomizer() {
   }, []);
 
   useEffect(() => {
-    if (isOpen) {
-      applyColors();
-    }
-  }, [lightColors, darkColors, isOpen]);
+    applyColors();
+  }, [lightColors, darkColors]);
 
   const loadColors = () => {
     const saved = localStorage.getItem("novasearch-colors");
@@ -108,26 +71,43 @@ export function ColorCustomizer() {
     localStorage.setItem("novasearch-colors", JSON.stringify(config));
     applyColors();
     toast({
-      title: "Colors saved",
-      description: "Your color scheme has been saved successfully",
+      title: "تم حفظ الألوان",
+      description: "تم حفظ نظام الألوان بنجاح",
     });
   };
 
   const applyColors = () => {
     const root = document.documentElement;
     
+    // Apply light mode colors to :root
     Object.entries(lightColors).forEach(([key, value]) => {
       const cssVar = key.replace(/([A-Z])/g, '-$1').toLowerCase();
       root.style.setProperty(`--${cssVar}`, value);
     });
     
-    const darkStyle = document.querySelector('.dark') as HTMLElement;
-    if (darkStyle) {
-      Object.entries(darkColors).forEach(([key, value]) => {
-        const cssVar = key.replace(/([A-Z])/g, '-$1').toLowerCase();
-        darkStyle.style.setProperty(`--${cssVar}`, value);
-      });
+    // Update dark mode styles by modifying CSS variables when .dark class is present
+    // We need to update the style tag or use a different approach
+    const styleId = 'dynamic-dark-colors';
+    let styleEl = document.getElementById(styleId) as HTMLStyleElement;
+    
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = styleId;
+      document.head.appendChild(styleEl);
     }
+    
+    const darkStyles = Object.entries(darkColors)
+      .map(([key, value]) => {
+        const cssVar = key.replace(/([A-Z])/g, '-$1').toLowerCase();
+        return `--${cssVar}: ${value};`;
+      })
+      .join('\n    ');
+    
+    styleEl.textContent = `
+      .dark {
+        ${darkStyles}
+      }
+    `;
   };
 
   const resetColors = () => {
@@ -135,96 +115,35 @@ export function ColorCustomizer() {
     setDarkColors(defaultDarkColors);
     localStorage.removeItem("novasearch-colors");
     toast({
-      title: "Colors reset",
-      description: "Color scheme has been reset to defaults",
+      title: "تم إعادة التعيين",
+      description: "تم إعادة تعيين الألوان إلى الافتراضية",
     });
-  };
-
-  const exportColors = () => {
-    const config = {
-      light: lightColors,
-      dark: darkColors,
-      exportedAt: new Date().toISOString(),
-      version: "1.0",
-    };
-    
-    const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `novasearch-colors-${Date.now()}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    toast({
-      title: "Colors exported",
-      description: "Color scheme downloaded successfully",
-    });
-  };
-
-  const importColors = () => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".json";
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-      
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const config = JSON.parse(event.target?.result as string);
-          if (config.light && config.dark) {
-            setLightColors(config.light);
-            setDarkColors(config.dark);
-            saveColors();
-            toast({
-              title: "Colors imported",
-              description: "Color scheme loaded successfully",
-            });
-          } else {
-            throw new Error("Invalid format");
-          }
-        } catch (e) {
-          toast({
-            title: "Import failed",
-            description: "Invalid color scheme file",
-            variant: "destructive",
-          });
-        }
-      };
-      reader.readAsText(file);
-    };
-    input.click();
-  };
-
-  const updateLightColor = (key: keyof ColorConfig, value: string) => {
-    setLightColors((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const updateDarkColor = (key: keyof ColorConfig, value: string) => {
-    setDarkColors((prev) => ({ ...prev, [key]: value }));
   };
 
   const hslToHex = (hsl: string): string => {
-    const [h, s, l] = hsl.split(' ').map(v => parseFloat(v));
-    const sNorm = s / 100;
-    const lNorm = l / 100;
+    const [h, s, l] = hsl.split(' ').map(v => parseFloat(v.replace('%', '')));
+    const lightness = l / 100;
+    const saturation = s / 100;
     
-    const c = (1 - Math.abs(2 * lNorm - 1)) * sNorm;
+    const c = (1 - Math.abs(2 * lightness - 1)) * saturation;
     const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-    const m = lNorm - c / 2;
+    const m = lightness - c / 2;
     
     let r = 0, g = 0, b = 0;
     
-    if (h < 60) { r = c; g = x; b = 0; }
-    else if (h < 120) { r = x; g = c; b = 0; }
-    else if (h < 180) { r = 0; g = c; b = x; }
-    else if (h < 240) { r = 0; g = x; b = c; }
-    else if (h < 300) { r = x; g = 0; b = c; }
-    else { r = c; g = 0; b = x; }
+    if (h >= 0 && h < 60) {
+      r = c; g = x; b = 0;
+    } else if (h >= 60 && h < 120) {
+      r = x; g = c; b = 0;
+    } else if (h >= 120 && h < 180) {
+      r = 0; g = c; b = x;
+    } else if (h >= 180 && h < 240) {
+      r = 0; g = x; b = c;
+    } else if (h >= 240 && h < 300) {
+      r = x; g = 0; b = c;
+    } else {
+      r = c; g = 0; b = x;
+    }
     
     const toHex = (n: number) => {
       const hex = Math.round((n + m) * 255).toString(16);
@@ -241,388 +160,156 @@ export function ColorCustomizer() {
     
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
-    let h = 0, s = 0;
-    const l = (max + min) / 2;
+    const diff = max - min;
     
-    if (max !== min) {
-      const d = max - min;
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-      
-      switch (max) {
-        case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
-        case g: h = ((b - r) / d + 2) / 6; break;
-        case b: h = ((r - g) / d + 4) / 6; break;
+    let h = 0;
+    const l = (max + min) / 2;
+    const s = diff === 0 ? 0 : diff / (1 - Math.abs(2 * l - 1));
+    
+    if (diff !== 0) {
+      if (max === r) {
+        h = 60 * (((g - b) / diff) % 6);
+      } else if (max === g) {
+        h = 60 * ((b - r) / diff + 2);
+      } else {
+        h = 60 * ((r - g) / diff + 4);
       }
     }
     
-    return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+    if (h < 0) h += 360;
+    
+    return `${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
   };
 
-  const ColorInput = ({ label, value, onChange, description }: { 
-    label: string; 
-    value: string; 
-    onChange: (value: string) => void;
-    description?: string;
-  }) => (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <Label className="text-sm font-medium">{label}</Label>
-        <div
-          className="w-8 h-8 rounded border-2 border-border"
-          style={{ backgroundColor: `hsl(${value})` }}
-        />
-      </div>
-      {description && (
-        <p className="text-xs text-muted-foreground">{description}</p>
-      )}
-      <div className="flex gap-2">
-        <Input
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="H S% L%"
-          className="font-mono text-xs"
-          data-testid={`input-color-${label.toLowerCase().replace(/\s+/g, '-')}`}
-        />
-        <Input
-          type="color"
-          value={hslToHex(value)}
-          onChange={(e) => onChange(hexToHsl(e.target.value))}
-          className="w-16 p-1 h-9"
-          data-testid={`input-color-picker-${label.toLowerCase().replace(/\s+/g, '-')}`}
-        />
-      </div>
-    </div>
-  );
+  const updateLightColor = (key: keyof SimpleColorConfig, hex: string) => {
+    setLightColors(prev => ({
+      ...prev,
+      [key]: hexToHsl(hex)
+    }));
+  };
+
+  const updateDarkColor = (key: keyof SimpleColorConfig, hex: string) => {
+    setDarkColors(prev => ({
+      ...prev,
+      [key]: hexToHsl(hex)
+    }));
+  };
+
+  const colorLabels = {
+    background: { ar: "لون الخلفية", en: "Background" },
+    foreground: { ar: "لون النص", en: "Text" },
+    primary: { ar: "اللون الأساسي", en: "Primary" },
+    card: { ar: "لون البطاقات", en: "Cards" },
+  } as const;
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" data-testid="button-color-customizer">
+        <Button 
+          variant="ghost" 
+          size="icon"
+          className="hover-elevate active-elevate-2"
+          data-testid="button-color-customizer"
+        >
           <Palette className="h-5 w-5" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[90vh]">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5" />
-            Color Customizer
+            <Palette className="h-5 w-5" />
+            تخصيص الألوان
           </DialogTitle>
           <DialogDescription>
-            Customize your NovaSearch color scheme for both light and dark modes
+            قم بتخصيص ألوان الموقع حسب ذوقك
           </DialogDescription>
         </DialogHeader>
-        
-        <div className="flex gap-2 flex-wrap">
-          <Button onClick={saveColors} size="sm" data-testid="button-save-colors">
-            Save Changes
-          </Button>
-          <Button onClick={exportColors} variant="outline" size="sm" data-testid="button-export-colors">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-          <Button onClick={importColors} variant="outline" size="sm" data-testid="button-import-colors">
-            <Upload className="h-4 w-4 mr-2" />
-            Import
-          </Button>
-          <Button onClick={resetColors} variant="outline" size="sm" data-testid="button-reset-colors">
-            <RotateCcw className="h-4 w-4 mr-2" />
-            Reset to Defaults
-          </Button>
-        </div>
 
         <Tabs defaultValue="light" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="light" className="gap-2" data-testid="tab-light-mode">
+            <TabsTrigger value="light" className="flex items-center gap-2">
               <Sun className="h-4 w-4" />
-              Light Mode
+              الوضع النهاري
             </TabsTrigger>
-            <TabsTrigger value="dark" className="gap-2" data-testid="tab-dark-mode">
+            <TabsTrigger value="dark" className="flex items-center gap-2">
               <Moon className="h-4 w-4" />
-              Dark Mode
+              الوضع الليلي
             </TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="light" className="space-y-4">
-            <ScrollArea className="h-[500px] pr-4">
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Background & Text</CardTitle>
-                    <CardDescription className="text-xs">Main background and foreground colors</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <ColorInput
-                      label="Background"
-                      value={lightColors.background}
-                      onChange={(v) => updateLightColor('background', v)}
-                      description="Main page background"
-                    />
-                    <ColorInput
-                      label="Foreground"
-                      value={lightColors.foreground}
-                      onChange={(v) => updateLightColor('foreground', v)}
-                      description="Main text color"
-                    />
-                    <ColorInput
-                      label="Border"
-                      value={lightColors.border}
-                      onChange={(v) => updateLightColor('border', v)}
-                      description="Default border color"
-                    />
-                  </CardContent>
-                </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Primary Colors</CardTitle>
-                    <CardDescription className="text-xs">Main brand colors for buttons and links</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <ColorInput
-                      label="Primary"
-                      value={lightColors.primary}
-                      onChange={(v) => updateLightColor('primary', v)}
-                      description="Primary brand color"
+          <TabsContent value="light" className="space-y-4 mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>ألوان الوضع النهاري</CardTitle>
+                <CardDescription>اختر الألوان التي تناسبك في الوضع النهاري</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {(Object.keys(lightColors) as Array<keyof SimpleColorConfig>).map((key) => (
+                  <div key={key} className="flex items-center gap-4">
+                    <div className="flex-1">
+                      <Label htmlFor={`light-${key}`} className="text-sm font-medium">
+                        {colorLabels[key].ar}
+                      </Label>
+                    </div>
+                    <Input
+                      id={`light-${key}`}
+                      type="color"
+                      value={hslToHex(lightColors[key])}
+                      onChange={(e) => updateLightColor(key, e.target.value)}
+                      className="w-20 h-10 cursor-pointer"
+                      data-testid={`input-light-${key}`}
                     />
-                    <ColorInput
-                      label="Primary Foreground"
-                      value={lightColors.primaryForeground}
-                      onChange={(v) => updateLightColor('primaryForeground', v)}
-                      description="Text on primary background"
-                    />
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Secondary Colors</CardTitle>
-                    <CardDescription className="text-xs">Secondary UI elements</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <ColorInput
-                      label="Secondary"
-                      value={lightColors.secondary}
-                      onChange={(v) => updateLightColor('secondary', v)}
-                    />
-                    <ColorInput
-                      label="Secondary Foreground"
-                      value={lightColors.secondaryForeground}
-                      onChange={(v) => updateLightColor('secondaryForeground', v)}
-                    />
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Muted & Accent</CardTitle>
-                    <CardDescription className="text-xs">Subtle background elements</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <ColorInput
-                      label="Muted"
-                      value={lightColors.muted}
-                      onChange={(v) => updateLightColor('muted', v)}
-                    />
-                    <ColorInput
-                      label="Muted Foreground"
-                      value={lightColors.mutedForeground}
-                      onChange={(v) => updateLightColor('mutedForeground', v)}
-                    />
-                    <ColorInput
-                      label="Accent"
-                      value={lightColors.accent}
-                      onChange={(v) => updateLightColor('accent', v)}
-                    />
-                    <ColorInput
-                      label="Accent Foreground"
-                      value={lightColors.accentForeground}
-                      onChange={(v) => updateLightColor('accentForeground', v)}
-                    />
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Cards</CardTitle>
-                    <CardDescription className="text-xs">Card backgrounds</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <ColorInput
-                      label="Card"
-                      value={lightColors.card}
-                      onChange={(v) => updateLightColor('card', v)}
-                    />
-                    <ColorInput
-                      label="Card Foreground"
-                      value={lightColors.cardForeground}
-                      onChange={(v) => updateLightColor('cardForeground', v)}
-                    />
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Destructive</CardTitle>
-                    <CardDescription className="text-xs">Error and delete actions</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <ColorInput
-                      label="Destructive"
-                      value={lightColors.destructive}
-                      onChange={(v) => updateLightColor('destructive', v)}
-                    />
-                    <ColorInput
-                      label="Destructive Foreground"
-                      value={lightColors.destructiveForeground}
-                      onChange={(v) => updateLightColor('destructiveForeground', v)}
-                    />
-                  </CardContent>
-                </Card>
-              </div>
-            </ScrollArea>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
           </TabsContent>
-          
-          <TabsContent value="dark" className="space-y-4">
-            <ScrollArea className="h-[500px] pr-4">
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Background & Text</CardTitle>
-                    <CardDescription className="text-xs">Main background and foreground colors</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <ColorInput
-                      label="Background"
-                      value={darkColors.background}
-                      onChange={(v) => updateDarkColor('background', v)}
-                      description="Main page background"
-                    />
-                    <ColorInput
-                      label="Foreground"
-                      value={darkColors.foreground}
-                      onChange={(v) => updateDarkColor('foreground', v)}
-                      description="Main text color"
-                    />
-                    <ColorInput
-                      label="Border"
-                      value={darkColors.border}
-                      onChange={(v) => updateDarkColor('border', v)}
-                      description="Default border color"
-                    />
-                  </CardContent>
-                </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Primary Colors</CardTitle>
-                    <CardDescription className="text-xs">Main brand colors for buttons and links</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <ColorInput
-                      label="Primary"
-                      value={darkColors.primary}
-                      onChange={(v) => updateDarkColor('primary', v)}
-                      description="Primary brand color"
+          <TabsContent value="dark" className="space-y-4 mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>ألوان الوضع الليلي</CardTitle>
+                <CardDescription>اختر الألوان التي تناسبك في الوضع الليلي</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {(Object.keys(darkColors) as Array<keyof SimpleColorConfig>).map((key) => (
+                  <div key={key} className="flex items-center gap-4">
+                    <div className="flex-1">
+                      <Label htmlFor={`dark-${key}`} className="text-sm font-medium">
+                        {colorLabels[key].ar}
+                      </Label>
+                    </div>
+                    <Input
+                      id={`dark-${key}`}
+                      type="color"
+                      value={hslToHex(darkColors[key])}
+                      onChange={(e) => updateDarkColor(key, e.target.value)}
+                      className="w-20 h-10 cursor-pointer"
+                      data-testid={`input-dark-${key}`}
                     />
-                    <ColorInput
-                      label="Primary Foreground"
-                      value={darkColors.primaryForeground}
-                      onChange={(v) => updateDarkColor('primaryForeground', v)}
-                      description="Text on primary background"
-                    />
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Secondary Colors</CardTitle>
-                    <CardDescription className="text-xs">Secondary UI elements</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <ColorInput
-                      label="Secondary"
-                      value={darkColors.secondary}
-                      onChange={(v) => updateDarkColor('secondary', v)}
-                    />
-                    <ColorInput
-                      label="Secondary Foreground"
-                      value={darkColors.secondaryForeground}
-                      onChange={(v) => updateDarkColor('secondaryForeground', v)}
-                    />
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Muted & Accent</CardTitle>
-                    <CardDescription className="text-xs">Subtle background elements</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <ColorInput
-                      label="Muted"
-                      value={darkColors.muted}
-                      onChange={(v) => updateDarkColor('muted', v)}
-                    />
-                    <ColorInput
-                      label="Muted Foreground"
-                      value={darkColors.mutedForeground}
-                      onChange={(v) => updateDarkColor('mutedForeground', v)}
-                    />
-                    <ColorInput
-                      label="Accent"
-                      value={darkColors.accent}
-                      onChange={(v) => updateDarkColor('accent', v)}
-                    />
-                    <ColorInput
-                      label="Accent Foreground"
-                      value={darkColors.accentForeground}
-                      onChange={(v) => updateDarkColor('accentForeground', v)}
-                    />
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Cards</CardTitle>
-                    <CardDescription className="text-xs">Card backgrounds</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <ColorInput
-                      label="Card"
-                      value={darkColors.card}
-                      onChange={(v) => updateDarkColor('card', v)}
-                    />
-                    <ColorInput
-                      label="Card Foreground"
-                      value={darkColors.cardForeground}
-                      onChange={(v) => updateDarkColor('cardForeground', v)}
-                    />
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Destructive</CardTitle>
-                    <CardDescription className="text-xs">Error and delete actions</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <ColorInput
-                      label="Destructive"
-                      value={darkColors.destructive}
-                      onChange={(v) => updateDarkColor('destructive', v)}
-                    />
-                    <ColorInput
-                      label="Destructive Foreground"
-                      value={darkColors.destructiveForeground}
-                      onChange={(v) => updateDarkColor('destructiveForeground', v)}
-                    />
-                  </CardContent>
-                </Card>
-              </div>
-            </ScrollArea>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
+
+        <div className="flex gap-2 justify-end mt-4">
+          <Button
+            variant="outline"
+            onClick={resetColors}
+            data-testid="button-reset-colors"
+          >
+            <RotateCcw className="h-4 w-4 mr-2" />
+            إعادة التعيين
+          </Button>
+          <Button
+            onClick={saveColors}
+            data-testid="button-save-colors"
+          >
+            حفظ التغييرات
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
