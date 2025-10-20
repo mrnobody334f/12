@@ -337,6 +337,29 @@ export default function Home() {
   const hasSearched = searchQuery.length > 0;
   const pagination = data?.pagination;
 
+  const getResultsLabel = (source: string): string => {
+    if (source === "all") return "Web results";
+    if (source === "google") return "Google";
+    
+    const platformNames: Record<string, string> = {
+      twitter: "Twitter",
+      facebook: "Facebook",
+      instagram: "Instagram",
+      tiktok: "TikTok",
+      reddit: "Reddit",
+      youtube: "YouTube",
+      pinterest: "Pinterest",
+      linkedin: "LinkedIn",
+    };
+    
+    const platformName = platformNames[source.toLowerCase()];
+    if (platformName) return `${platformName} results`;
+    
+    const domainName = source.replace(/\.(com|org|net|io|co|edu|gov)$/i, "");
+    const capitalizedName = domainName.charAt(0).toUpperCase() + domainName.slice(1);
+    return `${capitalizedName} results`;
+  };
+
   // Scroll Detection for Compact Header
   useEffect(() => {
     if (!hasSearched) {
@@ -846,7 +869,7 @@ export default function Home() {
               <div className="flex items-center justify-between gap-4 flex-wrap">
                 <div className="flex items-center gap-3">
                   <Badge variant="outline" className="text-xs font-medium px-3 py-1">
-                    Web results
+                    {getResultsLabel(activeSource)}
                   </Badge>
                 </div>
                 <SortOptions
