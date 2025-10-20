@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Star, ChevronRight, Share2, Copy, ExternalLink, BadgeCheck, Users, Eye } from "lucide-react";
+import { Star, ChevronRight, Share2, Copy, ExternalLink, BadgeCheck, Users, Eye, ThumbsUp, MessageCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -267,15 +267,39 @@ export function ResultCard({ result, index }: ResultCardProps) {
           </p>
 
           {/* Verified Source Stats - for popular/verified platforms */}
-          {verifiedSource && (result.views || result.ratingCount) && (
-            <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+          {verifiedSource && (result.views || result.ratingCount || result.likes || result.comments || result.subscribers || result.followers) && (
+            <div className="flex items-center flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
               {result.views && (
                 <div className="flex items-center gap-1">
                   <Eye className="h-3.5 w-3.5" />
                   <span>{typeof result.views === 'number' ? result.views.toLocaleString() : result.views} views</span>
                 </div>
               )}
-              {result.ratingCount && verifiedSource.stats && (
+              {result.likes && (
+                <div className="flex items-center gap-1">
+                  <ThumbsUp className="h-3.5 w-3.5" />
+                  <span>{typeof result.likes === 'number' ? result.likes.toLocaleString() : result.likes}</span>
+                </div>
+              )}
+              {result.comments && (
+                <div className="flex items-center gap-1">
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  <span>{typeof result.comments === 'number' ? result.comments.toLocaleString() : result.comments}</span>
+                </div>
+              )}
+              {result.subscribers && (
+                <div className="flex items-center gap-1">
+                  <Users className="h-3.5 w-3.5" />
+                  <span>{typeof result.subscribers === 'number' ? result.subscribers.toLocaleString() : result.subscribers} subscribers</span>
+                </div>
+              )}
+              {result.followers && (
+                <div className="flex items-center gap-1">
+                  <Users className="h-3.5 w-3.5" />
+                  <span>{typeof result.followers === 'number' ? result.followers.toLocaleString() : result.followers} followers</span>
+                </div>
+              )}
+              {result.ratingCount && verifiedSource.stats && !result.subscribers && !result.followers && (
                 <div className="flex items-center gap-1">
                   <Users className="h-3.5 w-3.5" />
                   <span>{result.ratingCount.toLocaleString()} {verifiedSource.stats}</span>

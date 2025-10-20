@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Star, MapPin, ExternalLink, Clock, Eye, Calendar, Phone, Globe, Maximize2 } from "lucide-react";
+import { Star, MapPin, ExternalLink, Clock, Eye, Calendar, Phone, Globe, Maximize2, ThumbsUp, MessageCircle, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ImageLightbox } from "@/components/image-lightbox";
@@ -205,14 +205,41 @@ export function VideoResults({ videos }: VideoResultsProps) {
               <h3 className="font-medium line-clamp-2 mb-1 group-hover:text-primary transition-colors">
                 {video.title}
               </h3>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                {video.channel && <span>{video.channel}</span>}
+              <div className="flex items-center flex-wrap gap-2 text-xs text-muted-foreground">
+                {video.channel && <span className="font-medium">{video.channel}</span>}
                 {video.views && (
                   <>
                     <span>•</span>
                     <div className="flex items-center gap-1">
                       <Eye className="h-3 w-3" />
                       <span>{video.views}</span>
+                    </div>
+                  </>
+                )}
+                {video.likes && (
+                  <>
+                    <span>•</span>
+                    <div className="flex items-center gap-1">
+                      <ThumbsUp className="h-3 w-3" />
+                      <span>{video.likes}</span>
+                    </div>
+                  </>
+                )}
+                {video.comments && (
+                  <>
+                    <span>•</span>
+                    <div className="flex items-center gap-1">
+                      <MessageCircle className="h-3 w-3" />
+                      <span>{video.comments}</span>
+                    </div>
+                  </>
+                )}
+                {video.subscribers && (
+                  <>
+                    <span>•</span>
+                    <div className="flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      <span>{video.subscribers} subs</span>
                     </div>
                   </>
                 )}
