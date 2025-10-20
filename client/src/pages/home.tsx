@@ -5,6 +5,7 @@ import { Bookmark, MapPin, Globe2, Settings2 } from "lucide-react";
 import { SearchBar } from "@/components/search-bar";
 import { IntentSelector } from "@/components/intent-selector";
 import { LocationSelector } from "@/components/location-selector";
+import { SearchControlCenter } from "@/components/search-control-center";
 import { DynamicTabs } from "@/components/dynamic-tabs";
 import { SortOptions } from "@/components/sort-options";
 import { Pagination } from "@/components/pagination";
@@ -592,26 +593,26 @@ export default function Home() {
             </div>
           </motion.div>
 
-          {/* Settings Row */}
+          {/* Search Control Center */}
+          <SearchControlCenter
+            country={country}
+            countryCode={countryCode}
+            city={city}
+            onLocationChange={handleLocationChange}
+            detectedLocation={detectedLocation}
+            autoDetectIntent={autoDetectIntent}
+            manualIntent={manualIntent}
+            onIntentChange={handleIntentChange}
+            onAutoDetectChange={handleAutoDetectChange}
+          />
+
+          {/* Theme Toggle */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8 }}
-            className="flex items-center gap-4 flex-wrap justify-center"
+            className="mt-6"
           >
-            <IntentSelector
-              selectedIntent={manualIntent}
-              onIntentChange={handleIntentChange}
-              autoDetect={autoDetectIntent}
-              onAutoDetectChange={handleAutoDetectChange}
-            />
-            <LocationSelector
-              country={country}
-              countryCode={countryCode}
-              city={city}
-              onLocationChange={handleLocationChange}
-              detectedLocation={detectedLocation}
-            />
             <ThemeToggle />
           </motion.div>
         </div>
