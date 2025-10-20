@@ -491,7 +491,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               siteFilter, 
               limitNum, 
               pageNum, 
-              locationCountryCode, 
+              locationCountryCode,
+              locationCountry,
               locationCity,
               timeFilterValue,
               languageFilterValue,
@@ -526,6 +527,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   limitNum,
                   pageNum,
                   undefined, // No country code for global search
+                  undefined, // No country for global search
                   undefined, // No city for global search
                   timeFilterValue,
                   fallbackLanguage, // Use appropriate language
@@ -957,7 +959,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           undefined, // No site filter - get real Google results
           20, // Get more results
           pageNum, 
-          locationCountryCode, 
+          locationCountryCode,
+          undefined, // No country name needed for domain extraction
           undefined // Don't use city for domain extraction - get broader results
         );
         

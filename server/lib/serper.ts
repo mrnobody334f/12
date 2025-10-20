@@ -316,6 +316,7 @@ export async function searchWithSerper(
   numResults: number = 10,
   page: number = 1,
   countryCode?: string,
+  country?: string,
   city?: string,
   timeFilter?: string,
   languageFilter?: string,
@@ -356,10 +357,18 @@ export async function searchWithSerper(
       requestBody.gl = countryCode.toLowerCase();
     }
     
-    // Add location (city) as separate parameter for Google to handle location-based results
+    // Add location (city) with country for more accurate results
+    // Serper API works best with format: "City, Country"
     if (city && city.trim()) {
-      requestBody.location = city.trim();
-      console.log(`Location parameter set: ${city}`);
+      if (country && country.trim()) {
+        // Format: "Cairo, Egypt" - Most accurate
+        requestBody.location = `${city.trim()}, ${country.trim()}`;
+        console.log(`Location parameter set: ${city}, ${country}`);
+      } else {
+        // Fallback: Just city name if country not provided
+        requestBody.location = city.trim();
+        console.log(`Location parameter set: ${city} (no country specified)`);
+      }
     }
     
     // Add time filter if specified
