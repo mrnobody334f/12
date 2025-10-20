@@ -76,7 +76,7 @@ export default function Home() {
   // Use manual location if set, otherwise use detected location for search
   const effectiveCountry = isManualLocation ? country : (detectedLocation?.country || country);
   const effectiveCountryCode = isManualLocation ? countryCode : (detectedLocation?.countryCode || countryCode);
-  const effectiveCity = isManualLocation ? city : "";
+  const effectiveCity = isManualLocation ? city : (detectedLocation?.city || "");
 
   const locationParams = (effectiveCountryCode && effectiveCountryCode !== "global" && effectiveCountryCode !== '') || effectiveCity 
     ? `&countryCode=${encodeURIComponent(effectiveCountryCode)}&country=${encodeURIComponent(effectiveCountry)}&city=${encodeURIComponent(effectiveCity)}`
@@ -922,7 +922,7 @@ export default function Home() {
             )}
 
             {/* AI Summary as Featured Snippet */}
-            {data.summary && activeSource === "all" && currentPage === 1 && (
+            {data.summary && activeSource === "web" && currentPage === 1 && (
               <AISummaryCard summary={data.summary} query={searchQuery} />
             )}
 

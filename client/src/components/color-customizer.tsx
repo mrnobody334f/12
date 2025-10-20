@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Palette, RotateCcw, Sun, Moon, Type } from "lucide-react";
+import { Palette, RotateCcw, Sun, Moon, Type, Download, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -22,6 +22,10 @@ interface ColorConfig {
   foreground: string;
   primary: string;
   card: string;
+  accent: string;
+  muted: string;
+  border: string;
+  secondary: string;
 }
 
 interface FontConfig {
@@ -36,13 +40,21 @@ const defaultLightColors: ColorConfig = {
   foreground: "222 47% 11%",
   primary: "221 83% 53%",
   card: "240 5% 96%",
+  accent: "240 5% 89%",
+  muted: "240 4% 90%",
+  border: "214 32% 91%",
+  secondary: "240 5% 88%",
 };
 
 const defaultDarkColors: ColorConfig = {
-  background: "0 0% 8%",
+  background: "0 0% 13%",
   foreground: "0 0% 95%",
   primary: "215 60% 55%",
   card: "0 0% 12%",
+  accent: "0 0% 15%",
+  muted: "0 0% 16%",
+  border: "0 0% 18%",
+  secondary: "0 0% 18%",
 };
 
 const defaultFont: FontConfig = {
@@ -66,6 +78,23 @@ const fontFamilies = [
   { value: "Tajawal", label: "Tajawal" },
 ];
 
+function setCookie(name: string, value: string, days: number = 365) {
+  const expires = new Date();
+  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+}
+
+function getCookie(name: string): string | null {
+  const nameEQ = name + "=";
+  const ca = document.cookie.split(';');
+  for (let i = 0; i < ca.length; i++) {
+    let c = ca[i];
+    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+  }
+  return null;
+}
+
 export function ColorCustomizer() {
   const [lightColors, setLightColors] = useState<ColorConfig>(defaultLightColors);
   const [darkColors, setDarkColors] = useState<ColorConfig>(defaultDarkColors);
@@ -82,10 +111,10 @@ export function ColorCustomizer() {
   }, [lightColors, darkColors, font]);
 
   const loadSettings = () => {
-    const savedColors = localStorage.getItem("novasearch-colors");
+    const savedColors = getCookie("novasearch-colors");
     if (savedColors) {
       try {
-        const parsed = JSON.parse(savedColors);
+        const parsed = JSON.parse(decodeURIComponent(savedColors));
         setLightColors(parsed.light || defaultLightColors);
         setDarkColors(parsed.dark || defaultDarkColors);
       } catch (e) {
@@ -93,10 +122,10 @@ export function ColorCustomizer() {
       }
     }
 
-    const savedFont = localStorage.getItem("novasearch-font");
+    const savedFont = getCookie("novasearch-font");
     if (savedFont) {
       try {
-        const parsed = JSON.parse(savedFont);
+        const parsed = JSON.parse(decodeURIComponent(savedFont));
         const baseSize = Math.max(12, Math.min(24, parsed.baseSize || parsed.size || defaultFont.baseSize));
         let headingSize = Math.max(20, Math.min(40, parsed.headingSize || defaultFont.headingSize));
         let subheadingSize = Math.max(14, Math.min(32, parsed.subheadingSize || defaultFont.subheadingSize));
@@ -122,13 +151,13 @@ export function ColorCustomizer() {
       light: lightColors,
       dark: darkColors,
     };
-    localStorage.setItem("novasearch-colors", JSON.stringify(colorConfig));
-    localStorage.setItem("novasearch-font", JSON.stringify(font));
+    setCookie("novasearch-colors", encodeURIComponent(JSON.stringify(colorConfig)));
+    setCookie("novasearch-font", encodeURIComponent(JSON.stringify(font)));
     
     applySettings();
     toast({
       title: "Settings saved",
-      description: "All customizations have been saved successfully",
+      description: "All customizations have been saved in cookies",
     });
   };
 
@@ -174,12 +203,75 @@ export function ColorCustomizer() {
     setLightColors(defaultLightColors);
     setDarkColors(defaultDarkColors);
     setFont(defaultFont);
-    localStorage.removeItem("novasearch-colors");
-    localStorage.removeItem("novasearch-font");
+    document.cookie = "novasearch-colors=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "novasearch-font=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     toast({
       title: "Reset complete",
       description: "All settings have been reset to defaults",
     });
+  };
+
+  const downloadSettings = () => {
+    const settings = {
+      light: lightColors,
+      dark: darkColors,
+      font: font,
+      version: "1.0",
+      exportDate: new Date().toISOString(),
+    };
+    
+    const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `novasearch-settings-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Settings downloaded",
+      description: "Your customizations have been exported successfully",
+    });
+  };
+
+  const uploadSettings = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json';
+    
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const settings = JSON.parse(event.target?.result as string);
+          
+          if (settings.light) setLightColors(settings.light);
+          if (settings.dark) setDarkColors(settings.dark);
+          if (settings.font) setFont(settings.font);
+          
+          saveSettings();
+          
+          toast({
+            title: "Settings imported",
+            description: "Your customizations have been loaded successfully",
+          });
+        } catch (error) {
+          toast({
+            title: "Import failed",
+            description: "The file format is invalid",
+            variant: "destructive",
+          });
+        }
+      };
+      reader.readAsText(file);
+    };
+    
+    input.click();
   };
 
   const hslToHex = (hsl: string): string => {
@@ -262,6 +354,10 @@ export function ColorCustomizer() {
     foreground: "Text",
     primary: "Primary",
     card: "Cards",
+    accent: "Accent",
+    muted: "Muted",
+    border: "Borders",
+    secondary: "Secondary",
   } as const;
 
   return (
@@ -481,21 +577,41 @@ export function ColorCustomizer() {
           </TabsContent>
         </Tabs>
 
-        <div className="flex gap-2 justify-end mt-4">
-          <Button
-            variant="outline"
-            onClick={resetSettings}
-            data-testid="button-reset-settings"
-          >
-            <RotateCcw className="h-4 w-4 mr-2" />
-            Reset
-          </Button>
-          <Button
-            onClick={saveSettings}
-            data-testid="button-save-settings"
-          >
-            Save Changes
-          </Button>
+        <div className="flex gap-2 justify-between mt-4">
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={downloadSettings}
+              data-testid="button-download-settings"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download
+            </Button>
+            <Button
+              variant="outline"
+              onClick={uploadSettings}
+              data-testid="button-upload-settings"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Upload
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={resetSettings}
+              data-testid="button-reset-settings"
+            >
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Reset
+            </Button>
+            <Button
+              onClick={saveSettings}
+              data-testid="button-save-settings"
+            >
+              Save Changes
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

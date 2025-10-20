@@ -1,6 +1,4 @@
 import { motion } from "framer-motion";
-import { AlertCircle } from "lucide-react";
-import { Card } from "@/components/ui/card";
 
 interface CorrectedQueryProps {
   originalQuery: string;
@@ -20,23 +18,16 @@ export function CorrectedQuery({ originalQuery, correctedQuery, onSearch }: Corr
       transition={{ duration: 0.3 }}
       className="w-full mb-4"
     >
-      <Card className="p-4 border-l-4 border-l-yellow-500 bg-yellow-50 dark:bg-yellow-950/20">
-        <div className="flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="text-sm text-foreground">
-              <span className="text-muted-foreground">Did you mean: </span>
-              <button
-                onClick={handleClick}
-                className="font-semibold text-primary hover:underline focus:outline-none focus:underline"
-                data-testid="button-corrected-query"
-              >
-                {correctedQuery}
-              </button>
-            </p>
-          </div>
-        </div>
-      </Card>
+      <div className="text-sm text-muted-foreground">
+        Did you mean:{" "}
+        <button
+          onClick={handleClick}
+          className="text-primary hover:underline focus:outline-none focus:underline font-normal"
+          data-testid="button-corrected-query"
+        >
+          {correctedQuery}
+        </button>
+      </div>
     </motion.div>
   );
 }
