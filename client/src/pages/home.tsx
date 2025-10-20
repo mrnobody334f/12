@@ -23,7 +23,9 @@ import { ImageResults, VideoResults, PlaceResults, NewsResults } from "@/compone
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { ColorCustomizer } from "@/components/color-customizer";
 import { useToast } from "@/hooks/use-toast";
+import { useColorCustomizer } from "@/hooks/use-color-customizer";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { cn } from "@/lib/utils";
 import type { SearchResponse, IntentType, SortOption, ImageResult, VideoResult, PlaceResult, NewsResult } from "@shared/schema";
@@ -55,6 +57,8 @@ export default function Home() {
   const [maxReachedPage, setMaxReachedPage] = useState(10);
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { toast} = useToast();
+
+  useColorCustomizer();
 
   const { data: detectedLocation } = useQuery<{country: string; countryCode: string; city: string}>({
     queryKey: ["/api/location/detect"],
@@ -573,6 +577,7 @@ export default function Home() {
                   <Bookmark className="h-3.5 w-3.5" />
                 </Button>
               )}
+              <ColorCustomizer />
               <ThemeToggle />
             </div>
           </div>
@@ -864,8 +869,9 @@ export default function Home() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8 }}
-            className="mt-6"
+            className="mt-6 flex items-center gap-2"
           >
+            <ColorCustomizer />
             <ThemeToggle />
           </motion.div>
         </div>
