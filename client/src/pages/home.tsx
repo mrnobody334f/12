@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Bookmark, MapPin, Globe2, Settings2, Mic, Sparkles, Filter, CheckCircle2, Search } from "lucide-react";
@@ -53,6 +53,7 @@ export default function Home() {
   const [languageFilter, setLanguageFilter] = useState<LanguageFilter>("any");
   const [fileTypeFilter, setFileTypeFilter] = useState<FileTypeFilter>("any");
   const [isScrolled, setIsScrolled] = useState(false);
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { toast} = useToast();
 
   const { data: detectedLocation } = useQuery<{country: string; countryCode: string; city: string}>({
@@ -345,13 +346,26 @@ export default function Home() {
     }
 
     const handleScroll = () => {
-      const scrollPosition = window.scrollY;
-      setIsScrolled(scrollPosition > 200);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+      scrollTimeoutRef.current = setTimeout(() => {
+        const scrollPosition = window.scrollY;
+        const shouldBeScrolled = scrollPosition > 150;
+        if (shouldBeScrolled !== isScrolled) {
+          setIsScrolled(shouldBeScrolled);
+        }
+      }, 50);
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [hasSearched]);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, [hasSearched, isScrolled]);
 
   // Keyboard Shortcuts
   useEffect(() => {

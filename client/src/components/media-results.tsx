@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
-import { Star, MapPin, ExternalLink, Clock, Eye, Calendar, Phone, Globe } from "lucide-react";
+import { Star, MapPin, ExternalLink, Clock, Eye, Calendar, Phone, Globe, Maximize2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ImageLightbox } from "@/components/image-lightbox";
 import { useState } from "react";
+import { SiReddit, SiX, SiFacebook, SiInstagram, SiPinterest, SiYoutube } from "react-icons/si";
 import type { ImageResult, VideoResult, PlaceResult, NewsResult } from "@shared/schema";
 
 interface ImageResultsProps {
@@ -16,6 +17,17 @@ interface ImageResultsProps {
 export function ImageResults({ images, currentPage = 1, totalPages = 1, onPageChange }: ImageResultsProps) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
+  const getSourceIcon = (source: string) => {
+    const lowerSource = source.toLowerCase();
+    if (lowerSource.includes('reddit')) return <SiReddit className="h-4 w-4 text-orange-500" />;
+    if (lowerSource.includes('twitter') || lowerSource.includes('x.com')) return <SiX className="h-4 w-4 text-foreground" />;
+    if (lowerSource.includes('facebook')) return <SiFacebook className="h-4 w-4 text-blue-600" />;
+    if (lowerSource.includes('instagram')) return <SiInstagram className="h-4 w-4 text-pink-500" />;
+    if (lowerSource.includes('pinterest')) return <SiPinterest className="h-4 w-4 text-red-600" />;
+    if (lowerSource.includes('youtube')) return <SiYoutube className="h-4 w-4 text-red-600" />;
+    return <Globe className="h-4 w-4 text-muted-foreground" />;
+  };
+
   if (images.length === 0) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -27,31 +39,67 @@ export function ImageResults({ images, currentPage = 1, totalPages = 1, onPageCh
   return (
     <>
       <div className="space-y-6">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {images.map((image, index) => (
             <motion.div
               key={index}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.02, duration: 0.2 }}
-              className="group relative rounded-lg overflow-hidden bg-muted hover-elevate cursor-pointer"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.03, duration: 0.3 }}
+              className="group bg-card border border-border rounded-xl overflow-hidden hover-elevate cursor-pointer"
               data-testid={`image-result-${index}`}
-              onClick={() => setLightboxIndex(index)}
             >
-              <div className="block aspect-square">
+              {/* Image Container */}
+              <div 
+                className="relative overflow-hidden bg-muted"
+                onClick={() => setLightboxIndex(index)}
+              >
                 <img
                   src={image.imageUrl}
                   alt={image.title}
-                  className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                  className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-105"
                   loading="lazy"
                   onError={(e) => {
                     e.currentTarget.src = image.thumbnail || '';
                   }}
+                  style={{ maxHeight: '400px', minHeight: '200px' }}
                 />
+                {/* Zoom Icon on Hover */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 dark:bg-black/90 rounded-full p-3">
+                    <Maximize2 className="h-6 w-6 text-foreground" />
+                  </div>
+                </div>
               </div>
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <p className="text-white text-xs line-clamp-2">{image.title}</p>
-                <p className="text-white/70 text-xs mt-1">{image.source}</p>
+              
+              {/* Info Section */}
+              <div className="p-3 space-y-2">
+                {/* Source with Icon */}
+                <div className="flex items-center gap-2">
+                  {getSourceIcon(image.source)}
+                  <span className="text-xs font-medium text-muted-foreground truncate">
+                    {image.source}
+                  </span>
+                </div>
+                
+                {/* Title/Description */}
+                <h3 className="text-sm font-medium line-clamp-2 text-foreground group-hover:text-primary transition-colors">
+                  {image.title || 'Untitled'}
+                </h3>
+                
+                {/* View Source Link */}
+                {image.link && (
+                  <a
+                    href={image.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    View source
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
               </div>
             </motion.div>
           ))}

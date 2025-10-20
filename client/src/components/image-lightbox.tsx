@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, ExternalLink, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SiReddit, SiX, SiFacebook, SiInstagram, SiPinterest, SiYoutube } from "react-icons/si";
 import type { ImageResult } from "@shared/schema";
 
 interface ImageLightboxProps {
@@ -13,6 +14,17 @@ interface ImageLightboxProps {
 export function ImageLightbox({ images, initialIndex, onClose }: ImageLightboxProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const currentImage = images[currentIndex];
+
+  const getSourceIcon = (source: string) => {
+    const lowerSource = source.toLowerCase();
+    if (lowerSource.includes('reddit')) return <SiReddit className="h-5 w-5 text-orange-500" />;
+    if (lowerSource.includes('twitter') || lowerSource.includes('x.com')) return <SiX className="h-5 w-5 text-white" />;
+    if (lowerSource.includes('facebook')) return <SiFacebook className="h-5 w-5 text-blue-600" />;
+    if (lowerSource.includes('instagram')) return <SiInstagram className="h-5 w-5 text-pink-500" />;
+    if (lowerSource.includes('pinterest')) return <SiPinterest className="h-5 w-5 text-red-600" />;
+    if (lowerSource.includes('youtube')) return <SiYoutube className="h-5 w-5 text-red-600" />;
+    return <Globe className="h-5 w-5 text-white/70" />;
+  };
 
   const handlePrevious = () => {
     setCurrentIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
@@ -87,31 +99,45 @@ export function ImageLightbox({ images, initialIndex, onClose }: ImageLightboxPr
         {/* Image Container */}
         <motion.div
           key={currentIndex}
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.9 }}
-          transition={{ duration: 0.2 }}
-          className="max-w-[90vw] max-h-[90vh] flex flex-col items-center"
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
+          className="w-full max-w-[95vw] max-h-[95vh] flex flex-col items-center"
           onClick={(e) => e.stopPropagation()}
         >
-          <img
-            src={currentImage.imageUrl}
-            alt={currentImage.title}
-            className="max-w-full max-h-[80vh] object-contain rounded-lg"
-            onError={(e) => {
-              if (currentImage.thumbnail) {
-                e.currentTarget.src = currentImage.thumbnail;
-              }
-            }}
-          />
+          {/* Image with better sizing */}
+          <div className="relative bg-black/50 rounded-lg overflow-hidden max-w-full max-h-[85vh]">
+            <img
+              src={currentImage.imageUrl}
+              alt={currentImage.title}
+              className="max-w-full max-h-[85vh] w-auto h-auto object-contain"
+              onError={(e) => {
+                if (currentImage.thumbnail) {
+                  e.currentTarget.src = currentImage.thumbnail;
+                }
+              }}
+            />
+          </div>
           
-          {/* Image Info */}
-          <div className="mt-4 text-center space-y-2 max-w-2xl">
-            <h3 className="text-white font-medium line-clamp-2">{currentImage.title}</h3>
-            <div className="flex items-center justify-center gap-3 text-sm text-white/70">
-              <span>{currentImage.source}</span>
-              <span>•</span>
-              <span>{currentIndex + 1} / {images.length}</span>
+          {/* Enhanced Image Info */}
+          <div className="mt-4 w-full max-w-3xl px-4 space-y-3">
+            {/* Source with Icon */}
+            <div className="flex items-center justify-center gap-2">
+              {getSourceIcon(currentImage.source)}
+              <span className="text-white/80 text-sm font-medium">
+                {currentImage.source}
+              </span>
+            </div>
+            
+            {/* Title */}
+            <h3 className="text-white font-semibold text-lg text-center line-clamp-3">
+              {currentImage.title || 'Untitled Image'}
+            </h3>
+            
+            {/* Footer Info */}
+            <div className="flex items-center justify-center gap-4 text-sm text-white/60">
+              <span>{currentIndex + 1} of {images.length}</span>
               {currentImage.link && (
                 <>
                   <span>•</span>
@@ -119,12 +145,12 @@ export function ImageLightbox({ images, initialIndex, onClose }: ImageLightboxPr
                     href={currentImage.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 hover:text-white transition-colors"
+                    className="inline-flex items-center gap-1.5 hover:text-white transition-colors underline"
                     onClick={(e) => e.stopPropagation()}
                     data-testid="link-view-source"
                   >
-                    View source
-                    <ExternalLink className="h-3 w-3" />
+                    Visit page
+                    <ExternalLink className="h-4 w-4" />
                   </a>
                 </>
               )}
