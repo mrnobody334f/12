@@ -167,8 +167,8 @@ export function SearchBar({ onSearch, initialQuery = "", isSearching = false }: 
       >
         <form onSubmit={handleSubmit} className="relative">
           <div className="relative flex items-center bg-card border border-card-border rounded-xl shadow-sm hover:shadow-md transition-all overflow-hidden">
-            <div className="flex items-center justify-center w-9 h-8 text-muted-foreground">
-              <Search className="h-3.5 w-3.5" />
+            <div className="flex items-center justify-center w-11 h-10 text-muted-foreground">
+              <Search className="h-4 w-4" />
             </div>
             
             <input
@@ -177,22 +177,22 @@ export function SearchBar({ onSearch, initialQuery = "", isSearching = false }: 
               onChange={handleInputChange}
               onFocus={handleInputFocus}
               placeholder="Search..."
-              className="flex-1 h-8 bg-transparent text-sm font-medium placeholder:text-muted-foreground focus:outline-none pr-2"
+              className="flex-1 h-10 bg-transparent text-base font-medium placeholder:text-muted-foreground focus:outline-none pr-2"
               data-testid="input-search"
               disabled={isSearching}
               autoComplete="off"
             />
             
-            <div className="flex items-center gap-0.5 mr-1">
+            <div className="flex items-center gap-1 mr-1.5">
               {query && (
                 <button
                   type="button"
                   onClick={handleClear}
-                  className="p-1 rounded-full hover-elevate active-elevate-2 text-muted-foreground hover:text-foreground transition-colors"
+                  className="p-1.5 rounded-full hover-elevate active-elevate-2 text-muted-foreground hover:text-foreground transition-colors"
                   data-testid="button-clear-search"
                   title="Clear search"
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-4 w-4" />
                 </button>
               )}
               
@@ -201,21 +201,21 @@ export function SearchBar({ onSearch, initialQuery = "", isSearching = false }: 
                   type="button"
                   onClick={handleVoiceSearch}
                   className={cn(
-                    "p-1 rounded-full hover-elevate active-elevate-2 transition-colors",
+                    "p-1.5 rounded-full hover-elevate active-elevate-2 transition-colors",
                     isListening 
                       ? "text-primary bg-primary/10 animate-pulse" 
                       : "text-muted-foreground hover:text-foreground"
                   )}
                   data-testid="button-voice-search"
                 >
-                  {isListening ? <MicOff className="h-3 w-3" /> : <Mic className="h-3 w-3" />}
+                  {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                 </button>
               )}
 
               <button
                 type="submit"
                 disabled={!query.trim() || isSearching}
-                className="px-3 h-7 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover-elevate active-elevate-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="px-4 h-8 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover-elevate active-elevate-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 data-testid="button-search"
               >
                 {isSearching ? "..." : "Search"}

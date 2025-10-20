@@ -453,7 +453,7 @@ export default function Home() {
       {hasSearched && (
         <header className="border-b border-border/40 bg-white dark:bg-background shadow-sm">
           {/* Main Header Row - Compact */}
-          <div className="max-w-[1400px] mx-auto px-4 py-1.5 flex items-center gap-2">
+          <div className="max-w-[1400px] mx-auto px-4 py-2 flex items-center gap-3">
             {/* Logo */}
             <div 
               className="flex items-center gap-1.5 cursor-pointer flex-shrink-0 hover-elevate active-elevate-2 rounded-lg px-1.5 py-0.5 transition-all" 
@@ -464,13 +464,13 @@ export default function Home() {
               }}
               data-testid="link-home"
             >
-              <div className="w-6 h-6 bg-gradient-to-br from-[#4285f4] to-[#34a853] rounded-lg flex items-center justify-center shadow-sm">
+              <div className="w-7 h-7 bg-gradient-to-br from-[#4285f4] to-[#34a853] rounded-lg flex items-center justify-center shadow-sm">
                 <span className="text-white font-bold text-sm">N</span>
               </div>
             </div>
 
-            {/* Search Bar */}
-            <div className="flex-1 max-w-xl">
+            {/* Search Bar - Larger */}
+            <div className="flex-1 max-w-2xl">
               <SearchBar
                 onSearch={handleSearch}
                 initialQuery={searchQuery}
@@ -522,6 +522,24 @@ export default function Home() {
                 </Button>
               )}
               <ThemeToggle />
+            </div>
+          </div>
+
+          {/* Sources & Filters Row */}
+          <div className="border-t border-border/20 bg-muted/30">
+            <div className="max-w-[1400px] mx-auto px-4 py-2">
+              <DynamicTabs
+                sources={currentSources}
+                intentSources={intentSources}
+                activeSource={activeSource}
+                activePlatformSource={activePlatformSource}
+                onSourceChange={handleSourceChange}
+                showPlatformTabs={true}
+                searchQuery={searchQuery}
+                detectedIntent={detectedIntent}
+                onLoadMoreTabs={handleLoadMoreTabs}
+                location={{ countryCode, city }}
+              />
             </div>
           </div>
         </header>
@@ -801,18 +819,16 @@ export default function Home() {
         </div>
       )}
 
-      {/* Content Area with Sidebar */}
-      <main className={hasSearched ? "flex max-w-[1400px] mx-auto px-6 py-4 gap-4" : ""}>
-        {/* Main Results Area */}
-        <div className={hasSearched ? "flex-1 min-w-0" : ""}>
-          {hasSearched && (isLoading || imagesLoading || videosLoading || placesLoading || newsLoading) && currentPage === 1 && <SearchingSkeleton />}
+      {/* Content Area */}
+      <main className={hasSearched ? "max-w-[1400px] mx-auto px-6 py-4" : ""}>
+        {hasSearched && (isLoading || imagesLoading || videosLoading || placesLoading || newsLoading) && currentPage === 1 && <SearchingSkeleton />}
 
-          {hasSearched && error && (
-            <ErrorState
-              message="Failed to fetch search results. Please try again."
-              onRetry={handleRetry}
-            />
-          )}
+        {hasSearched && error && (
+          <ErrorState
+            message="Failed to fetch search results. Please try again."
+            onRetry={handleRetry}
+          />
+        )}
 
         {hasSearched && !isLoading && !error && data && !isMediaTab && (
           <div className="space-y-6">
@@ -903,31 +919,6 @@ export default function Home() {
 
         {hasSearched && activeSource === 'news' && !newsLoading && newsData && (
           <NewsResults news={newsData.news} />
-        )}
-      </div>
-
-        {/* Sidebar - Dynamic Tabs & Filters */}
-        {hasSearched && (
-          <aside className="w-80 flex-shrink-0 sticky top-4 self-start">
-            <div className="bg-card border border-card-border rounded-xl p-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-sm">Sources & Filters</h3>
-              </div>
-              
-              <DynamicTabs
-                sources={currentSources}
-                intentSources={intentSources}
-                activeSource={activeSource}
-                activePlatformSource={activePlatformSource}
-                onSourceChange={handleSourceChange}
-                showPlatformTabs={true}
-                searchQuery={searchQuery}
-                detectedIntent={detectedIntent}
-                onLoadMoreTabs={handleLoadMoreTabs}
-                location={{ countryCode, city }}
-              />
-            </div>
-          </aside>
         )}
       </main>
 
