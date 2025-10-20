@@ -53,10 +53,10 @@ export function IntentSelector({
 }: IntentSelectorProps) {
   return (
     <TooltipProvider>
-      <div className="flex items-center gap-4 overflow-x-auto pb-2">
-        {/* Auto-detect toggle - compact with tooltip */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-border/60 bg-background flex-shrink-0">
-          <Zap className="h-3.5 w-3.5 text-primary" />
+      <div className="flex items-center gap-1.5">
+        {/* Auto-detect toggle - compact */}
+        <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-border/60 bg-background flex-shrink-0 h-8">
+          <Zap className="h-3 w-3 text-primary" />
           <Label htmlFor="auto-detect" className="text-xs font-medium cursor-pointer whitespace-nowrap">
             Auto
           </Label>
@@ -67,29 +67,11 @@ export function IntentSelector({
             data-testid="toggle-auto-detect"
             className="scale-75"
           />
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                className="ml-1 text-muted-foreground hover:text-foreground transition-colors"
-                data-testid="info-auto-detect"
-              >
-                <HelpCircle className="h-3.5 w-3.5" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs">
-              <p className="text-sm">
-                <strong>Smart Intent Detection</strong>
-                <br />
-                AI automatically analyzes your search query to determine if you're shopping, seeking news, learning, or looking for entertainment. This optimizes results and suggests the best sources for your needs.
-              </p>
-            </TooltipContent>
-          </Tooltip>
         </div>
 
-        {/* Intent tabs - Google style */}
+        {/* Intent tabs - Small buttons */}
         {!autoDetect && (
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0">
             {intentOptions.map((option) => {
               const Icon = option.icon;
               const isSelected = selectedIntent === option.value;
@@ -99,14 +81,14 @@ export function IntentSelector({
                   key={option.value}
                   onClick={() => onIntentChange(option.value)}
                   className={cn(
-                    "flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap",
+                    "flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-colors whitespace-nowrap h-8",
                     isSelected
-                      ? "bg-primary/10 text-primary border border-primary/20"
-                      : "text-muted-foreground hover:bg-muted/50"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted/50 text-muted-foreground hover-elevate"
                   )}
                   data-testid={`intent-${option.value}`}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-3 w-3" />
                   <span>{option.label}</span>
                 </button>
               );

@@ -130,43 +130,26 @@ export function LocationSelector({
     });
   };
 
-  const getLocationDisplay = () => {
-    if (displayCode === "global") {
-      return "Global Search";
-    }
-    if (city && country) {
-      return `${city}, ${country}`;
-    }
-    return country || "Select location";
-  };
-
   return (
     <TooltipProvider>
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="inline-flex items-center gap-1"
+        className="inline-flex items-center gap-1.5"
       >
         <Popover open={countryOpen} onOpenChange={setCountryOpen}>
           <PopoverTrigger asChild>
             <Button
-              variant={displayCode !== "global" ? "default" : "outline"}
+              variant="outline"
               size="sm"
-              className={cn(
-                "gap-2 font-medium",
-                displayCode !== "global" && "bg-location-accent hover:bg-location-accent/90"
-              )}
+              className="gap-1.5 font-medium h-8"
               data-testid="button-location-selector"
             >
-              {displayCode === "global" ? (
-                <Globe2 className="h-4 w-4" />
-              ) : (
-                <Map className="h-4 w-4" />
-              )}
-              <span className="max-w-[150px] truncate">{getLocationDisplay()}</span>
+              <MapPin className="h-3.5 w-3.5" />
+              <span className="text-xs">Search Location</span>
               {displayCode !== "global" && (
                 <X
-                  className="h-3 w-3 ml-1 opacity-70 hover:opacity-100"
+                  className="h-3 w-3 opacity-70 hover:opacity-100"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleClearLocation();
