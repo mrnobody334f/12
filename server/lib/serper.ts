@@ -9,6 +9,8 @@ interface SerperResult {
   rating?: number;
   ratingCount?: number;
   price?: string;
+  // Additional social/engagement metrics that may be in rich snippets
+  attributes?: Record<string, string | number>;
   sitelinks?: Array<{
     title: string;
     link: string;
@@ -38,6 +40,12 @@ export interface SerperSearchData {
     rating?: number;
     ratingCount?: number;
     price?: string;
+    views?: number | string;
+    likes?: number | string;
+    comments?: number | string;
+    shares?: number | string;
+    subscribers?: number | string;
+    followers?: number | string;
     sitelinks?: Array<{
       title: string;
       link: string;
@@ -404,19 +412,31 @@ export async function searchWithSerper(
     }
     
     return {
-      results: (data.organic || []).map((result) => ({
-        title: result.title,
-        link: result.link,
-        snippet: result.snippet,
-        position: result.position,
-        thumbnail: result.thumbnail,
-        image: result.imageUrl || result.thumbnail,
-        date: result.date,
-        rating: result.rating,
-        ratingCount: result.ratingCount,
-        price: result.price,
-        sitelinks: result.sitelinks,
-      })),
+      results: (data.organic || []).map((result) => {
+        // Extract social metrics from attributes if available
+        const attrs = result.attributes || {};
+        
+        return {
+          title: result.title,
+          link: result.link,
+          snippet: result.snippet,
+          position: result.position,
+          thumbnail: result.thumbnail,
+          image: result.imageUrl || result.thumbnail,
+          date: result.date,
+          rating: result.rating,
+          ratingCount: result.ratingCount,
+          price: result.price,
+          // Extract social/engagement metrics from attributes or direct fields
+          views: attrs.views || attrs.Views || undefined,
+          likes: attrs.likes || attrs.Likes || undefined,
+          comments: attrs.comments || attrs.Comments || undefined,
+          shares: attrs.shares || attrs.Shares || undefined,
+          subscribers: attrs.subscribers || attrs.Subscribers || undefined,
+          followers: attrs.followers || attrs.Followers || undefined,
+          sitelinks: result.sitelinks,
+        };
+      }),
       correctedQuery,
       relatedSearches,
     };
@@ -565,6 +585,9 @@ export async function searchVideosWithSerper(
       channel: video.channel,
       date: video.date,
       views: video.views,
+      likes: video.likes,
+      comments: video.comments,
+      subscribers: video.subscribers,
     }));
   } catch (error) {
     console.error("Serper videos error:", error);
