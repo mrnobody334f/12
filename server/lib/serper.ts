@@ -375,6 +375,9 @@ export async function searchWithSerper(
       }
     }
     
+    // ALWAYS enable strict safe search to block adult content
+    requestBody.safe = 'active';
+    
     const response = await fetch("https://google.serper.dev/search", {
       method: "POST",
       headers: {
@@ -454,8 +457,7 @@ export async function searchImagesWithSerper(
   query: string,
   numResults: number = 20,
   countryCode?: string,
-  languageFilter?: string,
-  safeSearch: boolean = true
+  languageFilter?: string
 ): Promise<Array<{
   title: string;
   imageUrl: string;
@@ -484,9 +486,8 @@ export async function searchImagesWithSerper(
       requestBody.gl = countryCode.toLowerCase();
     }
 
-    if (safeSearch) {
-      requestBody.safe = 'active';
-    }
+    // ALWAYS enable strict safe search to block adult content
+    requestBody.safe = 'active';
 
     const response = await fetch("https://google.serper.dev/images", {
       method: "POST",
@@ -523,8 +524,7 @@ export async function searchVideosWithSerper(
   query: string,
   numResults: number = 20,
   countryCode?: string,
-  languageFilter?: string,
-  safeSearch: boolean = true
+  languageFilter?: string
 ): Promise<Array<{
   title: string;
   link: string;
@@ -555,9 +555,8 @@ export async function searchVideosWithSerper(
       requestBody.gl = countryCode.toLowerCase();
     }
 
-    if (safeSearch) {
-      requestBody.safe = 'active';
-    }
+    // ALWAYS enable strict safe search to block adult content
+    requestBody.safe = 'active';
 
     const response = await fetch("https://google.serper.dev/videos", {
       method: "POST",
@@ -643,6 +642,9 @@ export async function searchPlacesWithSerper(
       requestBody.gl = countryCode.toLowerCase();
     }
 
+    // ALWAYS enable strict safe search to block adult content
+    requestBody.safe = 'active';
+
     const response = await fetch("https://google.serper.dev/places", {
       method: "POST",
       headers: {
@@ -721,6 +723,9 @@ export async function searchNewsWithSerper(
         requestBody.tbs = `qdr:${timeRanges[timeFilter]}`;
       }
     }
+
+    // ALWAYS enable strict safe search to block adult content
+    requestBody.safe = 'active';
 
     const response = await fetch("https://google.serper.dev/news", {
       method: "POST",

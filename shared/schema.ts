@@ -225,7 +225,7 @@ export type SearchRequest = z.infer<typeof searchRequestSchema>;
 
 export const searchResponseSchema = z.object({
   query: z.string(),
-  intent: z.enum(intentTypes),
+  intent: z.enum(intentTypes).optional(),
   results: z.array(searchResultSchema),
   summary: aiSummarySchema.optional(),
   sources: z.array(z.object({
@@ -233,7 +233,7 @@ export const searchResponseSchema = z.object({
     name: z.string(),
     site: z.string(),
     icon: z.string(),
-  })),
+  })).optional(),
   intentSources: z.array(z.object({
     id: z.string(),
     name: z.string(),
@@ -246,10 +246,12 @@ export const searchResponseSchema = z.object({
     totalResults: z.number(),
     hasNext: z.boolean(),
     hasPrevious: z.boolean(),
-  }),
+  }).optional(),
   location: locationSchema.optional(),
   correctedQuery: z.string().optional(),
   relatedSearches: z.array(z.string()).optional(),
+  message: z.string().optional(),
+  blocked: z.boolean().optional(),
 });
 
 export type SearchResponse = z.infer<typeof searchResponseSchema>;

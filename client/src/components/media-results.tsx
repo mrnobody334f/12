@@ -12,9 +12,10 @@ interface ImageResultsProps {
   currentPage?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
+  message?: string;
 }
 
-export function ImageResults({ images, currentPage = 1, totalPages = 1, onPageChange }: ImageResultsProps) {
+export function ImageResults({ images, currentPage = 1, totalPages = 1, onPageChange, message }: ImageResultsProps) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const getSourceIcon = (source: string) => {
@@ -31,7 +32,7 @@ export function ImageResults({ images, currentPage = 1, totalPages = 1, onPageCh
   if (images.length === 0) {
     return (
       <div className="flex items-center justify-center py-16">
-        <p className="text-muted-foreground">No images found</p>
+        <p className="text-muted-foreground">{message || "No images found"}</p>
       </div>
     );
   }
@@ -158,13 +159,14 @@ export function ImageResults({ images, currentPage = 1, totalPages = 1, onPageCh
 
 interface VideoResultsProps {
   videos: VideoResult[];
+  message?: string;
 }
 
-export function VideoResults({ videos }: VideoResultsProps) {
+export function VideoResults({ videos, message }: VideoResultsProps) {
   if (videos.length === 0) {
     return (
       <div className="flex items-center justify-center py-16">
-        <p className="text-muted-foreground">No videos found</p>
+        <p className="text-muted-foreground">{message || "No videos found"}</p>
       </div>
     );
   }
@@ -265,13 +267,14 @@ export function VideoResults({ videos }: VideoResultsProps) {
 
 interface PlaceResultsProps {
   places: PlaceResult[];
+  message?: string;
 }
 
-export function PlaceResults({ places }: PlaceResultsProps) {
+export function PlaceResults({ places, message }: PlaceResultsProps) {
   if (places.length === 0) {
     return (
       <div className="flex items-center justify-center py-16">
-        <p className="text-muted-foreground">No places found</p>
+        <p className="text-muted-foreground">{message || "No places found"}</p>
       </div>
     );
   }
@@ -399,13 +402,14 @@ export function PlaceResults({ places }: PlaceResultsProps) {
 
 interface NewsResultsProps {
   news: NewsResult[];
+  message?: string;
 }
 
-export function NewsResults({ news }: NewsResultsProps) {
+export function NewsResults({ news, message }: NewsResultsProps) {
   if (news.length === 0) {
     return (
       <div className="flex items-center justify-center py-16">
-        <p className="text-muted-foreground">No news found</p>
+        <p className="text-muted-foreground">{message || "No news found"}</p>
       </div>
     );
   }

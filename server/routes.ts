@@ -5,6 +5,7 @@ import { detectIntent, generateSummary } from "./lib/openrouter";
 import { getPopularSites } from "./lib/popular-sites";
 import { cache } from "./lib/cache";
 import { storage } from "./storage";
+import { filterQuery, filterResults, getBlockedMessage } from "./lib/content-filter";
 
 // Helper functions for global domain fallback
 function getGlobalDomain(localDomain: string): string | null {
@@ -354,6 +355,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Query parameter is required" });
       }
 
+      // CONTENT FILTER: Check if query contains blocked adult content
+      const queryFilter = filterQuery(query);
+      if (!queryFilter.allowed) {
+        console.log(`🚫 Blocked search query: "${query}"`);
+        return res.json({
+          results: [],
+          totalResults: 0,
+          currentPage: 1,
+          totalPages: 0,
+          message: getBlockedMessage(),
+          blocked: true,
+        });
+      }
+
       const pageNum = parseInt(page as string, 10);
       const limitNum = parseInt(limit as string, 10);
       const sortBy = sort as SortOption;
@@ -651,6 +666,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         intentSpecificSources = undefined;
       }
 
+      // CONTENT FILTER: Filter out adult content from results
+      flatResults = filterResults(flatResults);
+
       // Calculate pagination metadata
       // Serper API can return many pages, set a high limit to allow dynamic pagination
       const totalResults = limitNum * 100; // Allow up to 100 pages (2000 results)
@@ -706,6 +724,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Query parameter is required" });
       }
 
+      // CONTENT FILTER: Check if query contains blocked adult content
+      const queryFilter = filterQuery(query);
+      if (!queryFilter.allowed) {
+        console.log(`🚫 Blocked image search query: "${query}"`);
+        return res.json({
+          query,
+          images: [],
+          totalPages: 0,
+          currentPage: 1,
+          message: getBlockedMessage(),
+          blocked: true,
+        });
+      }
+
       const locationCountryCode = countryCode && typeof countryCode === "string" ? countryCode : undefined;
       const langFilter = languageFilter && typeof languageFilter === "string" ? languageFilter : "any";
       const limitNum = parseInt(limit as string, 10);
@@ -720,7 +752,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const searchQueryWithSite = siteFilter ? `site:${siteFilter} ${query}` : query;
-      const images = await searchImagesWithSerper(searchQueryWithSite, limitNum, locationCountryCode, langFilter, true);
+      let images = await searchImagesWithSerper(searchQueryWithSite, limitNum, locationCountryCode, langFilter);
+      
+      // CONTENT FILTER: Filter out adult content from image results
+      images = filterResults(images);
       
       const response = { query, images, totalPages: 10, currentPage: pageNum };
       cache.set(cacheKey, response, 30 * 60 * 1000);
@@ -741,6 +776,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Query parameter is required" });
       }
 
+      // CONTENT FILTER: Check if query contains blocked adult content
+      const queryFilter = filterQuery(query);
+      if (!queryFilter.allowed) {
+        console.log(`🚫 Blocked video search query: "${query}"`);
+        return res.json({
+          query,
+          videos: [],
+          totalPages: 0,
+          currentPage: 1,
+          message: getBlockedMessage(),
+          blocked: true,
+        });
+      }
+
       const locationCountryCode = countryCode && typeof countryCode === "string" ? countryCode : undefined;
       const langFilter = languageFilter && typeof languageFilter === "string" ? languageFilter : "any";
       const limitNum = parseInt(limit as string, 10);
@@ -755,7 +804,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const searchQueryWithSite = siteFilter ? `site:${siteFilter} ${query}` : query;
-      const videos = await searchVideosWithSerper(searchQueryWithSite, limitNum, locationCountryCode, langFilter, true);
+      let videos = await searchVideosWithSerper(searchQueryWithSite, limitNum, locationCountryCode, langFilter);
+      
+      // CONTENT FILTER: Filter out adult content from video results
+      videos = filterResults(videos);
       
       const response = { query, videos, totalPages: 10, currentPage: pageNum };
       cache.set(cacheKey, response, 30 * 60 * 1000);
@@ -776,6 +828,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Query parameter is required" });
       }
 
+      // CONTENT FILTER: Check if query contains blocked adult content
+      const queryFilter = filterQuery(query);
+      if (!queryFilter.allowed) {
+        console.log(`🚫 Blocked places search query: "${query}"`);
+        return res.json({
+          query,
+          places: [],
+          message: getBlockedMessage(),
+          blocked: true,
+        });
+      }
+
       const locationCountryCode = countryCode && typeof countryCode === "string" ? countryCode : undefined;
       const locationCity = city && typeof city === "string" ? city : undefined;
       const langFilter = languageFilter && typeof languageFilter === "string" ? languageFilter : "any";
@@ -791,6 +855,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const searchQueryWithSite = siteFilter ? `site:${siteFilter} ${query}` : query;
       const places = await searchPlacesWithSerper(searchQueryWithSite, limitNum, locationCountryCode, locationCity, langFilter);
+      
+      // Note: Places don't have traditional links in the same way, so we rely on SafeSearch
+      // and query filtering for content protection
       
       const response = { query, places };
       cache.set(cacheKey, response, 30 * 60 * 1000);
@@ -811,6 +878,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Query parameter is required" });
       }
 
+      // CONTENT FILTER: Check if query contains blocked adult content
+      const queryFilter = filterQuery(query);
+      if (!queryFilter.allowed) {
+        console.log(`🚫 Blocked news search query: "${query}"`);
+        return res.json({
+          query,
+          news: [],
+          message: getBlockedMessage(),
+          blocked: true,
+        });
+      }
+
       const locationCountryCode = countryCode && typeof countryCode === "string" ? countryCode : undefined;
       const langFilter = languageFilter && typeof languageFilter === "string" ? languageFilter : "any";
       const timeFilterValue = timeFilter && typeof timeFilter === "string" ? timeFilter : "any";
@@ -825,7 +904,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const searchQueryWithSite = siteFilter ? `site:${siteFilter} ${query}` : query;
-      const news = await searchNewsWithSerper(searchQueryWithSite, limitNum, locationCountryCode, langFilter, timeFilterValue);
+      let news = await searchNewsWithSerper(searchQueryWithSite, limitNum, locationCountryCode, langFilter, timeFilterValue);
+      
+      // CONTENT FILTER: Filter out adult content from news results
+      news = filterResults(news);
       
       const response = { query, news };
       cache.set(cacheKey, response, 30 * 60 * 1000);

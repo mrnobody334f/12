@@ -125,22 +125,22 @@ export default function Home() {
     ? `&site=${getPlatformSite(activePlatformSource)}` 
     : '';
 
-  const { data: imagesData, isLoading: imagesLoading } = useQuery<{images: ImageResult[], totalPages?: number, currentPage?: number}>({
+  const { data: imagesData, isLoading: imagesLoading } = useQuery<{images: ImageResult[], totalPages?: number, currentPage?: number, message?: string, blocked?: boolean}>({
     queryKey: [`/api/search/images?query=${encodeURIComponent(searchQuery)}${mediaLocationParams}&languageFilter=${languageFilter}${siteParam}&page=${currentPage}`],
     enabled: !!searchQuery && activeSource === 'images',
   });
 
-  const { data: videosData, isLoading: videosLoading } = useQuery<{videos: VideoResult[]}>({
+  const { data: videosData, isLoading: videosLoading } = useQuery<{videos: VideoResult[], message?: string, blocked?: boolean}>({
     queryKey: [`/api/search/videos?query=${encodeURIComponent(searchQuery)}${mediaLocationParams}&languageFilter=${languageFilter}${siteParam}&page=${currentPage}`],
     enabled: !!searchQuery && activeSource === 'videos',
   });
 
-  const { data: placesData, isLoading: placesLoading } = useQuery<{places: PlaceResult[]}>({
+  const { data: placesData, isLoading: placesLoading } = useQuery<{places: PlaceResult[], message?: string, blocked?: boolean}>({
     queryKey: [`/api/search/places?query=${encodeURIComponent(searchQuery)}${placesLocationParams}&languageFilter=${languageFilter}${siteParam}`],
     enabled: !!searchQuery && activeSource === 'places',
   });
 
-  const { data: newsData, isLoading: newsLoading } = useQuery<{news: NewsResult[]}>({
+  const { data: newsData, isLoading: newsLoading } = useQuery<{news: NewsResult[], message?: string, blocked?: boolean}>({
     queryKey: [`/api/search/news?query=${encodeURIComponent(searchQuery)}${mediaLocationParams}&languageFilter=${languageFilter}&timeFilter=${timeFilter}${siteParam}`],
     enabled: !!searchQuery && activeSource === 'news',
   });
@@ -959,8 +959,12 @@ export default function Home() {
             ) : (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">
-                  No results found for "{searchQuery}"
-                  {activeSource !== "all" && ` in ${activeSource}`}
+                  {data?.message || (
+                    <>
+                      No results found for "{searchQuery}"
+                      {activeSource !== "all" && ` in ${activeSource}`}
+                    </>
+                  )}
                 </p>
               </div>
             )}
@@ -974,19 +978,20 @@ export default function Home() {
             currentPage={currentPage}
             totalPages={imagesData.totalPages || 10}
             onPageChange={handlePageChange}
+            message={imagesData.message}
           />
         )}
 
         {hasSearched && activeSource === 'videos' && !videosLoading && videosData && (
-          <VideoResults videos={videosData.videos} />
+          <VideoResults videos={videosData.videos} message={videosData.message} />
         )}
 
         {hasSearched && activeSource === 'places' && !placesLoading && placesData && (
-          <PlaceResults places={placesData.places} />
+          <PlaceResults places={placesData.places} message={placesData.message} />
         )}
 
         {hasSearched && activeSource === 'news' && !newsLoading && newsData && (
-          <NewsResults news={newsData.news} />
+          <NewsResults news={newsData.news} message={newsData.message} />
         )}
       </main>
 
