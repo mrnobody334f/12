@@ -2,13 +2,20 @@ import { motion } from "framer-motion";
 import { Star, MapPin, ExternalLink, Clock, Eye, Calendar, Phone, Globe } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ImageLightbox } from "@/components/image-lightbox";
+import { useState } from "react";
 import type { ImageResult, VideoResult, PlaceResult, NewsResult } from "@shared/schema";
 
 interface ImageResultsProps {
   images: ImageResult[];
+  currentPage?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
 }
 
-export function ImageResults({ images }: ImageResultsProps) {
+export function ImageResults({ images, currentPage = 1, totalPages = 1, onPageChange }: ImageResultsProps) {
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
   if (images.length === 0) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -18,39 +25,86 @@ export function ImageResults({ images }: ImageResultsProps) {
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-      {images.map((image, index) => (
-        <motion.div
-          key={index}
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: index * 0.02, duration: 0.2 }}
-          className="group relative rounded-lg overflow-hidden bg-muted hover-elevate"
-          data-testid={`image-result-${index}`}
-        >
-          <a
-            href={image.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block aspect-square"
-          >
-            <img
-              src={image.imageUrl}
-              alt={image.title}
-              className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
-              loading="lazy"
-              onError={(e) => {
-                e.currentTarget.src = image.thumbnail || '';
-              }}
-            />
-          </a>
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <p className="text-white text-xs line-clamp-2">{image.title}</p>
-            <p className="text-white/70 text-xs mt-1">{image.source}</p>
+    <>
+      <div className="space-y-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          {images.map((image, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: index * 0.02, duration: 0.2 }}
+              className="group relative rounded-lg overflow-hidden bg-muted hover-elevate cursor-pointer"
+              data-testid={`image-result-${index}`}
+              onClick={() => setLightboxIndex(index)}
+            >
+              <div className="block aspect-square">
+                <img
+                  src={image.imageUrl}
+                  alt={image.title}
+                  className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                  loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.src = image.thumbnail || '';
+                  }}
+                />
+              </div>
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <p className="text-white text-xs line-clamp-2">{image.title}</p>
+                <p className="text-white/70 text-xs mt-1">{image.source}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && onPageChange && (
+          <div className="flex items-center justify-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              data-testid="button-previous-page"
+            >
+              Previous
+            </Button>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(totalPages, 10) }, (_, i) => i + 1).map((page) => (
+                <Button
+                  key={page}
+                  variant={page === currentPage ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => onPageChange(page)}
+                  className="min-w-[2rem]"
+                  data-testid={`button-page-${page}`}
+                >
+                  {page}
+                </Button>
+              ))}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              data-testid="button-next-page"
+            >
+              Next
+            </Button>
           </div>
-        </motion.div>
-      ))}
-    </div>
+        )}
+      </div>
+
+      {/* Lightbox */}
+      {lightboxIndex !== null && (
+        <ImageLightbox
+          images={images}
+          initialIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+        />
+      )}
+    </>
   );
 }
 

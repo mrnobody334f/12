@@ -626,7 +626,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Images search endpoint
   app.get("/api/search/images", async (req, res) => {
     try {
-      const { query, countryCode, languageFilter = "any", limit = "20" } = req.query;
+      const { query, countryCode, languageFilter = "any", limit = "20", site, page = "1" } = req.query;
 
       if (!query || typeof query !== "string") {
         return res.status(400).json({ error: "Query parameter is required" });
@@ -635,17 +635,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const locationCountryCode = countryCode && typeof countryCode === "string" ? countryCode : undefined;
       const langFilter = languageFilter && typeof languageFilter === "string" ? languageFilter : "any";
       const limitNum = parseInt(limit as string, 10);
+      const siteFilter = site && typeof site === "string" ? site : undefined;
+      const pageNum = parseInt(page as string, 10);
 
-      const cacheKey = `images:${query}:${locationCountryCode || 'global'}:${langFilter}:${limitNum}`;
+      const cacheKey = `images:${query}:${locationCountryCode || 'global'}:${langFilter}:${limitNum}:${siteFilter || 'all'}:${pageNum}`;
       const cached = cache.get<any>(cacheKey);
       if (cached) {
-        console.log(`Using cached images for "${query}"`);
+        console.log(`Using cached images for "${query}" (site: ${siteFilter || 'all'}, page: ${pageNum})`);
         return res.json(cached);
       }
 
-      const images = await searchImagesWithSerper(query, limitNum, locationCountryCode, langFilter, true);
+      const searchQueryWithSite = siteFilter ? `site:${siteFilter} ${query}` : query;
+      const images = await searchImagesWithSerper(searchQueryWithSite, limitNum, locationCountryCode, langFilter, true);
       
-      const response = { query, images };
+      const response = { query, images, totalPages: 10, currentPage: pageNum };
       cache.set(cacheKey, response, 30 * 60 * 1000);
 
       res.json(response);
@@ -658,7 +661,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Videos search endpoint
   app.get("/api/search/videos", async (req, res) => {
     try {
-      const { query, countryCode, languageFilter = "any", limit = "20" } = req.query;
+      const { query, countryCode, languageFilter = "any", limit = "20", site, page = "1" } = req.query;
 
       if (!query || typeof query !== "string") {
         return res.status(400).json({ error: "Query parameter is required" });
@@ -667,17 +670,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const locationCountryCode = countryCode && typeof countryCode === "string" ? countryCode : undefined;
       const langFilter = languageFilter && typeof languageFilter === "string" ? languageFilter : "any";
       const limitNum = parseInt(limit as string, 10);
+      const siteFilter = site && typeof site === "string" ? site : undefined;
+      const pageNum = parseInt(page as string, 10);
 
-      const cacheKey = `videos:${query}:${locationCountryCode || 'global'}:${langFilter}:${limitNum}`;
+      const cacheKey = `videos:${query}:${locationCountryCode || 'global'}:${langFilter}:${limitNum}:${siteFilter || 'all'}:${pageNum}`;
       const cached = cache.get<any>(cacheKey);
       if (cached) {
-        console.log(`Using cached videos for "${query}"`);
+        console.log(`Using cached videos for "${query}" (site: ${siteFilter || 'all'}, page: ${pageNum})`);
         return res.json(cached);
       }
 
-      const videos = await searchVideosWithSerper(query, limitNum, locationCountryCode, langFilter, true);
+      const searchQueryWithSite = siteFilter ? `site:${siteFilter} ${query}` : query;
+      const videos = await searchVideosWithSerper(searchQueryWithSite, limitNum, locationCountryCode, langFilter, true);
       
-      const response = { query, videos };
+      const response = { query, videos, totalPages: 10, currentPage: pageNum };
       cache.set(cacheKey, response, 30 * 60 * 1000);
 
       res.json(response);

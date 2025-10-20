@@ -36,6 +36,7 @@ import {
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSource, setActiveSource] = useState("all");
+  const [activePlatformSource, setActivePlatformSource] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState<SortOption>("relevance");
   const [autoDetectIntent, setAutoDetectIntent] = useState(true);
@@ -93,13 +94,17 @@ export default function Home() {
     enabled: !!searchQuery && !isMediaTab,
   });
 
-  const { data: imagesData, isLoading: imagesLoading } = useQuery<{images: ImageResult[]}>({
-    queryKey: [`/api/search/images?query=${encodeURIComponent(searchQuery)}${mediaLocationParams}&languageFilter=${languageFilter}`],
+  const siteParam = activePlatformSource !== 'all' && activePlatformSource !== 'google' 
+    ? `&site=${activePlatformSource}` 
+    : '';
+
+  const { data: imagesData, isLoading: imagesLoading } = useQuery<{images: ImageResult[], totalPages?: number, currentPage?: number}>({
+    queryKey: [`/api/search/images?query=${encodeURIComponent(searchQuery)}${mediaLocationParams}&languageFilter=${languageFilter}${siteParam}&page=${currentPage}`],
     enabled: !!searchQuery && activeSource === 'images',
   });
 
   const { data: videosData, isLoading: videosLoading } = useQuery<{videos: VideoResult[]}>({
-    queryKey: [`/api/search/videos?query=${encodeURIComponent(searchQuery)}${mediaLocationParams}&languageFilter=${languageFilter}`],
+    queryKey: [`/api/search/videos?query=${encodeURIComponent(searchQuery)}${mediaLocationParams}&languageFilter=${languageFilter}${siteParam}&page=${currentPage}`],
     enabled: !!searchQuery && activeSource === 'videos',
   });
 
@@ -146,6 +151,12 @@ export default function Home() {
 
   const handleSourceChange = (sourceId: string) => {
     setActiveSource(sourceId);
+    
+    const isMediaType = ['images', 'videos', 'places', 'news'].includes(sourceId);
+    if (!isMediaType) {
+      setActivePlatformSource(sourceId);
+    }
+    
     setCurrentPage(1);
     setAccumulatedResults([]);
   };
@@ -887,7 +898,12 @@ export default function Home() {
 
         {/* Media Results */}
         {hasSearched && activeSource === 'images' && !imagesLoading && imagesData && (
-          <ImageResults images={imagesData.images} />
+          <ImageResults 
+            images={imagesData.images} 
+            currentPage={currentPage}
+            totalPages={imagesData.totalPages || 10}
+            onPageChange={handlePageChange}
+          />
         )}
 
         {hasSearched && activeSource === 'videos' && !videosLoading && videosData && (

@@ -59,8 +59,7 @@ export function ResultCard({ result, index }: ResultCardProps) {
   const getDisplayUrl = (link: string) => {
     try {
       const url = new URL(link);
-      const path = url.pathname === '/' ? '' : url.pathname;
-      return url.hostname.replace('www.', '') + path;
+      return url.hostname.replace('www.', '');
     } catch {
       return link;
     }
