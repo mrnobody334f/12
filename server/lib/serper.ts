@@ -422,3 +422,298 @@ export async function searchWithSerper(
     throw error;
   }
 }
+
+export async function searchImagesWithSerper(
+  query: string,
+  numResults: number = 20,
+  countryCode?: string,
+  languageFilter?: string,
+  safeSearch: boolean = true
+): Promise<Array<{
+  title: string;
+  imageUrl: string;
+  link: string;
+  source: string;
+  thumbnail?: string;
+  width?: number;
+  height?: number;
+}>> {
+  const apiKey = process.env.SERPER_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error("SERPER_API_KEY is not configured");
+  }
+
+  const detectedLanguage = detectLanguage(query);
+
+  try {
+    const requestBody: any = {
+      q: query,
+      num: Math.min(numResults, 100),
+      hl: languageFilter && languageFilter !== 'any' ? languageFilter : detectedLanguage,
+    };
+
+    if (countryCode && countryCode.toLowerCase() !== 'global' && /^[a-z]{2}$/i.test(countryCode)) {
+      requestBody.gl = countryCode.toLowerCase();
+    }
+
+    if (safeSearch) {
+      requestBody.safe = 'active';
+    }
+
+    const response = await fetch("https://google.serper.dev/images", {
+      method: "POST",
+      headers: {
+        "X-API-KEY": apiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Serper Images API error: ${response.status}`);
+    }
+
+    const data: any = await response.json();
+    console.log(`Serper images: "${query}" - Found ${data.images?.length || 0} results`);
+    
+    return (data.images || []).map((img: any) => ({
+      title: img.title || '',
+      imageUrl: img.imageUrl,
+      link: img.link,
+      source: extractDomainFromUrl(img.link),
+      thumbnail: img.thumbnailUrl,
+      width: img.imageWidth,
+      height: img.imageHeight,
+    }));
+  } catch (error) {
+    console.error("Serper images error:", error);
+    throw error;
+  }
+}
+
+export async function searchVideosWithSerper(
+  query: string,
+  numResults: number = 20,
+  countryCode?: string,
+  languageFilter?: string,
+  safeSearch: boolean = true
+): Promise<Array<{
+  title: string;
+  link: string;
+  snippet?: string;
+  source: string;
+  thumbnail?: string;
+  duration?: string;
+  channel?: string;
+  date?: string;
+  views?: string;
+}>> {
+  const apiKey = process.env.SERPER_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error("SERPER_API_KEY is not configured");
+  }
+
+  const detectedLanguage = detectLanguage(query);
+
+  try {
+    const requestBody: any = {
+      q: query,
+      num: Math.min(numResults, 100),
+      hl: languageFilter && languageFilter !== 'any' ? languageFilter : detectedLanguage,
+    };
+
+    if (countryCode && countryCode.toLowerCase() !== 'global' && /^[a-z]{2}$/i.test(countryCode)) {
+      requestBody.gl = countryCode.toLowerCase();
+    }
+
+    if (safeSearch) {
+      requestBody.safe = 'active';
+    }
+
+    const response = await fetch("https://google.serper.dev/videos", {
+      method: "POST",
+      headers: {
+        "X-API-KEY": apiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Serper Videos API error: ${response.status}`);
+    }
+
+    const data: any = await response.json();
+    console.log(`Serper videos: "${query}" - Found ${data.videos?.length || 0} results`);
+    
+    return (data.videos || []).map((video: any) => ({
+      title: video.title || '',
+      link: video.link,
+      snippet: video.snippet,
+      source: extractDomainFromUrl(video.link),
+      thumbnail: video.imageUrl,
+      duration: video.duration,
+      channel: video.channel,
+      date: video.date,
+      views: video.views,
+    }));
+  } catch (error) {
+    console.error("Serper videos error:", error);
+    throw error;
+  }
+}
+
+export async function searchPlacesWithSerper(
+  query: string,
+  numResults: number = 20,
+  countryCode?: string,
+  city?: string,
+  languageFilter?: string
+): Promise<Array<{
+  title: string;
+  address?: string;
+  rating?: number;
+  ratingCount?: number;
+  type?: string;
+  phone?: string;
+  website?: string;
+  thumbnail?: string;
+  cid?: string;
+  googleMapsUrl?: string;
+}>> {
+  const apiKey = process.env.SERPER_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error("SERPER_API_KEY is not configured");
+  }
+
+  let enhancedQuery = query;
+  if (city && city.trim()) {
+    const detectedLanguage = detectLanguage(query);
+    const locationKeyword = detectedLanguage === 'ar' ? 'في' : 'in';
+    enhancedQuery = `${query} ${locationKeyword} ${city}`;
+  }
+
+  const detectedLanguage = detectLanguage(query);
+
+  try {
+    const requestBody: any = {
+      q: enhancedQuery,
+      num: Math.min(numResults, 100),
+      hl: languageFilter && languageFilter !== 'any' ? languageFilter : detectedLanguage,
+    };
+
+    if (countryCode && countryCode.toLowerCase() !== 'global' && /^[a-z]{2}$/i.test(countryCode)) {
+      requestBody.gl = countryCode.toLowerCase();
+    }
+
+    const response = await fetch("https://google.serper.dev/places", {
+      method: "POST",
+      headers: {
+        "X-API-KEY": apiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Serper Places API error: ${response.status}`);
+    }
+
+    const data: any = await response.json();
+    console.log(`Serper places: "${enhancedQuery}" - Found ${data.places?.length || 0} results`);
+    
+    return (data.places || []).map((place: any) => ({
+      title: place.title || '',
+      address: place.address,
+      rating: place.rating,
+      ratingCount: place.ratingCount,
+      type: place.type,
+      phone: place.phoneNumber,
+      website: place.website,
+      thumbnail: place.thumbnail,
+      cid: place.cid,
+      googleMapsUrl: place.cid ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.title)}&query_place_id=${place.cid}` : undefined,
+    }));
+  } catch (error) {
+    console.error("Serper places error:", error);
+    throw error;
+  }
+}
+
+export async function searchNewsWithSerper(
+  query: string,
+  numResults: number = 20,
+  countryCode?: string,
+  languageFilter?: string,
+  timeFilter?: string
+): Promise<Array<{
+  title: string;
+  link: string;
+  snippet: string;
+  source: string;
+  date?: string;
+  thumbnail?: string;
+}>> {
+  const apiKey = process.env.SERPER_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error("SERPER_API_KEY is not configured");
+  }
+
+  const detectedLanguage = detectLanguage(query);
+
+  try {
+    const requestBody: any = {
+      q: query,
+      num: Math.min(numResults, 100),
+      hl: languageFilter && languageFilter !== 'any' ? languageFilter : detectedLanguage,
+    };
+
+    if (countryCode && countryCode.toLowerCase() !== 'global' && /^[a-z]{2}$/i.test(countryCode)) {
+      requestBody.gl = countryCode.toLowerCase();
+    }
+
+    if (timeFilter && timeFilter !== 'any') {
+      const timeRanges: { [key: string]: string } = {
+        'day': 'd',
+        'week': 'w',
+        'month': 'm',
+        'year': 'y',
+      };
+      if (timeRanges[timeFilter]) {
+        requestBody.tbs = `qdr:${timeRanges[timeFilter]}`;
+      }
+    }
+
+    const response = await fetch("https://google.serper.dev/news", {
+      method: "POST",
+      headers: {
+        "X-API-KEY": apiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Serper News API error: ${response.status}`);
+    }
+
+    const data: any = await response.json();
+    console.log(`Serper news: "${query}" - Found ${data.news?.length || 0} results`);
+    
+    return (data.news || []).map((article: any) => ({
+      title: article.title || '',
+      link: article.link,
+      snippet: article.snippet || '',
+      source: article.source || extractDomainFromUrl(article.link),
+      date: article.date,
+      thumbnail: article.imageUrl,
+    }));
+  } catch (error) {
+    console.error("Serper news error:", error);
+    throw error;
+  }
+}

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Globe, LucideIcon, Search, Twitter, Facebook, Instagram, Music, MessageSquare, Youtube, ExternalLink, Plus, ChevronLeft, Globe2, ShoppingBag, Newspaper, BookOpen, Film, TrendingUp } from "lucide-react";
+import { Globe, LucideIcon, Search, Twitter, Facebook, Instagram, Music, MessageSquare, Youtube, ExternalLink, Plus, ChevronLeft, Globe2, ShoppingBag, Newspaper, BookOpen, Film, TrendingUp, Image, Video, MapPin } from "lucide-react";
 import { SiReddit, SiTiktok, SiPinterest, SiLinkedin, SiAmazon, SiEbay, SiNetflix, SiSpotify } from "react-icons/si";
 import * as Icons from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -67,6 +67,10 @@ function getPlatformSearchUrl(platformId: string, query: string, site?: string):
 
 const platformTabs = [
   { id: "all", name: "All", icon: Globe, color: "text-blue-600 dark:text-blue-400" },
+  { id: "images", name: "Images", icon: Image, color: "text-purple-600 dark:text-purple-400" },
+  { id: "videos", name: "Videos", icon: Video, color: "text-red-600 dark:text-red-400" },
+  { id: "places", name: "Places", icon: MapPin, color: "text-green-600 dark:text-green-400" },
+  { id: "news", name: "News", icon: Newspaper, color: "text-blue-700 dark:text-blue-500" },
   { id: "google", name: "Google", icon: Search, color: "text-blue-600 dark:text-blue-400" },
   { id: "reddit", name: "Reddit", iconComponent: SiReddit, color: "text-orange-600 dark:text-orange-400" },
   { id: "twitter", name: "Twitter", icon: Twitter, color: "text-blue-500 dark:text-blue-400" },
@@ -118,7 +122,8 @@ export function DynamicTabs({ sources, intentSources, activeSource, onSourceChan
   const allTabs = [...platformTabs, ...intentTabs];
   const activeTab = allTabs.find(tab => tab.id === activeSource);
   const activeSite = intentSources?.find(s => s.id === activeSource)?.site;
-  const showOpenButton = searchQuery && activeSource !== "all" && activeTab;
+  const isMediaTab = ['images', 'videos', 'places', 'news'].includes(activeSource);
+  const showOpenButton = searchQuery && activeSource !== "all" && !isMediaTab && activeTab;
 
   const handleOpenInNewTab = () => {
     if (searchQuery && activeSource) {
@@ -278,13 +283,17 @@ export function DynamicTabs({ sources, intentSources, activeSource, onSourceChan
         </div>
       )}
       
-      {showOpenButton && (
+      {showOpenButton && activeTab && (
         <div className="pt-1">
           <Button
             variant="outline"
             size="sm"
             onClick={handleOpenInNewTab}
-            className="gap-2"
+            className="gap-2 border-2"
+            style={{
+              borderColor: `hsl(var(--primary))`,
+              color: `hsl(var(--primary))`,
+            }}
             data-testid="button-open-in-new-tab"
           >
             <ExternalLink className="h-4 w-4" />

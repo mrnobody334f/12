@@ -96,6 +96,62 @@ export const searchResultSchema = z.object({
 
 export type SearchResult = z.infer<typeof searchResultSchema>;
 
+// Image result schema
+export const imageResultSchema = z.object({
+  title: z.string(),
+  imageUrl: z.string().url(),
+  link: z.string().url(),
+  source: z.string(),
+  thumbnail: z.string().optional(),
+  width: z.number().optional(),
+  height: z.number().optional(),
+});
+
+export type ImageResult = z.infer<typeof imageResultSchema>;
+
+// Video result schema
+export const videoResultSchema = z.object({
+  title: z.string(),
+  link: z.string().url(),
+  snippet: z.string().optional(),
+  source: z.string(),
+  thumbnail: z.string().optional(),
+  duration: z.string().optional(),
+  channel: z.string().optional(),
+  date: z.string().optional(),
+  views: z.string().optional(),
+});
+
+export type VideoResult = z.infer<typeof videoResultSchema>;
+
+// Place result schema
+export const placeResultSchema = z.object({
+  title: z.string(),
+  address: z.string().optional(),
+  rating: z.number().optional(),
+  ratingCount: z.number().optional(),
+  type: z.string().optional(),
+  phone: z.string().optional(),
+  website: z.string().optional(),
+  thumbnail: z.string().optional(),
+  cid: z.string().optional(),
+  googleMapsUrl: z.string().optional(),
+});
+
+export type PlaceResult = z.infer<typeof placeResultSchema>;
+
+// News result schema
+export const newsResultSchema = z.object({
+  title: z.string(),
+  link: z.string().url(),
+  snippet: z.string(),
+  source: z.string(),
+  date: z.string().optional(),
+  thumbnail: z.string().optional(),
+});
+
+export type NewsResult = z.infer<typeof newsResultSchema>;
+
 // Intent detection response
 export const intentResponseSchema = z.object({
   intent: z.enum(intentTypes),
@@ -122,11 +178,19 @@ export type AISummary = z.infer<typeof aiSummarySchema>;
 export const timeFilterOptions = ["any", "day", "week", "month", "year"] as const;
 export type TimeFilter = typeof timeFilterOptions[number];
 
-export const languageFilterOptions = ["any", "ar", "en", "fr", "es", "de"] as const;
+export const languageFilterOptions = [
+  "any", "ar", "en", "fr", "es", "de", "it", "pt", "ru", "ja", "ko", "zh-cn", "zh-tw",
+  "hi", "bn", "ur", "id", "tr", "vi", "th", "nl", "pl", "uk", "ro", "el", "cs", "sv",
+  "hu", "fi", "da", "no", "he", "fa", "ms", "ta", "te", "mr", "gu", "kn", "ml"
+] as const;
 export type LanguageFilter = typeof languageFilterOptions[number];
 
 export const fileTypeFilterOptions = ["any", "pdf", "doc", "ppt", "xls"] as const;
 export type FileTypeFilter = typeof fileTypeFilterOptions[number];
+
+// Search type for different Serper endpoints
+export const searchTypeOptions = ["all", "images", "videos", "places", "news", "reviews"] as const;
+export type SearchType = typeof searchTypeOptions[number];
 
 // Search request/response with pagination
 export const searchRequestSchema = z.object({

@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { searchWithSerper, getGoogleSuggestions, extractDomainsFromResults } from "./lib/serper";
+import { searchWithSerper, getGoogleSuggestions, extractDomainsFromResults, searchImagesWithSerper, searchVideosWithSerper, searchPlacesWithSerper, searchNewsWithSerper } from "./lib/serper";
 import { detectIntent, generateSummary } from "./lib/openrouter";
 import { getPopularSites } from "./lib/popular-sites";
 import { cache } from "./lib/cache";
@@ -620,6 +620,136 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Search error:", error);
       res.status(500).json({ error: "Failed to perform search" });
+    }
+  });
+
+  // Images search endpoint
+  app.get("/api/search/images", async (req, res) => {
+    try {
+      const { query, countryCode, languageFilter = "any", limit = "20" } = req.query;
+
+      if (!query || typeof query !== "string") {
+        return res.status(400).json({ error: "Query parameter is required" });
+      }
+
+      const locationCountryCode = countryCode && typeof countryCode === "string" ? countryCode : undefined;
+      const langFilter = languageFilter && typeof languageFilter === "string" ? languageFilter : "any";
+      const limitNum = parseInt(limit as string, 10);
+
+      const cacheKey = `images:${query}:${locationCountryCode || 'global'}:${langFilter}:${limitNum}`;
+      const cached = cache.get<any>(cacheKey);
+      if (cached) {
+        console.log(`Using cached images for "${query}"`);
+        return res.json(cached);
+      }
+
+      const images = await searchImagesWithSerper(query, limitNum, locationCountryCode, langFilter, true);
+      
+      const response = { query, images };
+      cache.set(cacheKey, response, 30 * 60 * 1000);
+
+      res.json(response);
+    } catch (error) {
+      console.error("Images search error:", error);
+      res.status(500).json({ error: "Failed to search images" });
+    }
+  });
+
+  // Videos search endpoint
+  app.get("/api/search/videos", async (req, res) => {
+    try {
+      const { query, countryCode, languageFilter = "any", limit = "20" } = req.query;
+
+      if (!query || typeof query !== "string") {
+        return res.status(400).json({ error: "Query parameter is required" });
+      }
+
+      const locationCountryCode = countryCode && typeof countryCode === "string" ? countryCode : undefined;
+      const langFilter = languageFilter && typeof languageFilter === "string" ? languageFilter : "any";
+      const limitNum = parseInt(limit as string, 10);
+
+      const cacheKey = `videos:${query}:${locationCountryCode || 'global'}:${langFilter}:${limitNum}`;
+      const cached = cache.get<any>(cacheKey);
+      if (cached) {
+        console.log(`Using cached videos for "${query}"`);
+        return res.json(cached);
+      }
+
+      const videos = await searchVideosWithSerper(query, limitNum, locationCountryCode, langFilter, true);
+      
+      const response = { query, videos };
+      cache.set(cacheKey, response, 30 * 60 * 1000);
+
+      res.json(response);
+    } catch (error) {
+      console.error("Videos search error:", error);
+      res.status(500).json({ error: "Failed to search videos" });
+    }
+  });
+
+  // Places search endpoint
+  app.get("/api/search/places", async (req, res) => {
+    try {
+      const { query, countryCode, city, languageFilter = "any", limit = "20" } = req.query;
+
+      if (!query || typeof query !== "string") {
+        return res.status(400).json({ error: "Query parameter is required" });
+      }
+
+      const locationCountryCode = countryCode && typeof countryCode === "string" ? countryCode : undefined;
+      const locationCity = city && typeof city === "string" ? city : undefined;
+      const langFilter = languageFilter && typeof languageFilter === "string" ? languageFilter : "any";
+      const limitNum = parseInt(limit as string, 10);
+
+      const cacheKey = `places:${query}:${locationCountryCode || 'global'}:${locationCity || 'none'}:${langFilter}:${limitNum}`;
+      const cached = cache.get<any>(cacheKey);
+      if (cached) {
+        console.log(`Using cached places for "${query}"`);
+        return res.json(cached);
+      }
+
+      const places = await searchPlacesWithSerper(query, limitNum, locationCountryCode, locationCity, langFilter);
+      
+      const response = { query, places };
+      cache.set(cacheKey, response, 30 * 60 * 1000);
+
+      res.json(response);
+    } catch (error) {
+      console.error("Places search error:", error);
+      res.status(500).json({ error: "Failed to search places" });
+    }
+  });
+
+  // News search endpoint
+  app.get("/api/search/news", async (req, res) => {
+    try {
+      const { query, countryCode, languageFilter = "any", timeFilter = "any", limit = "20" } = req.query;
+
+      if (!query || typeof query !== "string") {
+        return res.status(400).json({ error: "Query parameter is required" });
+      }
+
+      const locationCountryCode = countryCode && typeof countryCode === "string" ? countryCode : undefined;
+      const langFilter = languageFilter && typeof languageFilter === "string" ? languageFilter : "any";
+      const timeFilterValue = timeFilter && typeof timeFilter === "string" ? timeFilter : "any";
+      const limitNum = parseInt(limit as string, 10);
+
+      const cacheKey = `news:${query}:${locationCountryCode || 'global'}:${langFilter}:${timeFilterValue}:${limitNum}`;
+      const cached = cache.get<any>(cacheKey);
+      if (cached) {
+        console.log(`Using cached news for "${query}"`);
+        return res.json(cached);
+      }
+
+      const news = await searchNewsWithSerper(query, limitNum, locationCountryCode, langFilter, timeFilterValue);
+      
+      const response = { query, news };
+      cache.set(cacheKey, response, 30 * 60 * 1000);
+
+      res.json(response);
+    } catch (error) {
+      console.error("News search error:", error);
+      res.status(500).json({ error: "Failed to search news" });
     }
   });
 

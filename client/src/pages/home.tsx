@@ -20,12 +20,13 @@ import { SearchingSkeleton } from "@/components/loading-skeleton";
 import { CorrectedQuery } from "@/components/corrected-query";
 import { RelatedSearches } from "@/components/related-searches";
 import { SearchTools, type TimeFilter, type LanguageFilter, type FileTypeFilter } from "@/components/search-tools";
+import { ImageResults, VideoResults, PlaceResults, NewsResults } from "@/components/media-results";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import type { SearchResponse, IntentType, SortOption } from "@shared/schema";
+import type { SearchResponse, IntentType, SortOption, ImageResult, VideoResult, PlaceResult, NewsResult } from "@shared/schema";
 import {
   Popover,
   PopoverContent,
@@ -73,15 +74,43 @@ export default function Home() {
     ? `&countryCode=${encodeURIComponent(effectiveCountryCode)}&country=${encodeURIComponent(effectiveCountry)}&city=${encodeURIComponent(effectiveCity)}`
     : "";
 
+  const mediaLocationParams = effectiveCountryCode && effectiveCountryCode !== "global" && effectiveCountryCode !== ''
+    ? `&countryCode=${encodeURIComponent(effectiveCountryCode)}`
+    : "";
+
+  const placesLocationParams = locationParams;
+
   const filterParams = `&timeFilter=${timeFilter}&languageFilter=${languageFilter}&fileTypeFilter=${fileTypeFilter}`;
 
+  const isMediaTab = ['images', 'videos', 'places', 'news'].includes(activeSource);
+  
   const { data, isLoading, error, refetch } = useQuery<SearchResponse>({
     queryKey: [
       `/api/search?query=${encodeURIComponent(searchQuery)}&source=${activeSource}&page=${currentPage}&limit=20&sort=${sortBy}&autoDetect=${autoDetectIntent}${
         !autoDetectIntent && manualIntent ? `&intent=${manualIntent}` : ""
       }${locationParams}${filterParams}`,
     ],
-    enabled: !!searchQuery,
+    enabled: !!searchQuery && !isMediaTab,
+  });
+
+  const { data: imagesData, isLoading: imagesLoading } = useQuery<{images: ImageResult[]}>({
+    queryKey: [`/api/search/images?query=${encodeURIComponent(searchQuery)}${mediaLocationParams}&languageFilter=${languageFilter}`],
+    enabled: !!searchQuery && activeSource === 'images',
+  });
+
+  const { data: videosData, isLoading: videosLoading } = useQuery<{videos: VideoResult[]}>({
+    queryKey: [`/api/search/videos?query=${encodeURIComponent(searchQuery)}${mediaLocationParams}&languageFilter=${languageFilter}`],
+    enabled: !!searchQuery && activeSource === 'videos',
+  });
+
+  const { data: placesData, isLoading: placesLoading } = useQuery<{places: PlaceResult[]}>({
+    queryKey: [`/api/search/places?query=${encodeURIComponent(searchQuery)}${placesLocationParams}&languageFilter=${languageFilter}`],
+    enabled: !!searchQuery && activeSource === 'places',
+  });
+
+  const { data: newsData, isLoading: newsLoading } = useQuery<{news: NewsResult[]}>({
+    queryKey: [`/api/search/news?query=${encodeURIComponent(searchQuery)}${mediaLocationParams}&languageFilter=${languageFilter}&timeFilter=${timeFilter}`],
+    enabled: !!searchQuery && activeSource === 'news',
   });
 
   const bookmarkMutation = useMutation({
@@ -777,8 +806,8 @@ export default function Home() {
       )}
 
       {/* Content Area */}
-      <main className={hasSearched ? "max-w-[800px] mx-auto px-6 py-6" : ""}>
-        {hasSearched && isLoading && currentPage === 1 && <SearchingSkeleton />}
+      <main className={hasSearched ? "max-w-[1200px] mx-auto px-6 py-6" : ""}>
+        {hasSearched && (isLoading || imagesLoading || videosLoading || placesLoading || newsLoading) && currentPage === 1 && <SearchingSkeleton />}
 
         {hasSearched && error && (
           <ErrorState
@@ -787,7 +816,7 @@ export default function Home() {
           />
         )}
 
-        {hasSearched && !isLoading && !error && data && (
+        {hasSearched && !isLoading && !error && data && !isMediaTab && (
           <div className="space-y-6">
             {/* Corrected Query */}
             {data.correctedQuery && data.correctedQuery !== searchQuery && (
@@ -854,6 +883,23 @@ export default function Home() {
               </div>
             )}
           </div>
+        )}
+
+        {/* Media Results */}
+        {hasSearched && activeSource === 'images' && !imagesLoading && imagesData && (
+          <ImageResults images={imagesData.images} />
+        )}
+
+        {hasSearched && activeSource === 'videos' && !videosLoading && videosData && (
+          <VideoResults videos={videosData.videos} />
+        )}
+
+        {hasSearched && activeSource === 'places' && !placesLoading && placesData && (
+          <PlaceResults places={placesData.places} />
+        )}
+
+        {hasSearched && activeSource === 'news' && !newsLoading && newsData && (
+          <NewsResults news={newsData.news} />
         )}
       </main>
 
