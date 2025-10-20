@@ -554,8 +554,8 @@ export default function Home() {
       )}
       
       {/* Compact Smart Header */}
-      {hasSearched && (
-        <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-white/95 dark:bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:supports-[backdrop-filter]:bg-background/80 shadow-sm">
+      {hasSearched && !isScrolled && (
+        <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-white/95 dark:bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:supports-[backdrop-filter]:bg-background/80 shadow-sm">
           {/* Main Header Row - Compressed */}
           <div className="border-b border-border/20">
             <div className="max-w-[1400px] mx-auto px-4 py-2 flex items-center gap-3">
