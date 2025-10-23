@@ -3,6 +3,7 @@ import { Star, MapPin, ExternalLink, Clock, Eye, Calendar, Phone, Globe, Maximiz
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ImageLightbox } from "@/components/image-lightbox";
+import { Pagination } from "@/components/pagination";
 import { useState } from "react";
 import { SiReddit, SiX, SiFacebook, SiInstagram, SiPinterest, SiYoutube } from "react-icons/si";
 import type { ImageResult, VideoResult, PlaceResult, NewsResult } from "@shared/schema";
@@ -40,7 +41,7 @@ export function ImageResults({ images, currentPage = 1, totalPages = 1, onPageCh
   return (
     <>
       <div className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {images.map((image, index) => (
             <motion.div
               key={index}
@@ -52,18 +53,17 @@ export function ImageResults({ images, currentPage = 1, totalPages = 1, onPageCh
             >
               {/* Image Container */}
               <div 
-                className="relative overflow-hidden bg-muted"
+                className="relative overflow-hidden bg-muted aspect-[4/3]"
                 onClick={() => setLightboxIndex(index)}
               >
                 <img
                   src={image.imageUrl}
                   alt={image.title}
-                  className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-105"
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   loading="lazy"
                   onError={(e) => {
                     e.currentTarget.src = image.thumbnail || '';
                   }}
-                  style={{ maxHeight: '400px', minHeight: '200px' }}
                 />
                 {/* Zoom Icon on Hover */}
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
@@ -159,10 +159,13 @@ export function ImageResults({ images, currentPage = 1, totalPages = 1, onPageCh
 
 interface VideoResultsProps {
   videos: VideoResult[];
+  currentPage?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
   message?: string;
 }
 
-export function VideoResults({ videos, message }: VideoResultsProps) {
+export function VideoResults({ videos, currentPage = 1, totalPages = 1, onPageChange, message }: VideoResultsProps) {
   if (videos.length === 0) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -172,7 +175,8 @@ export function VideoResults({ videos, message }: VideoResultsProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {videos.map((video, index) => (
         <motion.div
           key={index}
@@ -262,6 +266,18 @@ export function VideoResults({ videos, message }: VideoResultsProps) {
         </motion.div>
       ))}
     </div>
+    
+    {/* Pagination */}
+    {totalPages > 1 && onPageChange && (
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={onPageChange}
+        hasNext={currentPage < totalPages}
+        hasPrevious={currentPage > 1}
+      />
+    )}
+    </>
   );
 }
 

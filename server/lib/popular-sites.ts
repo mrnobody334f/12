@@ -46,8 +46,9 @@ export const globalSites = {
     { id: "edx", name: "edX", site: "edx.org", icon: "Award" },
     { id: "skillshare", name: "Skillshare", site: "skillshare.com", icon: "Palette" },
   ],
-  entertainment: [
+  videos: [
     { id: "youtube", name: "YouTube", site: "youtube.com", icon: "Youtube" },
+    { id: "vimeo", name: "Vimeo", site: "vimeo.com", icon: "Video" },
     { id: "netflix", name: "Netflix", site: "netflix.com", icon: "Tv" },
     { id: "spotify", name: "Spotify", site: "spotify.com", icon: "Music" },
     { id: "twitch", name: "Twitch", site: "twitch.tv", icon: "Radio" },
@@ -56,7 +57,6 @@ export const globalSites = {
     { id: "reddit", name: "Reddit", site: "reddit.com", icon: "MessageSquare" },
     { id: "imdb", name: "IMDb", site: "imdb.com", icon: "Film" },
     { id: "pinterest", name: "Pinterest", site: "pinterest.com", icon: "Image" },
-    { id: "soundcloud", name: "SoundCloud", site: "soundcloud.com", icon: "Headphones" },
   ],
   general: [
     { id: "google", name: "Google", site: "google.com", icon: "Search" },
@@ -77,7 +77,7 @@ export const countrySites: Record<string, {
   shopping?: SiteConfig[];
   news?: SiteConfig[];
   learning?: SiteConfig[];
-  entertainment?: SiteConfig[];
+  videos?: SiteConfig[];
   general?: SiteConfig[];
 }> = {
   // United States
@@ -301,8 +301,8 @@ function getIconForSite(domain: string, intent: string): string {
       return 'Newspaper';
     case 'learning':
       return 'BookOpen';
-    case 'entertainment':
-      return 'Film';
+    case 'videos':
+      return 'Video';
     default:
       return 'Globe';
   }
@@ -312,7 +312,7 @@ function getIconForSite(domain: string, intent: string): string {
 export function extractSitesFromResults(
   results: Array<{ link: string; source?: string }>,
   intent: string,
-  limit: number = 10
+  limit: number = 8
 ): SiteConfig[] {
   if (!results || results.length === 0) {
     return [];

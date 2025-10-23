@@ -16,13 +16,15 @@ interface StatusBarProps {
   manualIntent: IntentType | undefined;
   country: string;
   countryCode: string;
+  state: string;
   city: string;
+  location: string;
   timeFilter: TimeFilter;
   languageFilter: LanguageFilter;
   fileTypeFilter: FileTypeFilter;
   onIntentChange: (intent: IntentType | undefined) => void;
   onAutoDetectChange: (enabled: boolean) => void;
-  onLocationChange: (country: string, countryCode: string, city: string) => void;
+  onLocationChange: (country: string, countryCode: string, state: string, city: string, location: string) => void;
   onTimeFilterChange: (filter: TimeFilter) => void;
   onLanguageFilterChange: (filter: LanguageFilter) => void;
   onFileTypeFilterChange: (filter: FileTypeFilter) => void;
@@ -35,7 +37,9 @@ export function StatusBar({
   manualIntent,
   country,
   countryCode,
+  state,
   city,
+  location,
   timeFilter,
   languageFilter,
   fileTypeFilter,
@@ -49,7 +53,11 @@ export function StatusBar({
   detectedLocation
 }: StatusBarProps) {
   const intentText = autoDetectIntent ? "Auto-detect ON" : (manualIntent ? `Intent: ${manualIntent}` : "General");
-  const locationText = city || country || "Global";
+  const locationText = location 
+    ? location.replace(/,/g, ', ') 
+    : (city && state ? `${city}, ${state}, ${country}` 
+      : (state && country ? `${state}, ${country}` 
+        : (city || state || country || "Global")));
   
   const hasActiveFilters = timeFilter !== "any" || languageFilter !== "any" || fileTypeFilter !== "any";
   const filterCount = [timeFilter !== "any", languageFilter !== "any", fileTypeFilter !== "any"].filter(Boolean).length;
@@ -110,7 +118,9 @@ export function StatusBar({
                   <LocationSelector
                     country={country}
                     countryCode={countryCode}
+                    state={state}
                     city={city}
+                    location={location}
                     onLocationChange={onLocationChange}
                     detectedLocation={detectedLocation}
                   />

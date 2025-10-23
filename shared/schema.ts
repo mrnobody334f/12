@@ -2,7 +2,7 @@ import { z } from "zod";
 import { createInsertSchema } from "drizzle-zod";
 
 // Intent types for search queries
-export const intentTypes = ["shopping", "news", "learning", "entertainment", "general"] as const;
+export const intentTypes = ["shopping", "news", "learning", "videos", "travel", "health", "tech", "finance", "entertainment", "food", "general"] as const;
 export type IntentType = typeof intentTypes[number];
 
 // Sort options for search results
@@ -13,7 +13,9 @@ export type SortOption = typeof sortOptions[number];
 export const locationSchema = z.object({
   country: z.string().optional(),
   countryCode: z.string().optional(),
+  state: z.string().optional(),
   city: z.string().optional(),
+  location: z.string().optional(), // Full location string like "Dallas, Texas, United States"
 });
 
 export type Location = z.infer<typeof locationSchema>;
@@ -22,7 +24,7 @@ export type Location = z.infer<typeof locationSchema>;
 export const platformSources = {
   all: { id: "all", name: "All", site: "", icon: "Globe" },
   google: { id: "google", name: "Google", site: "", icon: "Search" },
-  twitter: { id: "twitter", name: "Twitter", site: "twitter.com", icon: "Twitter" },
+  x: { id: "x", name: "X", site: "x.com", icon: "X" },
   facebook: { id: "facebook", name: "Facebook", site: "facebook.com", icon: "Facebook" },
   instagram: { id: "instagram", name: "Instagram", site: "instagram.com", icon: "Instagram" },
   tiktok: { id: "tiktok", name: "TikTok", site: "tiktok.com", icon: "Music" },
@@ -32,6 +34,9 @@ export const platformSources = {
   linkedin: { id: "linkedin", name: "LinkedIn", site: "linkedin.com", icon: "Briefcase" },
   quora: { id: "quora", name: "Quora", site: "quora.com", icon: "HelpCircle" },
   wikipedia: { id: "wikipedia", name: "Wikipedia", site: "wikipedia.org", icon: "BookOpen" },
+  stackoverflow: { id: "stackoverflow", name: "Stack Overflow", site: "stackoverflow.com", icon: "Code" },
+  yelp: { id: "yelp", name: "Yelp", site: "yelp.com", icon: "MapPin" },
+  github: { id: "github", name: "GitHub", site: "github.com", icon: "GitBranch" },
 } as const;
 
 // Search source configurations based on intent
@@ -57,12 +62,54 @@ export const sourceConfig = {
     { id: "reddit", name: "Reddit", site: "reddit.com", icon: "MessageSquare" },
     { id: "stackoverflow", name: "Stack Overflow", site: "stackoverflow.com", icon: "Code" },
   ],
-  entertainment: [
-    { id: "tiktok", name: "TikTok", site: "tiktok.com", icon: "Music" },
+  videos: [
     { id: "youtube", name: "YouTube", site: "youtube.com", icon: "Youtube" },
+    { id: "vimeo", name: "Vimeo", site: "vimeo.com", icon: "Video" },
+    { id: "tiktok", name: "TikTok", site: "tiktok.com", icon: "Music" },
     { id: "instagram", name: "Instagram", site: "instagram.com", icon: "Camera" },
-    { id: "reddit", name: "Reddit", site: "reddit.com", icon: "MessageSquare" },
-    { id: "pinterest", name: "Pinterest", site: "pinterest.com", icon: "Image" },
+    { id: "twitch", name: "Twitch", site: "twitch.tv", icon: "Gamepad2" },
+  ],
+  travel: [
+    { id: "booking", name: "Booking.com", site: "booking.com", icon: "MapPin" },
+    { id: "expedia", name: "Expedia", site: "expedia.com", icon: "Plane" },
+    { id: "tripadvisor", name: "TripAdvisor", site: "tripadvisor.com", icon: "Star" },
+    { id: "airbnb", name: "Airbnb", site: "airbnb.com", icon: "Home" },
+    { id: "kayak", name: "Kayak", site: "kayak.com", icon: "Search" },
+  ],
+  health: [
+    { id: "webmd", name: "WebMD", site: "webmd.com", icon: "Heart" },
+    { id: "mayoclinic", name: "Mayo Clinic", site: "mayoclinic.org", icon: "Stethoscope" },
+    { id: "healthline", name: "Healthline", site: "healthline.com", icon: "Activity" },
+    { id: "nhs", name: "NHS", site: "nhs.uk", icon: "Shield" },
+    { id: "medlineplus", name: "MedlinePlus", site: "medlineplus.gov", icon: "BookOpen" },
+  ],
+  tech: [
+    { id: "github", name: "GitHub", site: "github.com", icon: "GitBranch" },
+    { id: "stackoverflow", name: "Stack Overflow", site: "stackoverflow.com", icon: "Code" },
+    { id: "techcrunch", name: "TechCrunch", site: "techcrunch.com", icon: "Zap" },
+    { id: "arstechnica", name: "Ars Technica", site: "arstechnica.com", icon: "Cpu" },
+    { id: "theverge", name: "The Verge", site: "theverge.com", icon: "Monitor" },
+  ],
+  finance: [
+    { id: "bloomberg", name: "Bloomberg", site: "bloomberg.com", icon: "TrendingUp" },
+    { id: "reuters", name: "Reuters", site: "reuters.com", icon: "Newspaper" },
+    { id: "yahoofinance", name: "Yahoo Finance", site: "finance.yahoo.com", icon: "DollarSign" },
+    { id: "investopedia", name: "Investopedia", site: "investopedia.com", icon: "Calculator" },
+    { id: "cnbc", name: "CNBC", site: "cnbc.com", icon: "BarChart" },
+  ],
+  entertainment: [
+    { id: "imdb", name: "IMDb", site: "imdb.com", icon: "Film" },
+    { id: "spotify", name: "Spotify", site: "spotify.com", icon: "Music" },
+    { id: "steam", name: "Steam", site: "store.steampowered.com", icon: "Gamepad2" },
+    { id: "espn", name: "ESPN", site: "espn.com", icon: "Trophy" },
+    { id: "tmz", name: "TMZ", site: "tmz.com", icon: "Camera" },
+  ],
+  food: [
+    { id: "allrecipes", name: "AllRecipes", site: "allrecipes.com", icon: "ChefHat" },
+    { id: "foodnetwork", name: "Food Network", site: "foodnetwork.com", icon: "Utensils" },
+    { id: "yelp", name: "Yelp", site: "yelp.com", icon: "MapPin" },
+    { id: "zomato", name: "Zomato", site: "zomato.com", icon: "Store" },
+    { id: "epicurious", name: "Epicurious", site: "epicurious.com", icon: "BookOpen" },
   ],
   general: [
     { id: "google", name: "Google", site: "", icon: "Search" },
@@ -71,7 +118,7 @@ export const sourceConfig = {
     { id: "tiktok", name: "TikTok", site: "tiktok.com", icon: "Music" },
     { id: "reddit", name: "Reddit", site: "reddit.com", icon: "MessageSquare" },
     { id: "instagram", name: "Instagram", site: "instagram.com", icon: "Camera" },
-    { id: "twitter", name: "Twitter", site: "twitter.com", icon: "Twitter" },
+    { id: "x", name: "X", site: "x.com", icon: "X" },
   ],
 };
 
@@ -215,7 +262,9 @@ export const searchRequestSchema = z.object({
   sort: z.enum(sortOptions).optional().default("relevance"),
   country: z.string().optional(),
   countryCode: z.string().optional(),
+  state: z.string().optional(),
   city: z.string().optional(),
+  location: z.string().optional(), // Full location string like "Dallas, Texas, United States"
   timeFilter: z.enum(timeFilterOptions).optional(),
   languageFilter: z.enum(languageFilterOptions).optional(),
   fileTypeFilter: z.enum(fileTypeFilterOptions).optional(),

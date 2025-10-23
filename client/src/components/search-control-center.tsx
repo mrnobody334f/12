@@ -11,7 +11,7 @@ interface SearchControlCenterProps {
   country: string;
   countryCode: string;
   city: string;
-  onLocationChange: (country: string, countryCode: string, city: string) => void;
+  onLocationChange: (country: string, countryCode: string, state: string, city: string, location: string) => void;
   detectedLocation?: { country: string; countryCode: string; city: string };
   autoDetectIntent: boolean;
   manualIntent: IntentType | undefined;

@@ -10,7 +10,7 @@ const suggestedSearches = [
   { query: "Best laptop for developers 2025", intent: "shopping" },
   { query: "Latest AI technology news", intent: "news" },
   { query: "How to learn web development", intent: "learning" },
-  { query: "Funny cat videos", intent: "entertainment" },
+  { query: "Funny cat videos", intent: "videos" },
 ];
 
 export function EmptyState({ onSuggestedSearch }: EmptyStateProps) {
@@ -69,7 +69,7 @@ export function EmptyState({ onSuggestedSearch }: EmptyStateProps) {
               </div>
               <h3 className="font-semibold text-foreground">Dynamic Tabs</h3>
             </div>
-            <p className="text-sm text-muted-foreground">Interface adapts based on shopping, news, learning, or entertainment</p>
+            <p className="text-sm text-muted-foreground">Interface adapts based on shopping, news, learning, or videos</p>
           </div>
         </div>
 

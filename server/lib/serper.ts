@@ -88,7 +88,7 @@ export async function getGoogleSuggestions(query: string): Promise<string[]> {
   }
 }
 
-function detectLanguage(text: string): string {
+export function detectLanguage(text: string): string {
   const arabicPattern = /[\u0600-\u06FF]/;
   const chinesePattern = /[\u4E00-\u9FFF]/;
   const japanesePattern = /[\u3040-\u309F\u30A0-\u30FF]/;
@@ -154,11 +154,11 @@ function isSiteOfType(domain: string, title: string, snippet: string, intent: st
     'medium', 'dev.to', 'freecodecamp', 'w3schools', 'mdn', 'geeksforgeeks',
     'coursera', 'udemy', 'edx', 'khanacademy', 'skillshare', 'pluralsight', 'linkedin.com/learning',
     'mit.edu', 'stanford.edu', 'harvard.edu', 'yale.edu', 'oxford.ac.uk', 'cambridge.org',
-    'edraak', 'rwaq', 'maharatech'
+    'edraak', 'rwaq', 'maharatech', 'reddit'
   ];
   
-  const knownEntertainmentSites = [
-    'youtube', 'tiktok', 'netflix', 'hulu', 'disneyplus', 'primevideo', 'hbomax',
+  const knownVideosSites = [
+    'youtube', 'vimeo', 'tiktok', 'netflix', 'hulu', 'disneyplus', 'primevideo', 'hbomax',
     'spotify', 'applemusic', 'soundcloud', 'twitch', 'mixer', 'dlive',
     'instagram', 'pinterest', 'tumblr', 'deviantart', 'artstation',
     'ign', 'gamespot', 'kotaku', 'polygon', 'steam', 'epicgames', 'playstation', 'xbox'
@@ -168,7 +168,7 @@ function isSiteOfType(domain: string, title: string, snippet: string, intent: st
   const excludeFromShopping = ['pinterest', 'wikipedia', 'wiki', 'youtube', 'facebook', 'twitter', 'instagram', 'news', 'press'];
   const excludeFromNews = ['amazon', 'ebay', 'shop', 'store', 'alibaba', 'pinterest', 'instagram', 'game'];
   const excludeFromLearning = ['amazon', 'ebay', 'shop', 'store', 'pinterest', 'instagram', 'tiktok', 'game'];
-  const excludeFromEntertainment = ['amazon', 'ebay', 'shop', 'store', 'news', 'press'];
+  const excludeFromVideos = ['amazon', 'ebay', 'shop', 'store', 'news', 'press'];
   
   // Fallback patterns for sites not in the allow lists
   const shoppingPatterns = [
@@ -186,8 +186,8 @@ function isSiteOfType(domain: string, title: string, snippet: string, intent: st
     'تعليم', 'دورة', 'جامعة', 'تعلم', 'مدرسة', 'تدريب'
   ];
   
-  const entertainmentPatterns = [
-    'video', 'music', 'game', 'entertainment', 'fun', 'play', 'watch', 'stream', 'gaming',
+  const videosPatterns = [
+    'video', 'music', 'game', 'fun', 'play', 'watch', 'stream', 'gaming',
     'ترفيه', 'فيديو', 'لعبة', 'موسيقى', 'مشاهدة', 'العاب'
   ];
   
@@ -228,17 +228,17 @@ function isSiteOfType(domain: string, title: string, snippet: string, intent: st
       // Check patterns as fallback
       return learningPatterns.some(pattern => combinedText.includes(pattern));
       
-    case 'entertainment':
-      // Check if in known entertainment sites first
-      if (knownEntertainmentSites.some(site => lowerDomain.includes(site))) {
+    case 'videos':
+      // Check if in known videos sites first
+      if (knownVideosSites.some(site => lowerDomain.includes(site))) {
         return true;
       }
-      // Exclude non-entertainment sites
-      if (excludeFromEntertainment.some(exclude => lowerDomain.includes(exclude))) {
+      // Exclude non-videos sites
+      if (excludeFromVideos.some(exclude => lowerDomain.includes(exclude))) {
         return false;
       }
       // Check patterns as fallback
-      return entertainmentPatterns.some(pattern => combinedText.includes(pattern));
+      return videosPatterns.some(pattern => combinedText.includes(pattern));
       
     case 'general':
     default:
@@ -259,7 +259,7 @@ export function extractDomainsFromResults(
   const domainMap = new Map<string, {title: string, snippet: string, count: number}>();
   
   // Exclude major social platforms from tabs (they have their own platform tabs)
-  const excludedDomains = ['google.', 'youtube.', 'twitter.', 'facebook.', 'instagram.', 'tiktok.', 'reddit.'];
+  const excludedDomains = ['google.', 'youtube.', 'twitter.', 'facebook.', 'instagram.', 'tiktok.'];
   
   results.forEach((result) => {
     const domain = extractDomainFromUrl(result.link);
@@ -291,10 +291,10 @@ export function extractDomainsFromResults(
     }
   });
   
-  // Sort by count (most frequent first) and take top 10
+  // Sort by count (most frequent first) and take top 8
   const sortedDomains = Array.from(domainMap.entries())
     .sort((a, b) => b[1].count - a[1].count)
-    .slice(0, 10);
+    .slice(0, 8);
   
   return sortedDomains.map(([domain, data]) => {
     const domainName = getDomainName(domain);
@@ -317,7 +317,9 @@ export async function searchWithSerper(
   page: number = 1,
   countryCode?: string,
   country?: string,
+  state?: string,
   city?: string,
+  location?: string, // Full location string like "Dallas, Texas, United States"
   timeFilter?: string,
   languageFilter?: string,
   fileTypeFilter?: string
@@ -328,7 +330,7 @@ export async function searchWithSerper(
     throw new Error("SERPER_API_KEY is not configured");
   }
 
-  // Build the search query with filters (no city concatenation)
+  // Build the search query with filters
   let enhancedQuery = query;
   
   // Add file type filter to query if specified
@@ -352,24 +354,96 @@ export async function searchWithSerper(
       hl: languageFilter && languageFilter !== 'any' ? languageFilter : detectedLanguage,
     };
 
-    // Add country code only if provided (no default fallback)
-    if (countryCode && countryCode.toLowerCase() !== 'global' && /^[a-z]{2}$/i.test(countryCode)) {
-      requestBody.gl = countryCode.toLowerCase();
-    }
+    // COUNTRY CODE (gl parameter) - REQUIRED for localized search
+    let finalCountryCode = countryCode;
     
-    // Add location (city) with country for more accurate results
-    // Serper API works best with format: "City, Country"
-    if (city && city.trim()) {
-      if (country && country.trim()) {
-        // Format: "Cairo, Egypt" - Most accurate
-        requestBody.location = `${city.trim()}, ${country.trim()}`;
-        console.log(`Location parameter set: ${city}, ${country}`);
-      } else {
-        // Fallback: Just city name if country not provided
-        requestBody.location = city.trim();
-        console.log(`Location parameter set: ${city} (no country specified)`);
+    if (!finalCountryCode && country) {
+      // Map country names to country codes
+      const countryCodeMap: { [key: string]: string } = {
+        'united states': 'us', 'usa': 'us', 'america': 'us',
+        'united kingdom': 'gb', 'uk': 'gb', 'great britain': 'gb',
+        'canada': 'ca', 'australia': 'au', 'germany': 'de',
+        'france': 'fr', 'spain': 'es', 'italy': 'it',
+        'japan': 'jp', 'china': 'cn', 'india': 'in',
+        'brazil': 'br', 'mexico': 'mx', 'egypt': 'eg',
+        'saudi arabia': 'sa', 'uae': 'ae', 'united arab emirates': 'ae',
+        'russia': 'ru', 'south korea': 'kr', 'thailand': 'th',
+        'singapore': 'sg', 'malaysia': 'my', 'indonesia': 'id',
+        'philippines': 'ph', 'vietnam': 'vn', 'taiwan': 'tw',
+        'hong kong': 'hk', 'south africa': 'za', 'nigeria': 'ng',
+        'kenya': 'ke', 'morocco': 'ma', 'tunisia': 'tn',
+        'algeria': 'dz', 'libya': 'ly', 'sudan': 'sd',
+        'ethiopia': 'et', 'ghana': 'gh', 'uganda': 'ug',
+        'tanzania': 'tz', 'zimbabwe': 'zw', 'botswana': 'bw',
+        'namibia': 'na', 'zambia': 'zm', 'malawi': 'mw',
+        'mozambique': 'mz', 'madagascar': 'mg', 'mauritius': 'mu',
+        'seychelles': 'sc', 'comoros': 'km', 'djibouti': 'dj',
+        'somalia': 'so', 'eritrea': 'er', 'burundi': 'bi',
+        'rwanda': 'rw', 'central african republic': 'cf',
+        'chad': 'td', 'niger': 'ne', 'mali': 'ml',
+        'burkina faso': 'bf', 'senegal': 'sn', 'gambia': 'gm',
+        'guinea-bissau': 'gw', 'guinea': 'gn', 'sierra leone': 'sl',
+        'liberia': 'lr', 'ivory coast': 'ci', 'ghana': 'gh',
+        'togo': 'tg', 'benin': 'bj', 'cameroon': 'cm',
+        'equatorial guinea': 'gq', 'gabon': 'ga', 'congo': 'cg',
+        'democratic republic of the congo': 'cd', 'angola': 'ao',
+        'cabo verde': 'cv', 'sao tome and principe': 'st'
+      };
+      
+      const normalizedCountry = country.toLowerCase().trim();
+      finalCountryCode = countryCodeMap[normalizedCountry];
+      
+      if (finalCountryCode) {
+        console.log(`🌍 Country code mapped: ${country} -> ${finalCountryCode}`);
       }
     }
+    
+    if (finalCountryCode && finalCountryCode.toLowerCase() !== 'global' && /^[a-z]{2}$/i.test(finalCountryCode)) {
+      requestBody.gl = finalCountryCode.toLowerCase();
+      console.log(`🌍 Country code set: ${finalCountryCode.toLowerCase()}`);
+    }
+    
+    // LOCATION PARAMETER - Build precise location string
+    let locationString = '';
+    
+    if (location && location.trim()) {
+      // Use provided location string, clean it up
+      locationString = location.trim().replace(/\s*,\s*/g, ',');
+      console.log(`📍 Using provided location: "${locationString}"`);
+    } else {
+      // Build location from parts
+      const locationParts = [];
+      
+      if (city && city.trim()) {
+        locationParts.push(city.trim());
+      }
+      
+      if (state && state.trim() && (!city || city.trim() !== state.trim())) {
+        locationParts.push(state.trim());
+      }
+      
+      if (country && country.trim() && !locationParts.includes(country.trim())) {
+        locationParts.push(country.trim());
+      }
+      
+      if (locationParts.length > 0) {
+        locationString = locationParts.join(',');
+        console.log(`📍 Built location from parts: "${locationString}"`);
+      }
+    }
+    
+    if (locationString) {
+      requestBody.location = locationString;
+      console.log(`🎯 FINAL LOCATION PARAMETER: "${requestBody.location}"`);
+    }
+    
+    // Log final request parameters
+    console.log(`🔍 SEARCH REQUEST:`, {
+      query: requestBody.q,
+      gl: requestBody.gl,
+      location: requestBody.location,
+      hl: requestBody.hl
+    });
     
     // Add time filter if specified
     if (timeFilter && timeFilter !== 'any') {
@@ -466,6 +540,10 @@ export async function searchImagesWithSerper(
   query: string,
   numResults: number = 20,
   countryCode?: string,
+  country?: string,
+  state?: string,
+  city?: string,
+  location?: string, // Full location string like "Dallas, Texas, United States"
   languageFilter?: string
 ): Promise<Array<{
   title: string;
@@ -491,8 +569,40 @@ export async function searchImagesWithSerper(
       hl: languageFilter && languageFilter !== 'any' ? languageFilter : detectedLanguage,
     };
 
+    // Add country code (gl parameter) - this is REQUIRED for localized search
     if (countryCode && countryCode.toLowerCase() !== 'global' && /^[a-z]{2}$/i.test(countryCode)) {
       requestBody.gl = countryCode.toLowerCase();
+    }
+    
+    // Add location parameter for precise location targeting
+    // Support: country only, country + state, country + state + city, or full location string
+    if (location && location.trim()) {
+      // Use the full location string if provided
+      requestBody.location = location.trim();
+      console.log(`Location parameter set (full): ${requestBody.location}`);
+    } else if (country || state || city) {
+      // Fallback to building location from parts
+      let locationParts = [];
+      
+      // Priority order: City -> State -> Country
+      if (city && city.trim()) {
+        locationParts.push(city.trim());
+      }
+      
+      if (state && state.trim()) {
+        if (!city || city.trim() !== state.trim()) {
+          locationParts.push(state.trim());
+        }
+      }
+      
+      if (country && country.trim() && !locationParts.includes(country.trim())) {
+        locationParts.push(country.trim());
+      }
+      
+      if (locationParts.length > 0) {
+        requestBody.location = locationParts.join(', ');
+        console.log(`🎯 Location parameter set (parts): "${requestBody.location}"`);
+      }
     }
 
     // ALWAYS enable strict safe search to block adult content
@@ -533,6 +643,10 @@ export async function searchVideosWithSerper(
   query: string,
   numResults: number = 20,
   countryCode?: string,
+  country?: string,
+  state?: string,
+  city?: string,
+  location?: string, // Full location string like "Dallas, Texas, United States"
   languageFilter?: string
 ): Promise<Array<{
   title: string;
@@ -560,8 +674,40 @@ export async function searchVideosWithSerper(
       hl: languageFilter && languageFilter !== 'any' ? languageFilter : detectedLanguage,
     };
 
+    // Add country code (gl parameter) - this is REQUIRED for localized search
     if (countryCode && countryCode.toLowerCase() !== 'global' && /^[a-z]{2}$/i.test(countryCode)) {
       requestBody.gl = countryCode.toLowerCase();
+    }
+    
+    // Add location parameter for precise location targeting
+    // Support: country only, country + state, country + state + city, or full location string
+    if (location && location.trim()) {
+      // Use the full location string if provided
+      requestBody.location = location.trim();
+      console.log(`Location parameter set (full): ${requestBody.location}`);
+    } else if (country || state || city) {
+      // Fallback to building location from parts
+      let locationParts = [];
+      
+      // Priority order: City -> State -> Country
+      if (city && city.trim()) {
+        locationParts.push(city.trim());
+      }
+      
+      if (state && state.trim()) {
+        if (!city || city.trim() !== state.trim()) {
+          locationParts.push(state.trim());
+        }
+      }
+      
+      if (country && country.trim() && !locationParts.includes(country.trim())) {
+        locationParts.push(country.trim());
+      }
+      
+      if (locationParts.length > 0) {
+        requestBody.location = locationParts.join(', ');
+        console.log(`🎯 Location parameter set (parts): "${requestBody.location}"`);
+      }
     }
 
     // ALWAYS enable strict safe search to block adult content
@@ -611,7 +757,10 @@ export async function searchPlacesWithSerper(
   query: string,
   numResults: number = 20,
   countryCode?: string,
+  country?: string,
+  state?: string,
   city?: string,
+  location?: string, // Full location string like "Dallas, Texas, United States"
   languageFilter?: string
 ): Promise<Array<{
   title: string;
@@ -647,8 +796,40 @@ export async function searchPlacesWithSerper(
       hl: languageFilter && languageFilter !== 'any' ? languageFilter : detectedLanguage,
     };
 
+    // Add country code (gl parameter) - this is REQUIRED for localized search
     if (countryCode && countryCode.toLowerCase() !== 'global' && /^[a-z]{2}$/i.test(countryCode)) {
       requestBody.gl = countryCode.toLowerCase();
+    }
+    
+    // Add location parameter for precise location targeting
+    // Support: country only, country + state, country + state + city, or full location string
+    if (location && location.trim()) {
+      // Use the full location string if provided
+      requestBody.location = location.trim();
+      console.log(`Location parameter set (full): ${requestBody.location}`);
+    } else if (country || state || city) {
+      // Fallback to building location from parts
+      let locationParts = [];
+      
+      // Priority order: City -> State -> Country
+      if (city && city.trim()) {
+        locationParts.push(city.trim());
+      }
+      
+      if (state && state.trim()) {
+        if (!city || city.trim() !== state.trim()) {
+          locationParts.push(state.trim());
+        }
+      }
+      
+      if (country && country.trim() && !locationParts.includes(country.trim())) {
+        locationParts.push(country.trim());
+      }
+      
+      if (locationParts.length > 0) {
+        requestBody.location = locationParts.join(', ');
+        console.log(`🎯 Location parameter set (parts): "${requestBody.location}"`);
+      }
     }
 
     // ALWAYS enable strict safe search to block adult content
@@ -692,6 +873,10 @@ export async function searchNewsWithSerper(
   query: string,
   numResults: number = 20,
   countryCode?: string,
+  country?: string,
+  state?: string,
+  city?: string,
+  location?: string, // Full location string like "Dallas, Texas, United States"
   languageFilter?: string,
   timeFilter?: string
 ): Promise<Array<{

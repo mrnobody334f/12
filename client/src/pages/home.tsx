@@ -24,11 +24,19 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ColorCustomizer } from "@/components/color-customizer";
+import { CustomSiteManager } from "@/components/custom-site-manager";
 import { useToast } from "@/hooks/use-toast";
 import { useColorCustomizer } from "@/hooks/use-color-customizer";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { cn } from "@/lib/utils";
 import type { SearchResponse, IntentType, SortOption, ImageResult, VideoResult, PlaceResult, NewsResult } from "@shared/schema";
+
+interface CustomSite {
+  id: string;
+  name: string;
+  url: string;
+  domain: string;
+}
 import {
   Popover,
   PopoverContent,
@@ -37,8 +45,8 @@ import {
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeSource, setActiveSource] = useState("web");
-  const [activePlatformSource, setActivePlatformSource] = useState("web");
+  const [activeSource, setActiveSource] = useState("google");
+  const [activePlatformSource, setActivePlatformSource] = useState("google");
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState<SortOption>("relevance");
   const [autoDetectIntent, setAutoDetectIntent] = useState(true);
@@ -47,42 +55,138 @@ export default function Home() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [country, setCountry] = useState("");
   const [countryCode, setCountryCode] = useState("");
+  const [state, setState] = useState("");
   const [city, setCity] = useState("");
+  const [location, setLocation] = useState(""); // Full location string
   const [userLocation, setUserLocation] = useState<{country: string; countryCode: string; city: string} | null>(null);
   const [isManualLocation, setIsManualLocation] = useState(false);
+  const [isGlobalMode, setIsGlobalMode] = useState(false);
+  const [locationMode, setLocationMode] = useState<'manual' | 'normal' | 'global'>('normal');
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("any");
   const [languageFilter, setLanguageFilter] = useState<LanguageFilter>("any");
   const [fileTypeFilter, setFileTypeFilter] = useState<FileTypeFilter>("any");
   const [isScrolled, setIsScrolled] = useState(false);
   const [maxReachedPage, setMaxReachedPage] = useState(10);
+  const [customSites, setCustomSites] = useState<CustomSite[]>([]);
+  
+  // Debug custom sites changes
+  useEffect(() => {
+    console.log(`🔍 Custom sites state changed:`, customSites);
+  }, [customSites]);
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { toast} = useToast();
 
   useColorCustomizer();
 
-  const { data: detectedLocation } = useQuery<{country: string; countryCode: string; city: string}>({
+  const { data: detectedLocation, error: locationError, isLoading: locationLoading } = useQuery<{country: string; countryCode: string; city: string; state?: string; canonicalName?: string; fullName?: string}>({
     queryKey: ["/api/location/detect"],
     refetchOnWindowFocus: false,
     staleTime: Infinity,
+    retry: 3, // إعادة المحاولة 3 مرات في حالة الفشل
   });
 
+  // تشخيص فوري (يعمل في كل render)
+  console.log('🌍 Location detection status (immediate):', {
+    isLoading: locationLoading,
+    hasData: !!detectedLocation,
+    data: detectedLocation,
+    error: locationError
+  });
+
+  // تشخيص حالة الموقع المكتشف
   useEffect(() => {
-    if (detectedLocation && !country && !countryCode && !isManualLocation) {
-      // Don't set country/countryCode in state to keep location selector clean
-      // We'll use detectedLocation directly for search
+    console.log('🌍 Location detection status (useEffect):', {
+      isLoading: locationLoading,
+      hasData: !!detectedLocation,
+      data: detectedLocation,
+      error: locationError
+    });
+  }, [detectedLocation, locationError, locationLoading]);
+
+  // Restore saved location on app start (if no manual location is set)
+  useEffect(() => {
+    if (!isManualLocation) {
+      const savedLocation = localStorage.getItem('userDetectedLocation');
+      if (savedLocation) {
+        try {
+          const parsedLocation = JSON.parse(savedLocation);
+          console.log('🌍 Restoring saved location on app start:', parsedLocation);
+          
+          setCountry(parsedLocation.country);
+          setCountryCode(parsedLocation.countryCode);
+          setState(parsedLocation.state || "");
+          setCity(parsedLocation.city || "");
+          setLocation(parsedLocation.canonicalName || parsedLocation.fullName || parsedLocation.country);
+          setIsManualLocation(false); // Keep it as auto-detected
+        } catch (error) {
+          console.error('Error parsing saved location on app start:', error);
+        }
+      }
     }
-  }, [detectedLocation, country, countryCode, isManualLocation]);
+  }, []); // Run only once on app start
+
+  // Auto-apply detected location on first visit or restore saved location
+  useEffect(() => {
+    if (detectedLocation && !isManualLocation && !isGlobalMode) {
+      const savedLocation = localStorage.getItem('userDetectedLocation');
+      
+      if (!savedLocation) {
+        // First visit: save and apply detected location automatically
+        localStorage.setItem('userDetectedLocation', JSON.stringify(detectedLocation));
+        console.log('🌍 Auto-detected location saved and applied:', detectedLocation);
+        
+        // Apply the detected location automatically
+        setCountry(detectedLocation.country);
+        setCountryCode(detectedLocation.countryCode);
+        setState(detectedLocation.state || "");
+        setCity(detectedLocation.city || "");
+        setLocation(detectedLocation.canonicalName || detectedLocation.fullName || detectedLocation.country);
+        setIsManualLocation(false); // Keep it as auto-detected
+      }
+    }
+  }, [detectedLocation, isManualLocation, isGlobalMode]);
 
   // Use manual location if set, otherwise use detected location for search
-  const effectiveCountry = isManualLocation ? country : (detectedLocation?.country || country);
-  const effectiveCountryCode = isManualLocation ? countryCode : (detectedLocation?.countryCode || countryCode);
-  const effectiveCity = isManualLocation ? city : (detectedLocation?.city || "");
+  // This ensures auto-detection works seamlessly in the background
+  // If global mode is explicitly set, don't use detected location
+  
+  // إذا كان المستخدم حدد موقع يدوياً، استخدم الموقع اليدوي فقط
+  // إذا لم يحدد، استخدم الموقع المكتشف تلقائياً
+  // إذا كان في وضع عالمي، لا تستخدم أي موقع
+  const effectiveCountry = isGlobalMode ? "" : (country || (!isManualLocation && detectedLocation?.country) || "");
+  const effectiveCountryCode = isGlobalMode ? "" : (countryCode || (!isManualLocation && detectedLocation?.countryCode) || "");
+  const effectiveState = isGlobalMode ? "" : (state || (!isManualLocation && detectedLocation?.state) || "");
+  const effectiveCity = isGlobalMode ? "" : (city || (!isManualLocation && detectedLocation?.city) || "");
 
-  const locationParams = (effectiveCountryCode && effectiveCountryCode !== "global" && effectiveCountryCode !== '') || effectiveCity 
-    ? `&countryCode=${encodeURIComponent(effectiveCountryCode)}&country=${encodeURIComponent(effectiveCountry)}&city=${encodeURIComponent(effectiveCity)}`
+  // تشخيص القيم النهائية للموقع
+  console.log('📍 FRONTEND LOCATION PARAMS:', {
+    effectiveCountry,
+    effectiveCountryCode,
+    effectiveState,
+    effectiveCity,
+    location,
+    isGlobalMode,
+    manualCountry: country,
+    detectedCountry: detectedLocation?.country,
+    isManualLocation
+  });
+
+  const locationParams = !isGlobalMode && ((effectiveCountryCode && effectiveCountryCode !== "global" && effectiveCountryCode !== '') || effectiveCountry || effectiveState || effectiveCity || location)
+    ? `&countryCode=${encodeURIComponent(effectiveCountryCode)}&country=${encodeURIComponent(effectiveCountry)}&state=${encodeURIComponent(effectiveState)}&city=${encodeURIComponent(effectiveCity)}&location=${encodeURIComponent(location)}`
     : "";
 
-  const mediaLocationParams = effectiveCountryCode && effectiveCountryCode !== "global" && effectiveCountryCode !== ''
+  // Debug logging for location parameters
+  console.log('🔍 FRONTEND LOCATION PARAMS:', {
+    effectiveCountry,
+    effectiveCountryCode,
+    effectiveState,
+    effectiveCity,
+    location,
+    locationParams,
+    isGlobalMode
+  });
+
+  const mediaLocationParams = !isGlobalMode && effectiveCountryCode && effectiveCountryCode !== "global" && effectiveCountryCode !== ''
     ? `&countryCode=${encodeURIComponent(effectiveCountryCode)}`
     : "";
 
@@ -96,18 +200,17 @@ export default function Home() {
   // Use activePlatformSource when on all-media tab
   const effectiveSearchSource = isAllMediaTab ? (activePlatformSource || 'web') : activeSource;
   
-  const { data, isLoading, error, refetch } = useQuery<SearchResponse>({
-    queryKey: [
-      `/api/search?query=${encodeURIComponent(searchQuery)}&source=${effectiveSearchSource}&page=${currentPage}&limit=20&sort=${sortBy}&autoDetect=${autoDetectIntent}${
-        !autoDetectIntent && manualIntent ? `&intent=${manualIntent}` : ""
-      }${locationParams}${filterParams}`,
-    ],
-    enabled: !!searchQuery && !isMediaTab,
-  });
-
   const getPlatformSite = (platformId: string): string => {
+    console.log(`🔍 getPlatformSite called with platformId: ${platformId}`);
+    console.log(`🔍 Available custom sites:`, customSites.map(s => ({ id: s.id, name: s.name, domain: s.domain })));
+    
+    // ✅ إذا كان platformId هو "google"، ارجع سترينج فارغ (لا نريد site: filter)
+    if (platformId === 'google') {
+      return '';
+    }
+    
     const platformMap: Record<string, string> = {
-      twitter: 'twitter.com',
+      x: 'x.com',
       facebook: 'facebook.com',
       instagram: 'instagram.com',
       tiktok: 'tiktok.com',
@@ -117,20 +220,49 @@ export default function Home() {
       linkedin: 'linkedin.com',
       quora: 'quora.com',
       wikipedia: 'wikipedia.org',
+      stackoverflow: 'stackoverflow.com',
+      yelp: 'yelp.com',
+      github: 'github.com',
     };
-    return platformMap[platformId] || platformId;
+    
+    // Check if it's a custom site (platformId should match site.id)
+    const customSite = customSites.find(site => site.id === platformId);
+    if (customSite) {
+      console.log(`🔍 Found custom site: ${customSite.name} -> ${customSite.domain}`);
+      return customSite.domain;
+    }
+    
+    console.log(`🔍 No custom site found, using platform map or platformId: ${platformMap[platformId] || ''}`);
+    return platformMap[platformId] || '';
   };
 
   const siteParam = activePlatformSource !== 'web' 
     ? `&site=${getPlatformSite(activePlatformSource)}` 
     : '';
+  
+  const { data, isLoading, error, refetch } = useQuery<SearchResponse>({
+    queryKey: [
+      `/api/search?query=${encodeURIComponent(searchQuery)}&source=${effectiveSearchSource}&page=${currentPage}&limit=20&sort=${sortBy}&autoDetect=${autoDetectIntent}${
+        !autoDetectIntent && manualIntent ? `&intent=${manualIntent}` : ""
+      }${locationParams}${filterParams}${siteParam}`,
+    ],
+    enabled: !!searchQuery && !isMediaTab,
+  });
+  
+  // Debug logging
+  console.log(`🔍 DEBUG: activePlatformSource = "${activePlatformSource}"`);
+  console.log(`🔍 DEBUG: customSites.length = ${customSites.length}`);
+  console.log(`🔍 DEBUG: customSites =`, customSites);
+  if (activePlatformSource && activePlatformSource !== 'web') {
+    console.log(`🔍 Platform: ${activePlatformSource}, Site: ${getPlatformSite(activePlatformSource)}`);
+  }
 
   const { data: imagesData, isLoading: imagesLoading } = useQuery<{images: ImageResult[], totalPages?: number, currentPage?: number, message?: string, blocked?: boolean}>({
     queryKey: [`/api/search/images?query=${encodeURIComponent(searchQuery)}${mediaLocationParams}&languageFilter=${languageFilter}${siteParam}&page=${currentPage}`],
     enabled: !!searchQuery && activeSource === 'images',
   });
 
-  const { data: videosData, isLoading: videosLoading } = useQuery<{videos: VideoResult[], message?: string, blocked?: boolean}>({
+  const { data: videosData, isLoading: videosLoading } = useQuery<{videos: VideoResult[], totalPages?: number, currentPage?: number, message?: string, blocked?: boolean}>({
     queryKey: [`/api/search/videos?query=${encodeURIComponent(searchQuery)}${mediaLocationParams}&languageFilter=${languageFilter}${siteParam}&page=${currentPage}`],
     enabled: !!searchQuery && activeSource === 'videos',
   });
@@ -170,8 +302,8 @@ export default function Home() {
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
-    setActiveSource("web");
-    setActivePlatformSource("web");
+    // Keep the currently selected source instead of always resetting to Google
+    // This allows users to search within their selected platform (Facebook, Reddit, etc.)
     setCurrentPage(1);
     setMaxReachedPage(10);
     setAccumulatedResults([]);
@@ -238,16 +370,64 @@ export default function Home() {
     }
   };
 
-  const handleLocationChange = (newCountry: string, newCountryCode: string, newCity: string) => {
+  const handleLocationChange = (newCountry: string, newCountryCode: string, newState: string, newCity: string, newLocation: string) => {
+    console.log('📍 handleLocationChange called with:', {
+      newCountry,
+      newCountryCode,
+      newState,
+      newCity,
+      newLocation
+    });
+    
     setCountry(newCountry);
     setCountryCode(newCountryCode);
+    setState(newState);
     setCity(newCity);
-    setIsManualLocation(true);
+    setLocation(newLocation);
+    
+    // Determine if location is manual or global
+    const isManual = !(newCountry === "" && newCountryCode === "" && newState === "" && newCity === "" && newLocation === "");
+    setIsManualLocation(isManual);
+    
+    // Check if this is a global mode selection (all parameters empty)
+    const isGlobal = newCountry === "" && newCountryCode === "" && newState === "" && newCity === "" && newLocation === "";
+    setIsGlobalMode(isGlobal);
+    
+    // Set location mode based on the parameters
+    if (isGlobal) {
+      setLocationMode('global');
+    } else if (isManual) {
+      setLocationMode('manual');
+    } else {
+      setLocationMode('normal');
+    }
+    
+    // If setting to global, clear saved detected location
+    if (!isManual) {
+      localStorage.removeItem('userDetectedLocation');
+      console.log('🌍 Location set to global, cleared saved location');
+    } else {
+      console.log('🌍 Manual location selected:', { newCountry, newCountryCode, newState, newCity, newLocation });
+    }
+    
     if (searchQuery) {
       setCurrentPage(1);
       setMaxReachedPage(10);
       refetch();
     }
+  };
+
+  const handleCustomSiteAdd = (site: CustomSite) => {
+    console.log(`🔍 Adding custom site:`, site);
+    setCustomSites(prev => {
+      const newSites = [...prev, site];
+      console.log(`🔍 Updated custom sites:`, newSites);
+      return newSites;
+    });
+  };
+
+  const handleCustomSiteRemove = (siteId: string) => {
+    setCustomSites(prev => prev.filter(site => site.id !== siteId));
   };
 
   const handleRetry = () => {
@@ -324,6 +504,7 @@ export default function Home() {
           const parsedCache = JSON.parse(cached);
           if (parsedCache.timestamp && Date.now() - parsedCache.timestamp < 5 * 60 * 1000) {
             setAccumulatedResults(parsedCache.results);
+            // Note: intentSources will be loaded from the fresh API call
           }
         } catch (e) {
           // Invalid cache
@@ -341,6 +522,8 @@ export default function Home() {
         const cacheKey = `search_cache_${searchQuery}_${activeSource}_${sortBy}`;
         localStorage.setItem(cacheKey, JSON.stringify({
           results: data.results,
+          intentSources: data.intentSources,
+          intent: data.intent,
           timestamp: Date.now()
         }));
       } else {
@@ -352,6 +535,8 @@ export default function Home() {
           const cacheKey = `search_cache_${searchQuery}_${activeSource}_${sortBy}`;
           localStorage.setItem(cacheKey, JSON.stringify({
             results: allResults,
+            intentSources: data.intentSources,
+            intent: data.intent,
             timestamp: Date.now()
           }));
           
@@ -369,11 +554,26 @@ export default function Home() {
   const hasSearched = searchQuery.length > 0;
   const pagination = data?.pagination;
 
+  // Debug logging to see if intentSources is being received
+  console.log('🔍 Home Component Data:', {
+    intentSources,
+    intentSourcesLength: intentSources?.length,
+    detectedIntent,
+    hasSearchData: !!data,
+    searchQuery
+  });
+
   const getResultsLabel = (source: string): string => {
-    if (source === "web") return "Web results";
+    if (source === "google" || source === "web") return "Google results";
+    
+    // Check if it's a custom site
+    const customSite = customSites.find(site => site.id === source);
+    if (customSite) {
+      return `${customSite.name} results`;
+    }
     
     const platformNames: Record<string, string> = {
-      twitter: "Twitter",
+      x: "X",
       facebook: "Facebook",
       instagram: "Instagram",
       tiktok: "TikTok",
@@ -383,6 +583,9 @@ export default function Home() {
       linkedin: "LinkedIn",
       quora: "Quora",
       wikipedia: "Wikipedia",
+      stackoverflow: "Stack Overflow",
+      yelp: "Yelp",
+      github: "GitHub",
     };
     
     const platformName = platformNames[source.toLowerCase()];
@@ -458,6 +661,8 @@ export default function Home() {
       // Escape - Clear search and go home
       if (e.key === 'Escape' && hasSearched) {
         setSearchQuery("");
+        setActiveSource('google');
+        setActivePlatformSource('google');
         setCurrentPage(1);
         setAccumulatedResults([]);
       }
@@ -515,6 +720,8 @@ export default function Home() {
               className="flex items-center gap-1.5 cursor-pointer flex-shrink-0 hover-elevate active-elevate-2 rounded-lg px-1.5 py-0.5 transition-all" 
               onClick={() => {
                 setSearchQuery("");
+                setActiveSource('google');
+                setActivePlatformSource('google');
                 setCurrentPage(1);
                 setAccumulatedResults([]);
               }}
@@ -531,6 +738,8 @@ export default function Home() {
                 onSearch={handleSearch}
                 initialQuery={searchQuery}
                 isSearching={isLoading}
+                activeSource={activeSource}
+                onSourceChange={handleSourceChange}
               />
             </div>
 
@@ -538,7 +747,11 @@ export default function Home() {
             <LocationSelector
               country={country}
               countryCode={countryCode}
+              state={state}
               city={city}
+              location={location}
+              isManualLocation={isManualLocation}
+              locationMode={locationMode}
               onLocationChange={handleLocationChange}
               detectedLocation={detectedLocation}
             />
@@ -595,7 +808,10 @@ export default function Home() {
                 searchQuery={searchQuery}
                 detectedIntent={detectedIntent}
                 onLoadMoreTabs={handleLoadMoreTabs}
-                location={{ countryCode, city }}
+                location={{ countryCode, state, city }}
+                customSites={customSites}
+                onCustomSiteAdd={handleCustomSiteAdd}
+                onCustomSiteRemove={handleCustomSiteRemove}
               />
             </div>
           </div>
@@ -761,7 +977,11 @@ export default function Home() {
                         <LocationSelector
                           country={country}
                           countryCode={countryCode}
+                          state={state}
                           city={city}
+                          location={location}
+                          isManualLocation={isManualLocation}
+                          locationMode={locationMode}
                           onLocationChange={handleLocationChange}
                           detectedLocation={detectedLocation}
                         />
@@ -871,6 +1091,11 @@ export default function Home() {
             transition={{ delay: 0.8 }}
             className="mt-6 flex items-center gap-2"
           >
+            <CustomSiteManager 
+              onSiteAdd={handleCustomSiteAdd}
+              onSiteRemove={handleCustomSiteRemove}
+              customSites={customSites}
+            />
             <ColorCustomizer />
             <ThemeToggle />
           </motion.div>
@@ -909,7 +1134,7 @@ export default function Home() {
                   {isManualLocation && (country || city) && (
                     <Badge variant="secondary" className="text-xs px-3 py-1">
                       <MapPin className="h-3 w-3 mr-1" />
-                      {city ? `${city}, ${country}` : country}
+                      {location || (city && state && country ? `${city}, ${state}, ${country}` : (state && country ? `${state}, ${country}` : (city && country ? `${city}, ${country}` : country)))}
                     </Badge>
                   )}
                 </div>
@@ -922,9 +1147,10 @@ export default function Home() {
             )}
 
             {/* AI Summary as Featured Snippet */}
-            {data.summary && activeSource === "web" && currentPage === 1 && (
+            {data.summary && activeSource === "google" && currentPage === 1 && (
               <AISummaryCard summary={data.summary} query={searchQuery} />
             )}
+
 
             {/* Results */}
             {filteredResults.length > 0 ? (
@@ -983,7 +1209,13 @@ export default function Home() {
         )}
 
         {hasSearched && activeSource === 'videos' && !videosLoading && videosData && (
-          <VideoResults videos={videosData.videos} message={videosData.message} />
+          <VideoResults 
+            videos={videosData.videos} 
+            currentPage={currentPage}
+            totalPages={videosData.totalPages || 10}
+            onPageChange={handlePageChange}
+            message={videosData.message} 
+          />
         )}
 
         {hasSearched && activeSource === 'places' && !placesLoading && placesData && (

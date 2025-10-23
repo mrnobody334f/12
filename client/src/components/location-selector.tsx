@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { MapPin, Globe2, Check, ChevronsUpDown, Locate, X, Map, HelpCircle } from "lucide-react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { MapPin, Globe2, Check, ChevronsUpDown, X, Map, Search, Loader2, Flag } from "lucide-react";
 import { motion } from "framer-motion";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import {
   Command,
@@ -25,305 +25,523 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { countriesData, type Country } from "@/data/google-locations";
+import { getAllCountries, searchLocations, initializeLocations, type LocationResult, type SerperLocation } from "@/data/google-locations";
+
+// Helper function to get flag icon class
+const getFlagIconClass = (countryCode: string): string => {
+  if (!countryCode || countryCode === 'global') return '';
+  return `fi fi-${countryCode.toLowerCase()}`;
+};
+
+// Helper function to format location type for display
+const formatLocationType = (targetType: string): string => {
+  const typeMap: { [key: string]: string } = {
+    'Country': 'Country',
+    'State': 'State', 
+    'City': 'City',
+    'Region': 'Region',
+    'Neighborhood': 'Neighborhood',
+    'County': 'County',
+    'Airport': 'Airport',
+    'Province': 'Province',
+    'Territory': 'Territory',
+    'District': 'District',
+    'DMA Region': 'DMA Region',
+    'Metropolitan Area': 'Metro Area',
+    'Town': 'Town',
+    'Village': 'Village',
+    'Borough': 'Borough',
+    'Canton': 'Canton',
+    'Department': 'Department',
+    'Prefecture': 'Prefecture',
+    'Governorate': 'Governorate',
+    'Emirate': 'Emirate',
+    'Autonomous Region': 'Autonomous Region',
+    'Special Administrative Region': 'SAR'
+  };
+  return typeMap[targetType] || targetType;
+};
 
 interface LocationSelectorProps {
   country?: string;
   countryCode?: string;
+  state?: string;
   city?: string;
-  onLocationChange: (country: string, countryCode: string, city: string) => void;
-  detectedLocation?: {country: string; countryCode: string; city: string} | null | undefined;
+  location?: string; // Full location string
+  isManualLocation?: boolean; // Whether location was set manually
+  locationMode?: 'manual' | 'normal' | 'global'; // Track the current mode
+  onLocationChange: (country: string, countryCode: string, state: string, city: string, location: string) => void;
+  detectedLocation?: {country: string; countryCode: string; city: string; state?: string; canonicalName?: string; fullName?: string} | null | undefined;
 }
 
 export function LocationSelector({
   country = "",
   countryCode = "",
+  state = "",
   city = "",
+  location = "",
+  isManualLocation = false,
+  locationMode = 'manual',
   onLocationChange,
   detectedLocation,
 }: LocationSelectorProps) {
-  const [countryOpen, setCountryOpen] = useState(false);
-  const [cityOpen, setCityOpen] = useState(false);
-  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
-  const effectiveCountry = country || detectedLocation?.country || "";
-  const effectiveCountryCode = countryCode || detectedLocation?.countryCode || "";
-  const effectiveCity = city || detectedLocation?.city || "";
+  const [tempCountry, setTempCountry] = useState(country);
+  const [tempCountryCode, setTempCountryCode] = useState(countryCode);
+  const [tempLocation, setTempLocation] = useState(location);
+  const [tempLocationQuery, setTempLocationQuery] = useState("");
+  const [tempCountryQuery, setTempCountryQuery] = useState("");
+  const [selectedLocationResult, setSelectedLocationResult] = useState<LocationResult | null>(null);
 
-  const displayCode = effectiveCountryCode || "global";
-  const selectedCountry = countriesData.find((c) => c.code === displayCode);
-  const availableCities = selectedCountry?.cities || [];
+  const [countriesData, setCountriesData] = useState<SerperLocation[]>([]);
+  
+  // Debug logging for countriesData
+  useEffect(() => {
+    console.log('🔍 Countries data updated:', countriesData.length, countriesData.slice(0, 3));
+  }, [countriesData]);
+
+      // Popular countries for quick access
+      const popularCountries = [
+        'United States', 'United Kingdom', 'Canada', 'Australia', 'Germany', 
+        'France', 'Japan', 'China', 'India', 'Brazil', 'Italy', 'Spain',
+        'Netherlands', 'Sweden', 'Norway', 'Denmark', 'Switzerland', 'Austria',
+        'Belgium', 'Ireland', 'New Zealand', 'South Korea', 'Singapore', 'United Arab Emirates',
+        'Palestine', 'Egypt', 'Jordan', 'Lebanon', 'Saudi Arabia', 'Turkey'
+      ];
+  const [locationResults, setLocationResults] = useState<LocationResult[]>([]);
+  const [isLoadingCountries, setIsLoadingCountries] = useState(false);
+  const [isLoadingLocations, setIsLoadingLocations] = useState(false);
+
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+
+  useEffect(() => {
+    console.log('🚀 LocationSelector mounted, initializing...');
+    initializeLocations();
+    loadCountries();
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(tempLocationQuery);
+    }, 150); // Reduced from 300ms to 150ms for faster response
+
+    return () => clearTimeout(timer);
+  }, [tempLocationQuery]);
+
+  // Load countries
+  const loadCountries = useCallback(async () => {
+    console.log('🔄 loadCountries called');
+    setIsLoadingCountries(true);
+    try {
+      console.log('🔄 Loading countries...');
+      const countries = await getAllCountries();
+      console.log('✅ Loaded countries:', countries.length, countries.slice(0, 3));
+      setCountriesData(countries);
+      console.log('✅ Countries data set:', countries.length > 0 ? 'SUCCESS' : 'EMPTY');
+    } catch (error) {
+      console.error('❌ Failed to load countries:', error);
+    } finally {
+      setIsLoadingCountries(false);
+    }
+  }, []);
+
+  // Search locations when query changes
+  useEffect(() => {
+    const searchLocationsAsync = async () => {
+      if (!debouncedQuery || debouncedQuery.length < 2) {
+        setLocationResults([]);
+        return;
+      }
+
+      setIsLoadingLocations(true);
+      try {
+            const results = await searchLocations(debouncedQuery, tempCountryCode || undefined, 8); // Reduced from 10 to 8 for faster loading
+        setLocationResults(results);
+      } catch (error) {
+        console.error('Failed to search locations:', error);
+        setLocationResults([]);
+      } finally {
+        setIsLoadingLocations(false);
+      }
+    };
+
+    searchLocationsAsync();
+  }, [debouncedQuery, tempCountryCode]);
+
+  const selectedCountry = countriesData.find((c) => c.countryCode === tempCountryCode);
+  const displayCode = tempCountryCode || "global";
+
+  // Filter and sort countries based on search query
+  const filteredCountries = useMemo(() => {
+    if (!tempCountryQuery) {
+      // Show popular countries first when no search query
+      const popular = countriesData.filter(country => 
+        popularCountries.includes(country.name)
+      );
+      const others = countriesData.filter(country => 
+        !popularCountries.includes(country.name)
+      );
+      return [...popular, ...others];
+    } else {
+      // Filter by search query and prioritize popular countries
+      const query = tempCountryQuery.toLowerCase();
+      const matching = countriesData.filter(country =>
+        country.name.toLowerCase().includes(query)
+      );
+      
+      // Sort: popular countries first, then alphabetical
+      return matching.sort((a, b) => {
+        const aPopular = popularCountries.includes(a.name);
+        const bPopular = popularCountries.includes(b.name);
+        
+        if (aPopular && !bPopular) return -1;
+        if (!aPopular && bPopular) return 1;
+        return a.name.localeCompare(b.name);
+      });
+    }
+  }, [countriesData, tempCountryQuery, popularCountries]);
 
   const handleCountrySelect = (code: string) => {
-    const selected = countriesData.find((c) => c.code === code);
+    const selected = countriesData.find((c) => c.countryCode === code);
     const actualCountry = code === "global" ? "" : (selected?.name || "");
     const actualCode = code === "global" ? "" : code;
-    onLocationChange(actualCountry, actualCode, "");
-    setCountryOpen(false);
+
+    setTempCountry(actualCountry);
+    setTempCountryCode(actualCode);
+    setTempLocation(""); // Reset location when country changes
+    setTempLocationQuery("");
+    setTempCountryQuery(""); // Reset country search
+    setSelectedLocationResult(null); // Clear selected location result
   };
 
-  const handleCitySelect = (selectedCity: string) => {
-    onLocationChange(country, countryCode, selectedCity);
-    setCityOpen(false);
+  const handleLocationSelect = (locationResult: LocationResult) => {
+    console.log('🔍 LOCATION SELECTED:', locationResult);
+    setSelectedLocationResult(locationResult); // Save the complete location result
+    setTempLocation(locationResult.fullName);
+    setTempLocationQuery(locationResult.fullName);
   };
 
-  const handleUseMyLocation = async () => {
-    setIsGettingLocation(true);
-    
-    if ('geolocation' in navigator) {
-      try {
-        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-          });
-        });
-
-        const response = await fetch('/api/location/geocode', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          }),
-        });
-
-        if (response.ok) {
-          const location = await response.json();
-          if (location.countryCode) {
-            onLocationChange(location.country, location.countryCode, location.city || "");
-            toast({
-              title: "Location detected",
-              description: `Using your precise location: ${location.city ? location.city + ', ' : ''}${location.country}`,
-            });
-            setIsGettingLocation(false);
-            return;
-          }
-        }
-      } catch (error) {
-        if ((error as GeolocationPositionError).code === 1) {
-          toast({
-            title: "Location access denied",
-            description: "Search results will be global. You can manually select a location below.",
-            variant: "default",
-          });
-          setIsGettingLocation(false);
-          return;
-        }
-      }
-    }
-
+  const handleNormalClick = async () => {
+    // For Normal mode, don't pass any location parameters to the frontend
+    // The server will use the detected location automatically
+    onLocationChange("", "", "", "", "");
     toast({
-      title: "Location detection failed",
-      description: "Could not determine your location. Search results will be global.",
-      variant: "destructive",
+      title: "Location set to normal",
+      description: "Search results will be optimized for your current location",
     });
+    setIsOpen(false);
+  };
+
+  const handleGlobalClick = () => {
+    // Clear all location selections and set to global
+    setTempCountry("");
+    setTempCountryCode("");
+    setTempLocation("");
+    setTempLocationQuery("");
+    setSelectedLocationResult(null);
+    // Completely remove all location filters - no country, state, city, or location applied
+    onLocationChange("", "", "", "", "");
+    toast({
+      title: "Location set to global",
+      description: "Search results will be global (no location filters applied)",
+    });
+    setIsOpen(false);
+  };
+
+  const handleSave = () => {
+    console.log('🔍 LOCATION SELECTOR SAVE:', {
+      selectedLocationResult,
+      tempLocation,
+      tempCountry,
+      tempCountryCode
+    });
+
+    if (selectedLocationResult) {
+      // Use canonicalName for Serper API (without spaces after commas)
+      console.log('✅ Using selectedLocationResult:', {
+        country: selectedLocationResult.country,
+        countryCode: selectedLocationResult.countryCode,
+        state: selectedLocationResult.state,
+        city: selectedLocationResult.city,
+        targetType: selectedLocationResult.targetType,
+        canonicalName: selectedLocationResult.canonicalName
+      });
+      
+      // ✅ إرسال الموقع المحدد بدقة حسب نوعه
+      onLocationChange(
+        selectedLocationResult.country || tempCountry,
+        selectedLocationResult.countryCode || tempCountryCode,
+        selectedLocationResult.state || "",    // State (إذا كان State أو City)
+        selectedLocationResult.city || "",     // City (فقط إذا كان City)
+        selectedLocationResult.canonicalName || selectedLocationResult.fullName  // للـ Serper API
+      );
+    } else if (tempCountry) {
+      // User selected country only (no city/state selected from dropdown)
+      console.log('✅ Using country only:', tempCountry, tempCountryCode);
+      onLocationChange(tempCountry, tempCountryCode, "", "", "");
+    } else {
+      // Fallback to empty (global)
+      console.log('✅ Using global (no location)');
+      onLocationChange("", "", "", "", "");
+    }
+    setIsOpen(false);
     
-    setIsGettingLocation(false);
+    if (selectedLocationResult) {
+      toast({
+        title: "Location updated",
+        description: `Search results will be localized for ${selectedLocationResult.fullName}`,
+      });
+    } else if (tempCountry) {
+      toast({
+        title: "Location updated", 
+        description: `Search results will be localized for ${tempCountry}`,
+      });
+    }
   };
 
   const handleClearLocation = () => {
-    onLocationChange("", "", "");
-    toast({
-      title: "Location cleared",
-      description: "Search results will now be global",
-    });
+    setTempLocation("");
+    setTempLocationQuery("");
+    setSelectedLocationResult(null); // Clear selected location result
   };
 
   return (
     <TooltipProvider>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="inline-flex items-center gap-1.5"
-      >
-        <Popover open={countryOpen} onOpenChange={setCountryOpen}>
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <Tooltip>
+          <TooltipTrigger asChild>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
               size="sm"
-              className="gap-1.5 font-medium h-8"
+                className="h-8 gap-2 px-3"
               data-testid="button-location-selector"
             >
               <MapPin className="h-3.5 w-3.5" />
-              <span className="text-xs">Search Location</span>
-              {displayCode !== "global" && (
-                <X
-                  className="h-3 w-3 opacity-70 hover:opacity-100"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleClearLocation();
-                  }}
-                />
-              )}
+                <span className="hidden sm:inline">
+                  {locationMode === 'manual' && (country || city || state || location) ? (location || (city && state && country ? `${city}, ${state}, ${country}` : (state && country ? `${state}, ${country}` : (city && country ? `${city}, ${country}` : (country ? `${country}` : "Search Location"))))) : 
+                   locationMode === 'global' ? "Global" : "Search Location"}
+                </span>
+                <span className="sm:hidden">Location</span>
             </Button>
           </PopoverTrigger>
-        <PopoverContent className="w-[400px] p-4" align="start">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-primary" />
-                <Label className="text-base font-semibold">Search Location</Label>
-              </div>
-              <div className="flex items-center gap-2">
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Set search location for localized results</p>
+          </TooltipContent>
+        </Tooltip>
+        <PopoverContent className="w-96 p-0" align="start">
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Choose search region</h3>
                 <Button
-                  variant={displayCode === "global" ? "default" : "outline"}
+                variant="ghost"
                   size="sm"
-                  onClick={() => handleCountrySelect("global")}
-                  className="gap-2"
-                  data-testid="button-set-global"
-                >
-                  <Globe2 className="h-4 w-4" />
-                  <span className="text-xs">Global</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleUseMyLocation}
-                  className="gap-2"
-                  disabled={isGettingLocation}
-                  data-testid="button-use-my-location"
-                >
-                  <Locate className={cn("h-4 w-4", isGettingLocation && "animate-spin")} />
-                  <span className="text-xs">
-                    {isGettingLocation ? "Getting..." : "Use My Location"}
-                  </span>
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="country" className="text-xs text-muted-foreground font-medium">
-                  Country
-                </Label>
-                <Command>
-                  <CommandInput placeholder="Search country..." />
-                  <CommandList className="max-h-[200px]">
-                    <CommandEmpty>No country found.</CommandEmpty>
-                    <CommandGroup>
-                      {countriesData.map((c) => (
-                        <CommandItem
-                          key={c.code}
-                          value={c.name}
-                          onSelect={() => handleCountrySelect(c.code)}
-                          data-testid={`option-country-${c.code}`}
-                        >
-                          <Map className="mr-2 h-4 w-4 text-muted-foreground" />
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              displayCode === c.code ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          {c.name}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="city" className="text-xs text-muted-foreground font-medium">
-                  City (optional)
-                </Label>
-                <Popover open={cityOpen} onOpenChange={setCityOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={cityOpen}
-                      className="w-full justify-between"
-                      disabled={!countryCode || countryCode === "global" || availableCities.length === 0}
-                      data-testid="button-city-selector"
-                    >
-                      <div className="flex items-center gap-2 truncate">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <span className="truncate">
-                          {effectiveCity || (availableCities.length > 0 ? "Select city" : "Select country first")}
-                        </span>
-                      </div>
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[200px] p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder="Search city..." />
-                      <CommandList>
-                        <CommandEmpty>No city found.</CommandEmpty>
-                        <CommandGroup>
-                          {availableCities.map((c) => (
-                            <CommandItem
-                              key={c}
-                              value={c}
-                              onSelect={() => handleCitySelect(c)}
-                              data-testid={`option-city-${c.toLowerCase().replace(/\s+/g, '-')}`}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  effectiveCity === c ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              {c}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-
-            {(effectiveCountry || effectiveCity) && (
-              <motion.div
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="p-3 bg-primary/10 border border-primary/20 rounded-lg"
+                onClick={() => setIsOpen(false)}
+                className="h-6 w-6 p-0"
               >
-                <p className="text-sm text-foreground">
-                  <span className="font-medium">Search results will be localized for:</span>
-                  <br />
-                  <span className="text-primary font-semibold">
-                    {effectiveCity && <>{effectiveCity}, </>}
-                    {effectiveCountry}
-                  </span>
-                  {detectedLocation && !country && !countryCode && (
-                    <span className="text-xs text-muted-foreground block mt-1">
-                      (Auto-detected from IP)
-                    </span>
+                <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+            {/* Country Selection */}
+            <div className="space-y-2 mb-4">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Country
+              </label>
+              <Input
+                placeholder="Search country"
+                value={tempCountryQuery}
+                onChange={(e) => setTempCountryQuery(e.target.value)}
+                className="w-full"
+              />
+              <div className="space-y-2 max-h-[200px] overflow-y-auto border rounded-lg">
+                {/* Global Option */}
+                <div
+                  className={`flex items-center gap-3 p-3 cursor-pointer transition-colors ${
+                    !tempCountryCode || tempCountryCode === "global" 
+                      ? "bg-gray-100 dark:bg-gray-800" 
+                      : "hover:bg-gray-50 dark:hover:bg-gray-800"
+                  }`}
+                  onClick={() => {
+                    handleCountrySelect("global");
+                    // Clear all location selections and set to global
+                    setTempCountry("");
+                    setTempCountryCode("");
+                    setTempLocation("");
+                    setTempLocationQuery("");
+                    setSelectedLocationResult(null);
+                    // Apply global search immediately
+                    onLocationChange("", "", "", "", "");
+                    toast({
+                      title: "Location set to global",
+                      description: "Search results will be global",
+                    });
+                    setIsOpen(false);
+                  }}
+                >
+                  <Globe2 className="h-5 w-5 text-blue-500" />
+                  <span className="font-medium">All regions (Global)</span>
+                  {(!tempCountryCode || tempCountryCode === "global") && (
+                    <Check className="h-4 w-4 ml-auto text-green-600" />
                   )}
-                </p>
-              </motion.div>
+            </div>
+
+                    {/* Countries List */}
+                    {countriesData.length > 0 ? (
+                      <>
+                        {/* Show selected country at top if exists and not global */}
+                        {selectedCountry && tempCountryCode && tempCountryCode !== "global" && (
+                          <div className="border-b border-gray-200 dark:border-gray-700 pb-2 mb-2">
+                            <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                              <span className={`${getFlagIconClass(selectedCountry.countryCode)} me-2`} style={{ width: '20px', height: '15px' }}></span>
+                              <div className="flex flex-col flex-1">
+                                <span className="font-medium text-blue-700 dark:text-blue-300">{selectedCountry.name}</span>
+                                <span className="text-sm text-blue-600 dark:text-blue-400">({formatLocationType(selectedCountry.targetType)}) - Selected</span>
+                              </div>
+                              <Check className="h-4 w-4 text-blue-600" />
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Show filtered countries */}
+                        {filteredCountries.map((country) => (
+                          <div
+                            key={country.countryCode}
+                            className={`flex items-center gap-3 p-3 cursor-pointer transition-colors ${
+                              tempCountryCode === country.countryCode 
+                                ? "bg-gray-100 dark:bg-gray-800" 
+                                : "hover:bg-gray-50 dark:hover:bg-gray-800"
+                            }`}
+                            onClick={() => handleCountrySelect(country.countryCode)}
+                          >
+                            <span className={`${getFlagIconClass(country.countryCode)} me-2`} style={{ width: '20px', height: '15px' }}></span>
+                            <div className="flex flex-col flex-1">
+                              <span className="font-medium">{country.name}</span>
+                              <span className="text-sm text-gray-500">({formatLocationType(country.targetType)})</span>
+                            </div>
+                            {tempCountryCode === country.countryCode && (
+                              <Check className="h-4 w-4 ml-auto text-green-600" />
+                            )}
+                          </div>
+                        ))}
+                        
+                        {/* No countries found */}
+                        {filteredCountries.length === 0 && tempCountryQuery && (
+                          <div className="text-center p-4 text-gray-500">
+                            No countries found
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-center p-4 text-gray-500">
+                        {isLoadingCountries ? "Loading countries..." : `No countries available (${countriesData.length} loaded)`}
+                      </div>
+                    )}
+              </div>
+              </div>
+
+            {/* City/State Selection */}
+            <div className="space-y-2 mb-4">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  City / State (optional)
+                </label>
+                {/* Clear button - only show if there's a selected location */}
+                {selectedLocationResult && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClearLocation}
+                    className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700"
+                    title="Clear selected location"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              <Input
+                placeholder={tempCountryCode && tempCountryCode !== "global" ? "Search city or state" : "Select a country first"}
+                value={tempLocationQuery}
+                onChange={(e) => setTempLocationQuery(e.target.value)}
+                className="w-full"
+                disabled={!tempCountryCode || tempCountryCode === "global"}
+              />
+                
+                {/* City/State Results */}
+                {tempLocationQuery && tempCountryCode && tempCountryCode !== "global" && (
+                  <div className="space-y-1 max-h-[150px] overflow-y-auto border rounded-lg">
+                    {locationResults.map((result) => (
+                      <div
+                        key={result.fullName}
+                        className="flex items-center gap-3 p-3 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
+                        onClick={() => handleLocationSelect(result)}
+                      >
+                        <MapPin className="h-5 w-5 text-gray-500" />
+                        <div className="flex flex-col flex-1">
+                          <span className="font-medium">{result.fullName}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-500">{result.countryCode}</span>
+                            <span className="text-sm text-gray-500">({formatLocationType(result.targetType)})</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {/* Only show "No cities or states found" if no location is selected */}
+                    {locationResults.length === 0 && tempLocationQuery.length >= 2 && !selectedLocationResult && (
+                      <div className="text-center p-4 text-gray-500">
+                        No cities or states found
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+            {/* Loading State */}
+            {isLoadingCountries && (
+              <div className="flex items-center justify-center p-4">
+                <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
+                <span className="ml-2 text-gray-500">Loading regions...</span>
+            </div>
             )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-4 border-t mt-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleNormalClick}
+                    className="flex-1"
+                    data-testid="button-normal"
+                  >
+                    <Globe2 className="mr-2 h-4 w-4" />
+                    Normal
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGlobalClick}
+                    className="flex-1"
+                    data-testid="button-global"
+                  >
+                    <Globe2 className="mr-2 h-4 w-4" />
+                    Global
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleSave}
+                    className="flex-1"
+                    data-testid="button-save-location"
+                  >
+                    Save
+                  </Button>
+                </div>
           </div>
         </PopoverContent>
       </Popover>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button
-            type="button"
-            className="text-muted-foreground hover:text-foreground transition-colors"
-            data-testid="info-location"
-          >
-            <HelpCircle className="h-3.5 w-3.5" />
-          </button>
-        </TooltipTrigger>
-        <TooltipContent className="max-w-xs">
-          <p className="text-sm">
-            <strong>Location-Based Search</strong>
-            <br />
-            Get localized results tailored to your region. Use auto-detect for precision or manually select a country and city. Results will be optimized for your location's language, currency, and availability.
-          </p>
-        </TooltipContent>
-      </Tooltip>
-    </motion.div>
     </TooltipProvider>
   );
 }
